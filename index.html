@@ -359,6 +359,110 @@ html,body{-webkit-text-size-adjust:100%}
 .console-panel{z-index:3000}
 .console-toggle,.fab-console{z-index:3001}
 
+<!-- ==== DEV TEST PANEL (показывается только с ?debug=1) ==== -->
+<div id="dev-test-panel" style="display:none; position:fixed; right:16px; bottom:16px; z-index:9999; width:320px; max-width:92vw; background:#0f1221; color:#c9d1ff; border:1px solid #2a3157; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.35); font:13px/1.4 system-ui, -apple-system, Segoe UI, Roboto; overflow:hidden">
+  <div style="padding:10px 12px; border-bottom:1px solid #2a3157; display:flex; align-items:center; gap:8px;">
+    <div style="font-weight:600">DEV • GAS quick test</div>
+    <div id="dev-test-badge" style="margin-left:auto; font-size:11px; opacity:.8"></div>
+  </div>
+  <div style="padding:12px; display:flex; flex-direction:column; gap:8px;">
+    <button id="btn-test-bootstrap" style="padding:10px 12px; border:0; border-radius:10px; background:#2b52ff; color:white; cursor:pointer;">1) Bootstrap</button>
+    <button id="btn-test-booking" style="padding:10px 12px; border:0; border-radius:10px; background:#3aa76d; color:white; cursor:pointer;">2) Test consult_booking</button>
+    <div id="dev-test-log" style="background:#0b0e1a; border:1px solid #2a3157; border-radius:10px; padding:10px; max-height:180px; overflow:auto; white-space:pre-wrap;"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const params = new URL(location.href).searchParams;
+  const debugOn = params.get('debug') === '1';
+  const panel = document.getElementById('dev-test-panel');
+  if (!debugOn || !panel) return;
+
+  panel.style.display = 'block';
+
+  const $ = s => panel.querySelector(s);
+  const logBox = $('#dev-test-log');
+  const badge = $('#dev-test-badge');
+
+  function log(msg, obj){
+    const line = '[' + new Date().toLocaleTimeString() + '] ' + msg + (obj ? ' ' + JSON.stringify(obj) : '');
+    console.log('[DEV TEST]', msg, obj || '');
+    logBox.textContent = line + '\n' + logBox.textContent;
+  }
+
+  const inTG = !!(window.Telegram && Telegram.WebApp && Telegram.WebApp.initData);
+  const initLen = (Telegram && Telegram.WebApp && (Telegram.WebApp.initData||'').length) || 0;
+  badge.textContent = inTG ? ('TG OK • initData len ' + initLen) : 'not in Telegram';
+  if (!inTG) log('⚠ Not in Telegram WebApp. Open via bot button.');
+
+  // хелперы, если вдруг их нет в твоём файле
+  async function apiBootstrapFallback(){
+    const tgInit = Telegram.WebApp.initData;
+    const url = (window.APP_CONFIG && APP_CONFIG.GAS_WEBHOOK) + '?mode=bootstrap&tg_init=' + encodeURIComponent(tgInit);
+    const r = await fetch(url, { method: 'GET' });
+    return r.json();
+  }
+  async function apiEventFallback(type, extra={}){
+    const tgInit = Telegram.WebApp.initData;
+    const url = (window.APP_CONFIG && APP_CONFIG.GAS_WEBHOOK);
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ type, tg_init: tgInit, ...extra })
+    });
+    return r.json();
+  }
+  const apiBootstrap = (window.apiBootstrap || apiBootstrapFallback);
+  const apiEvent = (window.apiEvent || apiEventFallback);
+
+  // Кнопка 1: bootstrap
+  $('#btn-test-bootstrap').addEventListener('click', async ()=>{
+    try{
+      log('→ bootstrap()…');
+      const res = await apiBootstrap();
+      log('← bootstrap()', res);
+      if(res && res.ok) log('Profile', res.profile || {});
+    }catch(e){
+      log('bootstrap error', String(e));
+    }
+  });
+
+  // Кнопка 2: consult_booking с «сейчас + 15 минут»
+  $('#btn-test-booking').addEventListener('click', async ()=>{
+    try{
+      const now = new Date(Date.now() + 15*60*1000);
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth()+1).padStart(2,'0');
+      const dd = String(now.getDate()).padStart(2,'0');
+      const hh = String(now.getHours()).padStart(2,'0');
+      const mi = String(now.getMinutes()).padStart(2,'0');
+      const date = `${yyyy}-${mm}-${dd}`;
+      const time = `${hh}:${mi}`;
+
+      const payload = {
+        date,
+        time,
+        duration_min: 30,
+        format: 'call',
+        contact: '@dev_test'
+      };
+      log('→ consult_booking', payload);
+      const res = await apiEvent('consult_booking', payload);
+      log('← consult_booking', res);
+      if(res && res.ok) log('Check sheet consult_bookings row added.');
+    }catch(e){
+      log('consult_booking error', String(e));
+    }
+  });
+
+  // Автоматически раскрыть панель и сделать лёгкий ping
+  setTimeout(()=>{ log('Panel ready. Click buttons in order.'); }, 200);
+})();
+</script>
+<!-- ==== /DEV TEST PANEL ==== -->
+    
+    
 </style>
 </head>
 <body>
