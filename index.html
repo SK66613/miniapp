@@ -2075,7 +2075,7 @@ const pages = document.querySelectorAll('section.page');
 // ==== v16-safe config (only placeholders; nothing breaks if empty) ====
 window.APP_CONFIG = {
   TG_BOT_USERNAME: 'serge_kamensky_bot',  // поменяешь здесь
-  GAS_WEBHOOK: 'https://script.google.com/macros/s/AKfycbzW5mE7LKU_knuIibKatNXovbMLAjYiIGtj1By7F3QRCOOm9b79nnF2dq9gW7Os9fTgwg/exec',                        // вставишь URL Apps Script
+  GAS_WEBHOOK: 'https://script.google.com/macros/s/AKfycbxqbMhjJECl5PlMNd9rcfQgqMVsV1XlHBevD-PrXCOCWC7Qf-KxwlrVuFEuMeMI-nlwug/exec',                        // вставишь URL Apps Script
   API_KEY: '',                            // опционально
   USE_TG_SIGNATURE: true
 };
@@ -2131,7 +2131,6 @@ document.addEventListener('click', function(e){ if(e.target.closest('.btn')) __h
       ts: new Date().toISOString(),
       uid: __uid(),
       page: (new URL(location.href)).searchParams.get('page') || (location.hash||'#home').slice(1) || 'home',
-      // TOP-LEVEL fields to match GAS doPost/saveBooking_
       date: scope._selDate || '',
       time: scope._selTime || '',
       duration_min: scope._durMin || +(scope.querySelector('.dur.btn-primary') && scope.querySelector('.dur.btn-primary').getAttribute('data-min') || 30),
@@ -2879,5 +2878,28 @@ window.__domLog = function(){};
 })();
 </script>
 
+<script>
+
+/* API helpers */
+async function apiBootstrap() {
+  const tgInit = Telegram.WebApp.initData;
+  const url = (window.APP_CONFIG && APP_CONFIG.GAS_WEBHOOK) + '?mode=bootstrap&tg_init=' + encodeURIComponent(tgInit);
+  const r = await fetch(url, { method: 'GET' });
+  return r.json();
+}
+
+async function apiEvent(type, extra={}) {
+  const tgInit = Telegram.WebApp.initData;
+  const url = (window.APP_CONFIG && APP_CONFIG.GAS_WEBHOOK);
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ type, tg_init: tgInit, ...extra })
+  });
+  return r.json();
+}
+// END API helpers
+
+</script>
 </body>
 </html>
