@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Правильный Учёт — Мини‑приложение (pro)</title>
@@ -360,6 +362,41 @@ html,body{-webkit-text-size-adjust:100%}
 </style>
 </head>
 <body>
+
+<script>
+// Telegram WebApp SDK init + name read (runs as early as possible)
+(function(){
+  var tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+  if (!tg) return;
+  try { tg.ready(); tg.expand && tg.expand(); } catch(e){}
+
+  function getDisplayName(){
+    try{
+      var u = (tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : null;
+      if (!u) return null;
+      var full = [u.first_name||'', u.last_name||''].filter(Boolean).join(' ').trim();
+      return full || (u.username ? '@'+u.username : null);
+    }catch(e){ return null; }
+  }
+
+  // Wait a bit in case Telegram fills user with slight delay
+  function awaitUser(cb){
+    var tries = 0, timer = setInterval(function(){
+      var name = getDisplayName();
+      if (name || tries++ > 20){ clearInterval(timer); cb(name || 'Гость'); }
+    }, 150);
+  }
+
+  awaitUser(function(name){
+    // Expose globally so any part of app can use
+    window.__TG_DISPLAY_NAME__ = name;
+    // Update any placeholders in UI if present
+    var el = document.querySelector('[data-tg-name], .profile-name, #tg-user-header .name');
+    if (el) el.textContent = name;
+  });
+})();
+</script>
+
 <canvas id="bg-canvas"></canvas>
 
 <header class="container">
@@ -2038,7 +2075,7 @@ const pages = document.querySelectorAll('section.page');
 // ==== v16-safe config (only placeholders; nothing breaks if empty) ====
 window.APP_CONFIG = {
   TG_BOT_USERNAME: 'serge_kamensky_bot',  // поменяешь здесь
-  GAS_WEBHOOK: '',                        // вставишь URL Apps Script
+  GAS_WEBHOOK: 'https://script.google.com/macros/s/AKfycbxqbMhjJECl5PlMNd9rcfQgqMVsV1XlHBevD-PrXCOCWC7Qf-KxwlrVuFEuMeMI-nlwug/exec',                        // вставишь URL Apps Script
   API_KEY: '',                            // опционально
   USE_TG_SIGNATURE: true
 };
@@ -2812,60 +2849,30 @@ window.__domLog = function(){};
 
 
 <script>
-// v28 — Диагностика сети GAS + надёжный bootstrap
+// GAS bootstrap: fetch profile by tg_init on load
 (function(){
-  const C = window.APP_CONFIG || {};
-  if(!C.GAS_WEBHOOK){ console.warn('GAS_WEBHOOK is empty'); return; }
-
+  const C = window.APP_CONFIG||{};
+  if(!C.GAS_WEBHOOK) return;
   function tgInit(){ try{ return Telegram && Telegram.WebApp && Telegram.WebApp.initData || ''; }catch(e){ return '' } }
-  function uid(){ let u = localStorage.getItem('uid'); if(!u){ u = Date.now().toString(36)+Math.random().toString(36).slice(2,8); localStorage.setItem('uid',u);} return u; }
-  function toast(t,m){ try{ showToast && showToast(t,m||''); }catch(e){ console.log('[toast]', t, m); } }
-  function sendDiag(obj){ try{ Telegram.WebApp.sendData && Telegram.WebApp.sendData(JSON.stringify({type:'diag', ...obj})); }catch(e){} }
-
-  async function call(url, opts){
-    const start = Date.now();
-    try{
-      const r = await fetch(url, Object.assign({method:'GET', headers:{'Cache-Control':'no-store'}}, opts||{}));
-      const txt = await r.text();
-      let json=null; try{ json = JSON.parse(txt); }catch(_){}
-      return {ok:r.ok, status:r.status, ms:Date.now()-start, text:txt, json};
-    }catch(e){
-      return {ok:false, error:String(e), ms:Date.now()-start};
-    }
-  }
-
   async function bootstrap(){
-    const init = tgInit();
-    const url = C.GAS_WEBHOOK + '?mode=bootstrap&' + (init ? ('tg_init='+encodeURIComponent(init)) : ('test=1&tg_id='+encodeURIComponent(uid())));
-    toast('Подключение', 'Проверяем связь с сервером');
-    sendDiag({stage:'bootstrap_start', url});
-    const res = await call(url);
-    sendDiag({stage:'bootstrap_reply', meta:{ok:res.ok, status:res.status, ms:res.ms}, sample:(res.text||'').slice(0,140)});
-    if(!res.ok || !res.json || !res.json.ok){ toast('Ошибка сервера', (res.text||res.error||'unknown').slice(0,60)); return; }
-    const p = res.json.profile || {};
     try{
-      localStorage.setItem('stat_points', String(p.points||0));
-      localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[]));
-      if(p.spin_next_at) localStorage.setItem('spin_next_at', p.spin_next_at);
-      if(p.last_booking) localStorage.setItem('last_booking', p.last_booking);
-    }catch(_){}
-    toast('Профиль обновлён','Данные с сервера получены');
+      const url = C.GAS_WEBHOOK + '?mode=bootstrap&tg_init=' + encodeURIComponent(tgInit());
+      const res = await fetch(url, {method:'GET', headers:{'Cache-Control':'no-store'}});
+      const data = await res.json().catch(()=>null);
+      if(!data || !data.ok) return;
+      // Cache essentials for UI
+      try{
+        const p = data.profile||{};
+        localStorage.setItem('stat_points', String(p.points||0));
+        localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[]));
+        if(p.spin_next_at) localStorage.setItem('spin_next_at', p.spin_next_at);
+        if(p.last_booking) localStorage.setItem('last_booking', p.last_booking);
+      }catch(_){}
+      // notify UI
+      try{ window.showToast && showToast('Профиль обновлён', 'Данные подтянуты с сервера'); }catch(_){}
+    }catch(e){ /*silent*/ }
   }
-
-  // маленькая кнопка диагностики
-  const diagBtn = document.createElement('button');
-  diagBtn.textContent = 'Проверка связи';
-  diagBtn.className = 'btn btn-ghost';
-  diagBtn.style.position='fixed'; diagBtn.style.bottom='14px'; diagBtn.style.left='14px'; diagBtn.style.zIndex='4000';
-  diagBtn.style.opacity='0.6'; diagBtn.style.backdropFilter='blur(6px)';
-  diagBtn.addEventListener('click', async ()=>{
-    const res = await call(C.GAS_WEBHOOK + '?mode=ping&ts=' + Date.now());
-    toast(res.ok ? 'PING ok' : 'PING err', (res.ok?(''+res.status+' '+(res.ms||0)+'ms'): (res.error||'')));
-    sendDiag({stage:'ping', meta:res});
-  });
-  document.body.appendChild(diagBtn);
-
-  // старт
+  // start when WebApp is ready
   if (document.readyState === 'complete' || document.readyState === 'interactive') bootstrap();
   else document.addEventListener('DOMContentLoaded', bootstrap);
 })();
