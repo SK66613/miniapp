@@ -2131,12 +2131,11 @@ document.addEventListener('click', function(e){ if(e.target.closest('.btn')) __h
       ts: new Date().toISOString(),
       uid: __uid(),
       page: (new URL(location.href)).searchParams.get('page') || (location.hash||'#home').slice(1) || 'home',
-      consult: {
-        date: scope._selDate || '',
-        time: scope._selTime || '',
-        duration: scope._durMin || +(scope.querySelector('.dur.btn-primary') && scope.querySelector('.dur.btn-primary').getAttribute('data-min') || 30),
-        format: scope._type || (scope.querySelector('.consult-type.btn-primary') && scope.querySelector('.consult-type.btn-primary').getAttribute('data-type') || 'call')
-      },
+      // TOP-LEVEL fields to match GAS doPost/saveBooking_
+      date: scope._selDate || '',
+      time: scope._selTime || '',
+      duration_min: scope._durMin || +(scope.querySelector('.dur.btn-primary') && scope.querySelector('.dur.btn-primary').getAttribute('data-min') || 30),
+      format: scope._type || (scope.querySelector('.consult-type.btn-primary') && scope.querySelector('.consult-type.btn-primary').getAttribute('data-type') || 'call'),
       contact: val,
       tg_user: __tgUser()
     };
@@ -2150,8 +2149,11 @@ document.addEventListener('click', function(e){ if(e.target.closest('.btn')) __h
 (function(){
   const box = document.getElementById('invite'); if(!box) return;
   const inp = box.querySelector('#refLink'); const copy = box.querySelector('#copyRef'); const share = box.querySelector('#shareRef');
-  const u = __uid(); const bot = (window.APP_CONFIG && window.APP_CONFIG.TG_BOT_USERNAME) || 'serge_kamensky_bot';
-  const link = 'https://t.me/' + bot + '?start=ref_' + u;
+  
+  const tg = __tgUser();
+  const ref = tg && tg.id ? String(tg.id) : __uid();
+  const bot = (window.APP_CONFIG && window.APP_CONFIG.TG_BOT_USERNAME) || 'serge_kamensky_bot';
+  const link = 'https://t.me/' + bot + '?start=ref_' + ref;
   if (inp) inp.value = link;
   copy && copy.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(link); window.showToast && showToast('Скопировано','Ссылка в буфере'); }catch(e){} });
   share && share.addEventListener('click', async ()=>{
@@ -2608,8 +2610,7 @@ window.__domLog = function(){};
 /* 4) Invite page: generate link + demo add +100 */
 (function(){
   const box=document.getElementById('invite'); if(!box) return;
-  const bot=(window.APP_CONFIG&&window.APP_CONFIG.TG_BOT_USERNAME)||'serge_kamensky_bot';
-  const link=`https://t.me/${bot}?start=ref_${__uid()}`;
+  const bot=(window.APP_CONFIG&&window.APP_CONFIG.TG_BOT_USERNAME)||'serge_kamensky_bot'; const link=`https://t.me/${bot}?start=ref_${(__tgUser()&&__tgUser().id)?__tgUser().id:__uid()}`;
   const inp=box.querySelector('#refLink'); if(inp) inp.value=link;
   const copy=box.querySelector('#copyRef'), share=box.querySelector('#shareRef'), sim=box.querySelector('#simulateRef');
   copy && copy.addEventListener('click', async()=>{ try{ await navigator.clipboard.writeText(link); showToast && showToast('Скопировано','Ссылка в буфере'); }catch(_){}});
