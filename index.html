@@ -2748,7 +2748,7 @@ document.addEventListener('click', function(e){ if(e.target.closest('.btn')) __h
       <div class="grid" style="gap:8px">
         <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Очки</div><div class="big">${pts}</div></div>
         <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Последний приз</div><div class="big" style="font-size:14px">${prize}</div></div>
-        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Запись</div><div class="big" style="font-size:14px">${booking}</div></div>
+        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Запись</div><div class="big" style="font-size:14px">${booking_date} ${booking_time}</div></div>
       </div>
       <div class="cta" style="margin-top:10px">
         <a class="btn btn-primary" href="https://t.me/${(window.APP_CONFIG&&window.APP_CONFIG.TG_BOT_USERNAME)||'serge_kamensky_bot'}" target="_blank" rel="noopener">Открыть бота</a>
