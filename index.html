@@ -1176,7 +1176,7 @@ function __updateURL(page){
     btn.addEventListener('click', ()=>{
       panel.style.display = panel.style.display==='block' ? 'none' : 'block';
     });
-  }
+  } //
 })();
 
 // ===== Nav: robust clicks + drag threshold + keep carousel look =====
@@ -2666,47 +2666,7 @@ document.addEventListener('click', function(e){ if(e.target.closest('.btn')) __h
   apply();
 })();
 
-// v20 — Profile panel instead of console (avatar, name, points, last prize, last booking demo)
-(function(){
-  const toggle = document.querySelector('.console-toggle'); const panel = document.getElementById('consolePanel');
-  if(!toggle || !panel) return;
-  function initials(name){
-    const parts = (name||'').trim().split(/\s+/); const a=(parts[0]||'').charAt(0), b=(parts[1]||'').charAt(0);
-    return (a+b||a||'?').toUpperCase();
-  }
-  function renderProfile(){
-    let user=null; try{ user = Telegram?.WebApp?.initDataUnsafe?.user || null; }catch(_){}
-    const uname = user?.username ? '@'+user.username : (user?.first_name||'Гость');
-    const name = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Гость';
-    const pts = +localStorage.getItem('stat_points') || 0;
-    const prize = (JSON.parse(localStorage.getItem('last_prizes')||'[]')||[]).slice(-1)[0] || '—';
-    const lastBooking = localStorage.getItem('last_booking') || 'Нет';
-    panel.innerHTML = `
-      <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px">
-        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--mint),var(--primary));display:grid;place-items:center;font-weight:800">${initials(name)}</div>
-        <div><div style="font-weight:800">${name}</div><div style="opacity:.7;font-size:12px">${uname}</div></div>
-      </div>
-      <div class="grid" style="gap:8px">
-        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Очки</div><div class="big">${pts}</div></div>
-        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Последний приз</div><div class="big" style="font-size:14px">${prize}</div></div>
-        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Запись</div><div class="big" style="font-size:14px">${lastBooking}</div></div>
-      </div>
-      <div class="cta" style="margin-top:10px">
-        <a class="btn btn-primary" href="https://t.me/${(window.APP_CONFIG&&window.APP_CONFIG.TG_BOT_USERNAME)||'serge_kamensky_bot'}" target="_blank" rel="noopener">Открыть бота</a>
-        <button class="btn btn-ghost" id="profClose">Закрыть</button>
-      </div>
-    `;
-    panel.style.display='block';
-    panel.style.maxHeight='70vh'; panel.style.width='min(420px,92vw)';
-    panel.querySelector('#profClose')?.addEventListener('click', ()=> panel.style.display='none');
-  }
-  toggle.addEventListener('click', ()=>{
-    if (panel.style.display==='block'){ panel.style.display='none'; }
-    else { renderProfile(); }
-  });
-})();
-
-</script>
+<!-- removed: v20 profile panel block -->
 
 
 <script>
@@ -3482,45 +3442,7 @@ window.__domLog = function(){};
     panel.style.display='block'; panel.style.maxHeight='70vh'; panel.style.width='min(420px,92vw)';
   }
 
-  // Hook the existing profile toggle (.console-toggle / #consolePanel)
-  document.addEventListener('DOMContentLoaded', function(){
-    const toggle = document.querySelector('.console-toggle');
-    const panel  = document.getElementById('consolePanel');
-    if(!toggle || !panel) return;
-
-    async function openProfile(){
-      try{
-        const p = await getProfile();
-        renderProfileInto(panel, p);
-      }catch(e){
-        // fall back to local
-        renderProfileInto(panel, localFallback());
-      }
-    }
-
-    // replace previous handler if any
-    toggle.onclick = function(){
-      if (panel.style.display==='block'){ panel.style.display='none'; }
-      else { openProfile(); }
-    };
-
-    // auto-refresh profile after any apiEvent
-    if (typeof window.apiEvent === 'function' && !window.__apiEventWrappedProfile){
-      const orig = window.apiEvent;
-      window.apiEvent = async function(type, data){
-        const res = await orig(type, data);
-        try{
-          const p = await getProfile();
-          // if panel open -> rerender
-          if (panel.style.display === 'block') renderProfileInto(panel, p);
-        }catch(_){}
-        return res;
-      };
-      window.__apiEventWrappedProfile = true;
-    }
-  });
-})();
-</script>
+  <!-- removed: legacy toggle hook block -->
 
 
 <!-- === Profile Panel: instant open + async hydrate + skeleton === -->
@@ -4011,145 +3933,112 @@ window.__domLog = function(){};
       panel.dataset.ready = '1';
     });
 
-    // Use rAF + small timers to stage work and avoid blocking click frame
-    document.addEventListener('click', function(ev){
-      const t = ev.target.closest && ev.target.closest('.console-toggle');
-      if (!t) return;
-      ev.preventDefault();
-      const panel = document.getElementById('consolePanel'); if (!panel) return;
-
-      // Stage 1: next frame — open instantly
-      requestAnimationFrame(() => {
-        panel.classList.add('open');
-      });
-
-      // Stage 2: quickly hydrate from cache without forcing layout
-      setTimeout(() => {
-        try { hydrate(window.__PROFILE || cacheGet()); } catch(_){}
-      }, 0);
-
-      // Stage 3: background fetch (throttled)
-      setTimeout(() => { refresh(false); }, 60);
-    }, true);
-
-    // Warm cache (but don't block load)
-    window.addEventListener('load', () => setTimeout(() => refresh(true), 120));
-  })();
-})();
-</script>
+    <!-- removed: legacy fast-open rAF handler (duplicate) -->
 
 </body>
 </html>
 
-<!-- === Profile Panel: robust binder (capture click) === -->
+<!-- removed: robust binder profile block -->
+<!-- === /Profile Panel robust binder === -->
+
+<!-- === FAST OPEN v2 — single source of truth (instant open + async refresh) === -->
 <script>
 (function(){
   function onReady(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
-  function tgUser(){ try{ return Telegram?.WebApp?.initDataUnsafe?.user || null }catch(_){ return null } }
-  function initials(name){ const p=(name||'').trim().split(/\s+/); const a=(p[0]||'').charAt(0), b=(p[1]||'').charAt(0); return (a+b||a||'?').toUpperCase(); }
 
-  async function getProfile(){
-    try{
-      if (typeof window.apiBootstrap === 'function'){
-        const p = await window.apiBootstrap();
-        window.__PROFILE = p;
-        try{
-          localStorage.setItem('stat_points', String(p.points||0));
-          localStorage.setItem('last_booking', p.last_booking||'');
-          localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[]));
-          localStorage.setItem('referrals_count', String(p.referrals_count||0));
-        }catch(_){}
-        return p;
-      }
-    }catch(e){}
-    return {
-      points: +(localStorage.getItem('stat_points')||0),
-      prizes: JSON.parse(localStorage.getItem('last_prizes')||'[]')||[],
-      last_booking: localStorage.getItem('last_booking')||null,
-      referrals_count: +(localStorage.getItem('referrals_count')||0)
-    };
-  }
-
-  function render(panel, p){
-    const u = tgUser();
-    const name = [u?.first_name, u?.last_name].filter(Boolean).join(' ') || 'Гость';
-    const uname = u?.username ? '@'+u.username : '—';
-    const points = p.points ?? 0;
-    const lastPrize = (Array.isArray(p.prizes) && p.prizes.length) ? (p.prizes[p.prizes.length-1].title || p.prizes[p.prizes.length-1].name || '—') : '—';
-    const lastBooking = p.last_booking ? (()=>{try{return new Date(p.last_booking).toLocaleString()}catch(_){return p.last_booking}})() : 'Нет';
-    const refCount = p.referrals_count ?? 0;
-
-    panel.innerHTML = `
-      <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px">
-        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--mint),var(--primary));display:grid;place-items:center;font-weight:800">${initials(name)}</div>
-        <div><div style="font-weight:800">${name}</div><div style="opacity:.7;font-size:12px">${uname}</div></div>
-      </div>
-      <div class="grid" style="gap:8px">
-        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Очки</div><div class="big">${points}</div></div>
-        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Последний приз</div><div class="big" style="font-size:14px">${lastPrize}</div></div>
-        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Запись</div><div class="big" style="font-size:14px">${lastBooking}</div></div>
-        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Рефералы</div><div class="big" style="font-size:14px">${refCount}</div></div>
-      </div>
-      <details style="margin-top:10px">
-        <summary class="btn btn-ghost" style="display:inline-flex">Показать призы</summary>
-        <ul id="prizeUL" style="list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px"></ul>
-      </details>
-      <div class="cta" style="margin-top:10px">
-        <a class="btn btn-primary" href="https://t.me/${(window.APP_CONFIG&&window.APP_CONFIG.TG_BOT_USERNAME)||'serge_kamensky_bot'}" target="_blank" rel="noopener">Открыть бота</a>
-        <button class="btn btn-ghost" id="profClose">Закрыть</button>
-      </div>
-    `;
-    const ul = panel.querySelector('#prizeUL');
-    if (ul && Array.isArray(p.prizes)){
-      p.prizes.forEach(x=>{
-        const li = document.createElement('li');
-        li.textContent = (x && (x.title||x.name)) ? (x.title||x.name) : (typeof x === 'string' ? x : JSON.stringify(x));
-        li.style.cssText = 'padding:6px 8px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:rgba(255,255,255,.04)';
-        ul.appendChild(li);
-      });
-    }
-    panel.querySelector('#profClose')?.addEventListener('click', ()=> panel.style.display='none');
-    panel.style.display='block';
-  }
-
-  async function openProfilePanel(){
-    const panel = document.getElementById('consolePanel');
-    if (!panel) return;
-    try{
-      const p = await getProfile();
-      render(panel, p);
-    }catch(e){
-      render(panel, await getProfile());
-    }
-  }
-  window.openProfilePanel = openProfilePanel;
-
-  onReady(function(){
-    // 1) capture click on toggle, stop other handlers
-    document.addEventListener('click', function(ev){
-      const t = ev.target.closest && ev.target.closest('.console-toggle');
-      if (!t) return;
-      ev.preventDefault(); ev.stopImmediatePropagation(); ev.stopPropagation();
-      const panel = document.getElementById('consolePanel');
-      if (!panel) return;
-      if (panel.style.display === 'block'){ panel.style.display='none'; return; }
-      openProfilePanel();
-    }, true);
-
-    // 2) auto-refresh after apiEvent
-    if (typeof window.apiEvent === 'function' && !window.__apiEventWrappedProfile2){
-      const orig = window.apiEvent;
-      window.apiEvent = async function(type, data){
-        const res = await orig(type, data);
-        const panel = document.getElementById('consolePanel');
-        if (panel && panel.style.display === 'block'){
-          try{ render(panel, await getProfile()); }catch(_){}
-        }
-        return res;
+  // Minimal cache + hydrate (reuse if already defined)
+  window.__profileHydrate__ = window.__profileHydrate__ || (function(){
+    function cacheGet(){
+      return {
+        points: +(localStorage.getItem('stat_points')||0),
+        prizes: JSON.parse(localStorage.getItem('last_prizes')||'[]')||[],
+        last_booking: localStorage.getItem('last_booking')||null,
+        referrals_count: +(localStorage.getItem('referrals_count')||0)
       };
-      window.__apiEventWrappedProfile2 = true;
     }
+    function fmtDate(x){ try{ return x ? new Date(x).toLocaleString() : 'Нет'; }catch(_){ return x||'Нет'; } }
+    function setVal(sel, txt){
+      const el = document.querySelector(sel); if (!el) return;
+      el.classList && el.classList.remove('skel');
+      if (el.textContent !== String(txt)) el.textContent = String(txt);
+    }
+    function hydrate(p){
+      if (!p) return;
+      const lastPrize = (Array.isArray(p.prizes) && p.prizes.length) ? (p.prizes.at(-1).title || p.prizes.at(-1).name || '—') : '—';
+      setVal('#ppPoints', String(p.points ?? 0));
+      setVal('#ppPrize', lastPrize);
+      setVal('#ppBooking', fmtDate(p.last_booking));
+      setVal('#ppRefs', String(p.referrals_count ?? 0));
+      const ul = document.querySelector('#ppPrizeList');
+      if (ul){
+        const wanted = (Array.isArray(p.prizes)?p.prizes:[]).map(x => (x && (x.title||x.name)) ? (x.title||x.name) : (typeof x==='string'?x:JSON.stringify(x)));
+        const cur = Array.from(ul.children).map(li=>li.textContent);
+        for (let i=cur.length-1;i>=0;i--){ if(!wanted.includes(cur[i])) ul.removeChild(ul.children[i]); }
+        const frag = document.createDocumentFragment();
+        wanted.forEach(txt=>{ if(!cur.includes(txt)){ const li=document.createElement('li'); li.textContent=txt; li.style.cssText='padding:6px 8px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:rgba(255,255,255,.04)'; frag.appendChild(li);} });
+        if (frag.childNodes.length) ul.appendChild(frag);
+      }
+    }
+    return { cacheGet, hydrate };
+  })();
+
+  // Soft-throttled network refresh with timeout
+  window.__profileRefresh__ = window.__profileRefresh__ || (function(){
+    let fetching=false, fetchedAt=0;
+    async function refresh(force=false){
+      const api = window.apiBootstrap;
+      if (typeof api !== 'function') return;
+      const now = Date.now();
+      if (!force && (fetching || (now - fetchedAt) < 4000)) return;
+      fetching = true;
+      try{
+        const p = await Promise.race([ api(), new Promise((_,rej)=>setTimeout(()=>rej('timeout'),1500)) ]);
+        if (p){ window.__PROFILE = p;
+          try{
+            localStorage.setItem('stat_points', String(p.points||0));
+            localStorage.setItem('last_booking', p.last_booking||'');
+            localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[]));
+            localStorage.setItem('referrals_count', String(p.referrals_count||0));
+          }catch(_){}
+          window.__profileHydrate__.hydrate(p);
+          fetchedAt = Date.now();
+        }
+      }catch(_){ /* silent */ }
+      finally{ fetching=false; }
+    }
+    return { refresh };
+  })();
+
+  // Single click handler: open instantly, hydrate cache, then refresh; capture+stop to disable legacy handlers
+  onReady(function(){
+    const toggle = document.querySelector('.console-toggle');
+    const panel  = document.getElementById('consolePanel');
+    if(!toggle || !panel) return;
+
+    function openInstant(){
+      panel.classList && panel.classList.add('open');
+      if (panel.style){ panel.style.display='block'; } // if legacy CSS relies on display
+      // Stage 2: cache hydrate
+      try{ window.__profileHydrate__.hydrate(window.__PROFILE || window.__profileHydrate__.cacheGet()); }catch(_){}
+      // Stage 3: background fetch
+      setTimeout(() => { try{ window.__profileRefresh__.refresh(false); }catch(_){} }, 60);
+    }
+
+    toggle.addEventListener('click', function(ev){
+      ev.preventDefault(); ev.stopImmediatePropagation(); ev.stopPropagation();
+      // toggle behavior
+      const isOpen = panel.classList ? panel.classList.contains('open') : (panel.style.display==='block');
+      if (isOpen){
+        panel.classList && panel.classList.remove('open');
+        if (panel.style) panel.style.display='none';
+      } else {
+        // next frame to ensure compositor path
+        requestAnimationFrame(openInstant);
+      }
+    }, { capture:true });
+
+    // Warm cache shortly after load
+    window.addEventListener('load', () => setTimeout(() => { try{ window.__profileRefresh__.refresh(true); }catch(_){} }, 200));
   });
 })();
 </script>
-<!-- === /Profile Panel robust binder === -->
