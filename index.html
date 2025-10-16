@@ -478,6 +478,30 @@ html,body{-webkit-text-size-adjust:100%}
 })();
 </script>
 <!-- ==== /DEV TEST ==== -->
+<script>
+(function(){
+  const cont = document.getElementById('dev-panel') || document.body;
+  const btn = document.createElement('button');
+  btn.id = 'btn-echo-sign';
+  btn.textContent = 'Echo Sign';
+  btn.style.marginLeft = '8px';
+  cont.appendChild(btn);
+
+  btn.addEventListener('click', async ()=>{
+    try{
+      const res = await _jsonp(APP_CONFIG.GAS_WEBHOOK, {
+        mode: 'echo_sign',
+        tg_init: (Telegram.WebApp && Telegram.WebApp.initData) || ''
+      });
+      console.log('[echo_sign]', res);
+      alert('equal=' + res.equal + ', ageSec=' + res.ageSec);
+    }catch(e){
+      console.error(e);
+      alert('echo_sign error: ' + e);
+    }
+  });
+})();
+</script>
 
     
 </style>
