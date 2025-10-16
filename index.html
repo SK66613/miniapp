@@ -3069,5 +3069,43 @@ window.__domLog = function(){};
   try{ console.log('[GAS] JSONP helpers ready', { webhook: (window.APP_CONFIG||{}).GAS_WEBHOOK }); }catch(e){}
 })();
 </script>
+
+<script>
+/* Force DEV panel to use JSONP apiEvent instead of old fetch fallback */
+(function(){
+  const logBox = document.getElementById('dev-log');
+  function log(msg, obj){
+    const line = '['+new Date().toLocaleTimeString()+'] '+msg+(obj?' '+JSON.stringify(obj):'');
+    console.log('[DEV]', msg, obj||'');
+    if (logBox) logBox.textContent = line + '\n' + logBox.textContent;
+  }
+
+  const btn = document.getElementById('btn-test-booking');
+  if (!btn || !window.apiEvent) return; // если нет кнопки или JSONP-хелпера — ничего не делаем
+
+  // снимаем старый обработчик и вешаем новый
+  const newBtn = btn.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn, btn);
+
+  newBtn.addEventListener('click', async ()=>{
+    try{
+      const now = new Date(Date.now()+15*60*1000);
+      const yyyy = now.getFullYear(), mm = String(now.getMonth()+1).padStart(2,'0'), dd = String(now.getDate()).padStart(2,'0');
+      const hh = String(now.getHours()).padStart(2,'0'), mi = String(now.getMinutes()).padStart(2,'0');
+      const payload = { date:`${yyyy}-${mm}-${dd}`, time:`${hh}:${mi}`, duration_min:30, format:'call', contact:'@dev_test' };
+
+      log('→ consult_booking', payload);
+      const res = await window.apiEvent('consult_booking', payload); // <— ЖЁСТКО JSONP
+      log('← consult_booking', res);
+      if (res && res.ok) log('✓ Проверь лист consult_bookings — добавилась строка');
+      if (res && res.error) log('✗ Ошибка от сервера', res);
+    }catch(e){
+      log('consult_booking error', String(e));
+    }
+  });
+})();
+</script>
+
+  
 </body>
 </html>
