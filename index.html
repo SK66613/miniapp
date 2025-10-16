@@ -3203,72 +3203,71 @@ window.__domLog = function(){};
 })();
 </script>
 
-<!-- --- BEGIN: form-urlencoded POST patch (avoids CORS preflight) --- -->
+<!-- --- BEGIN: fetch wrapper to avoid CORS preflight on GAS POST --- -->
 <script>
 (function(){
   const C = window.APP_CONFIG || {};
+  const GAS = C.GAS_WEBHOOK || '';
 
-  function _tgInit() {
-    try { return (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) || ''; } catch(e) { return ''; }
-  }
+  if (!GAS) return;
 
-  // Override __postGAS to POST as application/x-www-form-urlencoded
-  window.__postGAS = async function(payload){
-    try {
-      if (!C.GAS_WEBHOOK) throw new Error('No GAS_WEBHOOK configured');
+  const _origFetch = window.fetch;
+  window.fetch = function(input, init){
+    try{
+      const url = (typeof input === 'string') ? input : (input && input.url) || '';
+      const method = (init && (init.method || 'GET')).toUpperCase();
+      const isGAS = GAS && url && url.split('#')[0].split('?')[0] === GAS.split('#')[0].split('?')[0];
 
-      // Normalize input
-      const p = Object.assign({}, payload || {});
-      const type = p.type || p.event || '';
-      if (!type) throw new Error('Missing event type');
+      if (isGAS && method === 'POST') {
+        // Detect JSON body
+        const hdrs = (init && init.headers) || {};
+        const ct = (typeof hdrs.get === 'function') ? (hdrs.get('Content-Type')||'') : (hdrs['Content-Type'] || hdrs['content-type'] || '');
+        if (String(ct).toLowerCase().includes('application/json')) {
+          let obj = {};
+          try { obj = JSON.parse(init.body || '{}'); } catch(_) {}
+          const params = new URLSearchParams();
 
-      // Build auth
-      const params = new URLSearchParams();
-      params.set('type', type);
+          // keep primary "type"
+          if (obj.type) params.set('type', obj.type);
 
-      const init = _tgInit();
-      if (init) {
-        params.set('tg_init', init);
-      } else if (C.API_KEY) {
-        params.set('key', C.API_KEY);
-        if (C.DEV_ID) params.set('dev_id', C.DEV_ID);
-      } else {
-        throw new Error('No auth: open in Telegram or set API_KEY for dev');
+          // auth: prefer explicit fields, then TG init, then API_KEY
+          if (obj.tg_init) params.set('tg_init', obj.tg_init);
+          else {
+            try {
+              const initData = (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) || '';
+              if (initData) params.set('tg_init', initData);
+            } catch(_){}
+          }
+          if (!params.has('tg_init') && obj.key) params.set('key', obj.key);
+          if (!params.has('tg_init') && !params.has('key') && C.API_KEY) {
+            params.set('key', C.API_KEY);
+            if (C.DEV_ID) params.set('dev_id', C.DEV_ID);
+          }
+          if (obj.dev_id && !params.has('dev_id')) params.set('dev_id', obj.dev_id);
+
+          // Put the rest as data JSON
+          const data = Object.assign({}, obj);
+          delete data.type; delete data.tg_init; delete data.key; delete data.dev_id;
+          params.set('data', JSON.stringify(data));
+
+          const newInit = Object.assign({}, init, {
+            method: 'POST',
+            headers: Object.assign({}, hdrs, {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'}),
+            body: params.toString(),
+            credentials: 'omit'
+          });
+          return _origFetch.call(this, url, newInit);
+        }
       }
-
-      // Remove meta fields from data copy
-      const data = Object.assign({}, p);
-      delete data.type; delete data.event;
-      delete data.tg_init; delete data.key; delete data.dev_id;
-
-      // Attach payload as JSON string (server already supports this)
-      params.set('data', JSON.stringify(data));
-
-      const res = await fetch(C.GAS_WEBHOOK, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-        body: params.toString(),
-        credentials: 'omit'
-      });
-
-      const json = await res.json();
-      if (!json || json.ok !== true) throw new Error((json && json.error) || 'event_failed');
-      try { window.showToast && showToast('OK', 'Событие отправлено'); } catch(_) {}
-      return json;
-    } catch (err) {
-      console.error('[__postGAS] error', err);
-      try { window.showToast && showToast('Ошибка', String(err.message||err)); } catch(_) {}
-      throw err;
+    } catch (e) {
+      console.warn('[fetch-wrapper] fallback to original fetch due to error:', e);
     }
+    return _origFetch.apply(this, arguments);
   };
-
-  // Optional helper for direct call
-  window.apiPostEvent = function(type, data) {
-    return window.__postGAS(Object.assign({ type }, data||{}));
-  };
+  console.log('[fetch-wrapper] active for GAS:', GAS);
 })();
 </script>
-<!-- --- END: form-urlencoded POST patch --- -->
+<!-- --- END: fetch wrapper --- -->
 
 </body>
 </html>
