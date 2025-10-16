@@ -3950,6 +3950,124 @@ window.__domLog = function(){};
 
     <!-- removed: legacy fast-open rAF handler (duplicate) -->
 
+
+<!-- === Booking Date/Time Patch v5 === -->
+<script>
+(function(){
+  // Parse RU date "DD.MM.YYYY" -> ISO "YYYY-MM-DD"
+  function ruToIso(d){
+    var m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(String(d||''));
+    if(!m) return null;
+    return m[3] + '-' + m[2] + '-' + m[1];
+  }
+  function pick(val, alt){ return (val!==undefined && val!==null && val!=='') ? val : alt; }
+
+  // Build display string "DD.MM.YYYY HH:MM (30 мин)"
+  function formatBooking(src){
+    try{
+      src = src || {};
+      // try nested profile object too
+      var p = src.profile || src;
+      var iso = p.last_booking || localStorage.getItem('last_booking');
+      var d   = pick(p.booking_date, localStorage.getItem('booking_date'));
+      var t   = pick(p.booking_time, localStorage.getItem('booking_time'));
+      var dur = pick(p.booking_duration_min, pick(p.duration_min, localStorage.getItem('booking_duration_min')));
+      var dt = null;
+
+      if (iso) {
+        dt = new Date(iso);
+      } else if (d && t) {
+        var dIso = /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : ruToIso(d);
+        if (dIso) dt = new Date(dIso + 'T' + t + ':00');
+      } else if (d) {
+        var dIso2 = /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : ruToIso(d);
+        if (dIso2) dt = new Date(dIso2 + 'T00:00:00');
+      }
+
+      if (!dt || isNaN(dt)) return '—';
+
+      var dd = String(dt.getDate()).padStart(2,'0');
+      var mm = String(dt.getMonth()+1).padStart(2,'0');
+      var yyyy = String(dt.getFullYear());
+      var HH = String(dt.getHours()).padStart(2,'0');
+      var MM = String(dt.getMinutes()).padStart(2,'0');
+      var base = dd + '.' + mm + '.' + yyyy + ' ' + HH + ':' + MM;
+      return (dur && Number(dur)>0) ? (base + ' (' + Number(dur) + ' мин)') : base;
+    }catch(e){ return '—'; }
+  }
+
+  function setText(id, txt){
+    var el = document.querySelector(id);
+    if (el && el.textContent !== String(txt)) el.textContent = String(txt);
+  }
+
+  function persistFrom(p){
+    try{
+      var iso = p.last_booking;
+      var d = p.booking_date, t = p.booking_time, dur = p.booking_duration_min || p.duration_min;
+      if (iso) localStorage.setItem('last_booking', iso);
+      if (d) localStorage.setItem('booking_date', d);
+      if (t) localStorage.setItem('booking_time', t);
+      if (dur!=null) localStorage.setItem('booking_duration_min', String(dur));
+    }catch(_){}
+  }
+
+  function applyBooking(src){
+    var txt = formatBooking(src);
+    setText('#ppBooking', txt);
+    setText('#p_record',  txt); // alt id
+  }
+
+  // 1) Patch existing hydrate() if present
+  try{
+    if (window.__profileHydrate__ && typeof window.__profileHydrate__.hydrate === 'function'){
+      var _origHydrate = window.__profileHydrate__.hydrate;
+      window.__profileHydrate__.hydrate = function(p){
+        try{ _origHydrate.call(window.__profileHydrate__, p); }catch(_){}
+        try{ persistFrom(p.profile||p||{}); }catch(_){}
+        try{ applyBooking(p); }catch(_){}
+      };
+    }
+  }catch(_){}
+
+  // 2) Observe panel opening to apply value when user opens profile
+  try{
+    var panel = document.getElementById('consolePanel');
+    if (panel && 'MutationObserver' in window){
+      var mo = new MutationObserver(function(muts){
+        muts.forEach(function(m){
+          if (m.attributeName === 'class') {
+            var open = panel.classList.contains('open');
+            if (open) setTimeout(function(){ applyBooking(window.__PROFILE||{}); }, 30);
+          }
+        });
+      });
+      mo.observe(panel, { attributes:true });
+    }
+  }catch(_){}
+
+  // 3) Fallback: on load/app start, try to fill from cache
+  window.addEventListener('load', function(){
+    setTimeout(function(){ applyBooking({}); }, 120);
+  });
+
+  // 4) If apiBootstrap result is exposed globally later, try to persist/apply via hook
+  // (Developers might assign window.__PROFILE in different places; we keep a soft poll)
+  (function softPoll(){
+    var tries = 0;
+    var t = setInterval(function(){
+      tries++;
+      if (window.__PROFILE){
+        try{ persistFrom(window.__PROFILE); applyBooking(window.__PROFILE); }catch(_){}
+        clearInterval(t);
+      }
+      if (tries > 40) clearInterval(t);
+    }, 200);
+  })();
+})();
+</script>
+<!-- === /Booking Date/Time Patch v5 === -->
+
 </body>
 </html>
 
