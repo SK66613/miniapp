@@ -3286,5 +3286,171 @@ window.__domLog = function(){};
 </script>
 <!-- --- END: universal fetch wrapper --- -->
 
+
+<!-- BEGIN: universal GAS fetch wrapper v3 -->
+<script>
+(function(){
+  const C = window.APP_CONFIG || {};
+  const GAS = (C && C.GAS_WEBHOOK) || '';
+  if (!GAS) { console.warn('[fetch-wrapper] GAS_WEBHOOK not set'); return; }
+
+  const strip = (u)=> (u||'').split('#')[0].split('?')[0];
+  const GAS_BASE = strip(GAS);
+  const _origFetch = window.fetch;
+
+  function _autoType(obj){
+    if (!obj || typeof obj !== 'object') return '';
+    if (obj.type || obj.event) return obj.type || obj.event;
+    if ('date' in obj && 'time' in obj) return 'consult_booking';
+    if ('inviter' in obj) return 'ref_join';
+    if (Object.keys(obj).length === 0) return 'register_business';
+    return '';
+  }
+  function _tgInit(){
+    try { return (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) || ''; } catch(_) { return ''; }
+  }
+  function _ensureAuth(params, obj){
+    const init = (obj && obj.tg_init) || _tgInit();
+    if (init) { params.set('tg_init', init); return; }
+    if (obj && obj.key) params.set('key', obj.key);
+    if (!params.has('key') && (window.APP_CONFIG && window.APP_CONFIG.API_KEY)) {
+      params.set('key', window.APP_CONFIG.API_KEY);
+      if (window.APP_CONFIG.DEV_ID) params.set('dev_id', window.APP_CONFIG.DEV_ID);
+    }
+    if (obj && obj.dev_id && !params.has('dev_id')) params.set('dev_id', obj.dev_id);
+  }
+
+  window.fetch = function(input, init){
+    try{
+      const url = (typeof input === 'string') ? input : (input && input.url) || '';
+      const method = (init && (init.method || 'GET')).toUpperCase();
+      const isGAS = GAS_BASE && strip(url) === GAS_BASE;
+      if (!isGAS || method !== 'POST') return _origFetch.apply(this, arguments);
+
+      const hdrs = (init && init.headers) || {};
+      const getCT = () => (typeof hdrs.get === 'function')
+        ? (hdrs.get('Content-Type')||'')
+        : (hdrs['Content-Type'] || hdrs['content-type'] || '');
+      const setCT = (h) => (typeof Headers !== 'undefined' && hdrs instanceof Headers)
+        ? (hdrs.set('Content-Type', h), hdrs)
+        : Object.assign({}, hdrs, {'Content-Type': h});
+
+      const ct = String(getCT()).toLowerCase();
+
+      // CASE 1: JSON → form-urlencoded
+      if (ct.includes('application/json')) {
+        let obj = {};
+        try { obj = JSON.parse(init.body || '{}'); } catch(_) {}
+        const params = new URLSearchParams();
+
+        const t = _autoType(obj);
+        if (t) params.set('type', t);
+
+        _ensureAuth(params, obj);
+
+        const data = Object.assign({}, obj);
+        delete data.type; delete data.event; delete data.tg_init; delete data.key; delete data.dev_id;
+        params.set('data', JSON.stringify(data));
+
+        const newInit = Object.assign({}, init, {
+          method: 'POST',
+          headers: setCT('application/x-www-form-urlencoded;charset=UTF-8'),
+          body: params.toString(),
+          credentials: 'omit'
+        });
+        return _origFetch.call(this, url, newInit);
+      }
+
+      // CASE 2: already form-urlencoded: ensure type/auth
+      if (ct.includes('application/x-www-form-urlencoded')) {
+        try {
+          const u = new URLSearchParams(init.body || '');
+          let type = u.get('type');
+          if (!type) {
+            const raw = u.get('data');
+            let obj = {};
+            try { obj = raw ? JSON.parse(raw) : {}; } catch(_) {}
+            type = _autoType(obj);
+            if (type) u.set('type', type);
+          }
+          if (!u.get('tg_init') && !u.get('key')) _ensureAuth(u, null);
+
+          const newInit = Object.assign({}, init, {
+            method: 'POST',
+            headers: setCT('application/x-www-form-urlencoded;charset=UTF-8'),
+            body: u.toString(),
+            credentials: 'omit'
+          });
+          return _origFetch.call(this, url, newInit);
+        } catch(_) {}
+      }
+
+      return _origFetch.apply(this, arguments);
+    } catch (e) {
+      console.warn('[fetch-wrapper] error:', e);
+      return _origFetch.apply(this, arguments);
+    }
+  };
+
+  console.log('[fetch-wrapper v3] active →', GAS_BASE);
+})();
+</script>
+<!-- END: universal GAS fetch wrapper v3 -->
+
+
+<!-- BEGIN: robust JSONP helper (anti-cache + longer timeout) -->
+<script>
+(function(){
+  function _jsonp(url, params = {}, timeoutMs = 25000) {
+    return new Promise((resolve, reject) => {
+      const cbName = 'cb_' + Math.random().toString(36).slice(2);
+      const q = new URLSearchParams(params);
+      q.set('callback', cbName);
+      q.set('_ts', Date.now().toString());
+      const src = url + (url.includes('?') ? '&' : '?') + q.toString();
+
+      const s = document.createElement('script');
+      let done = false, tmr = null;
+
+      function cleanup(){
+        if (tmr) clearTimeout(tmr);
+        try { delete window[cbName]; } catch(_) {}
+        if (s.parentNode) s.parentNode.removeChild(s);
+      }
+      window[cbName] = (data) => { if (done) return; done = true; cleanup(); resolve(data); };
+      s.onerror = () => { if (done) return; done = true; cleanup(); reject(new Error('JSONP load error')); };
+
+      document.head.appendChild(s);
+      s.src = src;
+
+      tmr = setTimeout(() => {
+        if (done) return;
+        done = true; cleanup();
+        reject(new Error('JSONP timeout'));
+      }, timeoutMs);
+    });
+  }
+  window._jsonp = _jsonp;
+
+  // api helpers
+  function _authParams(){
+    const tg = (window.Telegram && Telegram.WebApp) || null;
+    const init = tg ? (tg.initData || '') : '';
+    const p = {};
+    if (init) p.tg_init = init;
+    else if (window.APP_CONFIG?.API_KEY) {
+      p.key = window.APP_CONFIG.API_KEY;
+      if (window.APP_CONFIG.DEV_ID) p.dev_id = window.APP_CONFIG.DEV_ID;
+    }
+    return p;
+  }
+  window.apiBootstrap = () => _jsonp(APP_CONFIG.GAS_WEBHOOK, { mode: 'bootstrap', ..._authParams() });
+  window.apiEvent = (type, extra={}) => _jsonp(APP_CONFIG.GAS_WEBHOOK, { mode:'event', type, data: JSON.stringify(extra), ..._authParams() });
+
+  console.log('[jsonp] helpers ready');
+})();
+</script>
+<!-- END: robust JSONP helper -->
+
 </body>
 </html>
