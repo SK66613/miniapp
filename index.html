@@ -3388,6 +3388,9 @@ window.__domLog = function(){};
         try{
           localStorage.setItem('stat_points', String(p.points||0));
           localStorage.setItem('last_booking', p.last_booking||'');
+            if(p.booking_date) localStorage.setItem('booking_date', p.booking_date);
+            if(p.booking_time) localStorage.setItem('booking_time', p.booking_time);
+            if(p.booking_duration_min||p.duration_min) localStorage.setItem('booking_duration_min', String(p.booking_duration_min||p.duration_min));
           localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[]));
           localStorage.setItem('referrals_count', String(p.referrals_count||0));
         }catch(_){}
@@ -3466,6 +3469,9 @@ window.__domLog = function(){};
     try{
       localStorage.setItem('stat_points', String(p.points||0));
       localStorage.setItem('last_booking', p.last_booking||'');
+            if(p.booking_date) localStorage.setItem('booking_date', p.booking_date);
+            if(p.booking_time) localStorage.setItem('booking_time', p.booking_time);
+            if(p.booking_duration_min||p.duration_min) localStorage.setItem('booking_duration_min', String(p.booking_duration_min||p.duration_min));
       localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[]));
       localStorage.setItem('referrals_count', String(p.referrals_count||0));
     }catch(_){}
@@ -3576,7 +3582,10 @@ window.__domLog = function(){};
   function onReady(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
   function tgUser(){ try{ return Telegram?.WebApp?.initDataUnsafe?.user || null }catch(_){ return null } }
   function initials(name){ const p=(name||'').trim().split(/\s+/); const a=(p[0]||'').charAt(0), b=(p[1]||'').charAt(0); return (a+b||a||'?').toUpperCase(); }
-  function cachePut(p){ try{ localStorage.setItem('stat_points', String(p.points||0)); localStorage.setItem('last_booking', p.last_booking||''); localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[])); localStorage.setItem('referrals_count', String(p.referrals_count||0)); }catch(_){ } }
+  function cachePut(p){ try{ localStorage.setItem('stat_points', String(p.points||0)); localStorage.setItem('last_booking', p.last_booking||'');
+            if(p.booking_date) localStorage.setItem('booking_date', p.booking_date);
+            if(p.booking_time) localStorage.setItem('booking_time', p.booking_time);
+            if(p.booking_duration_min||p.duration_min) localStorage.setItem('booking_duration_min', String(p.booking_duration_min||p.duration_min)); localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[])); localStorage.setItem('referrals_count', String(p.referrals_count||0)); }catch(_){ } }
   function cacheGet(){ return { points:+(localStorage.getItem('stat_points')||0), prizes: JSON.parse(localStorage.getItem('last_prizes')||'[]')||[], last_booking: localStorage.getItem('last_booking')||null, referrals_count:+(localStorage.getItem('referrals_count')||0) }; }
   function fmtDate(x){ try{ return x ? new Date(x).toLocaleString() : 'Нет'; }catch(_){ return x||'Нет'; } }
 
@@ -3695,6 +3704,9 @@ window.__domLog = function(){};
     try{
       localStorage.setItem('stat_points', String(p.points||0));
       localStorage.setItem('last_booking', p.last_booking||'');
+            if(p.booking_date) localStorage.setItem('booking_date', p.booking_date);
+            if(p.booking_time) localStorage.setItem('booking_time', p.booking_time);
+            if(p.booking_duration_min||p.duration_min) localStorage.setItem('booking_duration_min', String(p.booking_duration_min||p.duration_min));
       localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[]));
       localStorage.setItem('referrals_count', String(p.referrals_count||0));
     }catch(_){}
@@ -3762,7 +3774,7 @@ window.__domLog = function(){};
     setVal('#ppPoints', String(p.points ?? 0));
     const lastPrize = (Array.isArray(p.prizes) && p.prizes.length) ? (p.prizes.at(-1).title || p.prizes.at(-1).name || '—') : '—';
     setVal('#ppPrize', lastPrize);
-    setVal('#ppBooking', fmtDate(p.last_booking));
+    setVal('#ppBooking', fmtBooking(p));
     setVal('#ppRefs', String(p.referrals_count ?? 0));
     const ul = panel.querySelector('#ppPrizeList');
     if (ul){
@@ -3831,6 +3843,9 @@ window.__domLog = function(){};
     try{
       localStorage.setItem('stat_points', String(p.points||0));
       localStorage.setItem('last_booking', p.last_booking||'');
+            if(p.booking_date) localStorage.setItem('booking_date', p.booking_date);
+            if(p.booking_time) localStorage.setItem('booking_time', p.booking_time);
+            if(p.booking_duration_min||p.duration_min) localStorage.setItem('booking_duration_min', String(p.booking_duration_min||p.duration_min));
       localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[]));
       localStorage.setItem('referrals_count', String(p.referrals_count||0));
     }catch(_){}
@@ -3854,7 +3869,7 @@ window.__domLog = function(){};
     const lastPrize = (Array.isArray(p.prizes) && p.prizes.length) ? (p.prizes.at(-1).title || p.prizes.at(-1).name || '—') : '—';
     setVal('#ppPoints', String(p.points ?? 0));
     setVal('#ppPrize', lastPrize);
-    setVal('#ppBooking', fmtDate(p.last_booking));
+    setVal('#ppBooking', fmtBooking(p));
     setVal('#ppRefs', String(p.referrals_count ?? 0));
 
     const ul = document.querySelector('#ppPrizeList');
@@ -3967,7 +3982,7 @@ window.__domLog = function(){};
       const lastPrize = (Array.isArray(p.prizes) && p.prizes.length) ? (p.prizes.at(-1).title || p.prizes.at(-1).name || '—') : '—';
       setVal('#ppPoints', String(p.points ?? 0));
       setVal('#ppPrize', lastPrize);
-      setVal('#ppBooking', fmtDate(p.last_booking));
+      setVal('#ppBooking', fmtBooking(p));
       setVal('#ppRefs', String(p.referrals_count ?? 0));
       const ul = document.querySelector('#ppPrizeList');
       if (ul){
@@ -3997,6 +4012,9 @@ window.__domLog = function(){};
           try{
             localStorage.setItem('stat_points', String(p.points||0));
             localStorage.setItem('last_booking', p.last_booking||'');
+            if(p.booking_date) localStorage.setItem('booking_date', p.booking_date);
+            if(p.booking_time) localStorage.setItem('booking_time', p.booking_time);
+            if(p.booking_duration_min||p.duration_min) localStorage.setItem('booking_duration_min', String(p.booking_duration_min||p.duration_min));
             localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[]));
             localStorage.setItem('referrals_count', String(p.referrals_count||0));
           }catch(_){}
