@@ -3,6 +3,28 @@
 <head>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
+// 1) Дождись SDK
+const tg = window.Telegram && window.Telegram.WebApp;
+
+// 2) init
+if (tg && tg.initDataUnsafe) {
+  tg.ready();
+  tg.expand(); // полноэкранный режим (если надо)
+}
+
+// 3) утилиты
+function __tgInit() {
+  return (tg && typeof tg.initData === 'string' && tg.initData.length > 0) ? tg.initData : '';
+}
+function __user() {
+  return tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user : null;
+}
+function __startParam() {
+  // deep link параметр: t.me/<bot>/<app>?startapp=XXXX
+  return (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || null;
+}
+
+  
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Content-Security-Policy"
