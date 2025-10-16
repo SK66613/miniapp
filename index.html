@@ -617,6 +617,35 @@ html,body{-webkit-text-size-adjust:100%}
   
     
 </style>
+
+<!-- === FAST PANEL CSS OVERRIDE (transform/opacity toggle) === -->
+<style>
+  .console-panel{
+    position: fixed; right: 14px; bottom: 56px; width: 360px;
+    max-height: 78vh; overflow: auto;
+    background: rgba(15,18,33,.9);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 12px; padding: 10px 12px;
+    /* fast show via compositor only */
+    transform: translateY(18px);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .16s ease, opacity .16s ease;
+    will-change: transform, opacity;
+    contain: content;
+    content-visibility: auto;
+    z-index: 3000;
+  }
+  .console-panel.open{
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  @media (max-width:480px){
+    .console-panel{ width: 88vw; right: 6vw; }
+  }
+</style>
+
 </head>
 <body>
 
@@ -3734,6 +3763,280 @@ window.__domLog = function(){};
 })();
 </script>
 <!-- === /smooth hydrate === -->
+
+
+<!-- === FAST PANEL JS (build once, toggle class, hydrate async) === -->
+<script>
+(function(){
+  function onReady(f){ document.readyState!=='loading' ? f() : document.addEventListener('DOMContentLoaded', f); }
+  function cachePut(p){
+    try{
+      localStorage.setItem('stat_points', String(p.points||0));
+      localStorage.setItem('last_booking', p.last_booking||'');
+      localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[]));
+      localStorage.setItem('referrals_count', String(p.referrals_count||0));
+    }catch(_){}
+  }
+  function cacheGet(){
+    return {
+      points: +(localStorage.getItem('stat_points')||0),
+      prizes: JSON.parse(localStorage.getItem('last_prizes')||'[]')||[],
+      last_booking: localStorage.getItem('last_booking')||null,
+      referrals_count: +(localStorage.getItem('referrals_count')||0)
+    };
+  }
+  function initials(name){
+    const p=(name||'').trim().split(/\s+/);
+    const a=(p[0]||'').charAt(0), b=(p[1]||'').charAt(0);
+    return (a+b||a||'?').toUpperCase();
+  }
+  function tgUser(){
+    try{ return Telegram?.WebApp?.initDataUnsafe?.user || null }catch(_){ return null }
+  }
+  function fmtDate(x){ try{ return x ? new Date(x).toLocaleString() : 'Нет'; }catch(_){ return x||'Нет'; } }
+  function setVal(sel, txt){
+    const el = document.querySelector(sel); if (!el) return;
+    el.classList && el.classList.remove('skel');
+    el.textContent = txt;
+  }
+
+  function buildShell(panel){
+    const u = tgUser();
+    const name = [u?.first_name, u?.last_name].filter(Boolean).join(' ') || 'Гость';
+    const uname = u?.username ? '@'+u.username : '—';
+    panel.innerHTML = `
+      <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px">
+        <div id="ppAvatar" class="skel" style="width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-weight:800"></div>
+        <div style="flex:1">
+          <div id="ppName" class="skel" style="height:14px;width:160px;border-radius:6px;margin-bottom:6px"></div>
+          <div id="ppUname" class="skel" style="height:12px;width:90px;border-radius:6px"></div>
+        </div>
+      </div>
+      <div class="grid" style="gap:8px">
+        <div class="card metric" style="padding:10px"><div class="label">Очки</div><div id="ppPoints" class="value skel" style="height:20px;border-radius:6px"></div></div>
+        <div class="card metric" style="padding:10px"><div class="label">Последний приз</div><div id="ppPrize" class="value skel" style="height:16px;border-radius:6px"></div></div>
+        <div class="card metric" style="padding:10px"><div class="label">Запись</div><div id="ppBooking" class="value skel" style="height:16px;border-radius:6px"></div></div>
+        <div class="card metric" style="padding:10px"><div class="label">Рефералы</div><div id="ppRefs" class="value skel" style="height:16px;border-radius:6px"></div></div>
+      </div>
+      <details style="margin-top:10px">
+        <summary class="btn btn-ghost" style="display:inline-flex">Показать призы</summary>
+        <ul id="ppPrizeList" style="list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px"></ul>
+      </details>
+      <div class="cta" style="margin-top:10px">
+        <a class="btn btn-primary" href="https://t.me/${(window.APP_CONFIG&&window.APP_CONFIG.TG_BOT_USERNAME)||'serge_kamensky_bot'}" target="_blank" rel="noopener">Открыть бота</a>
+        <button class="btn btn-ghost" id="ppClose">Закрыть</button>
+      </div>
+    `;
+    // avatar & name immediate
+    const av = panel.querySelector('#ppAvatar');
+    av && av.classList.remove('skel');
+    if (av){ av.style.background='linear-gradient(135deg,var(--mint),var(--primary))'; av.textContent = initials(name); }
+    setVal('#ppName', name); setVal('#ppUname', uname);
+    panel.querySelector('#ppClose')?.addEventListener('click', ()=> panel.classList.remove('open'));
+  }
+
+  function hydrate(p){
+    const panel = document.getElementById('consolePanel'); if (!panel) return;
+    setVal('#ppPoints', String(p.points ?? 0));
+    const lastPrize = (Array.isArray(p.prizes) && p.prizes.length) ? (p.prizes.at(-1).title || p.prizes.at(-1).name || '—') : '—';
+    setVal('#ppPrize', lastPrize);
+    setVal('#ppBooking', fmtDate(p.last_booking));
+    setVal('#ppRefs', String(p.referrals_count ?? 0));
+    const ul = panel.querySelector('#ppPrizeList');
+    if (ul){
+      const wanted = (Array.isArray(p.prizes)?p.prizes:[]).map(x => (x && (x.title||x.name)) ? (x.title||x.name) : (typeof x==='string'?x:JSON.stringify(x)));
+      const cur = Array.from(ul.children).map(li=>li.textContent);
+      for (let i=cur.length-1;i>=0;i--){ if(!wanted.includes(cur[i])) ul.removeChild(ul.children[i]); }
+      wanted.forEach(txt=>{
+        if(!cur.includes(txt)){
+          const li=document.createElement('li');
+          li.textContent=txt;
+          li.style.cssText='padding:6px 8px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:rgba(255,255,255,.04)';
+          ul.appendChild(li);
+        }
+      });
+    }
+  }
+
+  async function refresh(){
+    try{
+      if (typeof window.apiBootstrap === 'function'){
+        const p = await window.apiBootstrap();
+        window.__PROFILE = p; cachePut(p); hydrate(p);
+      }
+    }catch(_){}
+  }
+
+  // Build shell once
+  onReady(function(){
+    const panel = document.getElementById('consolePanel');
+    if (!panel) return;
+    if (!panel.dataset.ready){ buildShell(panel); panel.dataset.ready='1'; }
+  });
+
+  // Toggle on click (capture) without reflow-heavy DOM rebuilds
+  document.addEventListener('click', function(ev){
+    const t = ev.target.closest && ev.target.closest('.console-toggle');
+    if (!t) return;
+    ev.preventDefault();
+    const panel = document.getElementById('consolePanel'); if (!panel) return;
+    const opening = !panel.classList.contains('open');
+    panel.classList.toggle('open');
+    if (opening){
+      // hydrate from cache instantly
+      try{
+        const cached = window.__PROFILE || cacheGet();
+        hydrate(cached);
+      }catch(_){}
+      // refresh async
+      refresh();
+    }
+  }, true);
+
+  // Warm cache on start
+  onReady(refresh);
+})();
+</script>
+
+
+<!-- === FAST OPEN v2: zero-wait toggle + staged hydrate + fetch throttle === -->
+<script>
+(function(){
+  let __profileFetching = false;
+  let __profileFetchedAt = 0;
+
+  function cachePut(p){
+    try{
+      localStorage.setItem('stat_points', String(p.points||0));
+      localStorage.setItem('last_booking', p.last_booking||'');
+      localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[]));
+      localStorage.setItem('referrals_count', String(p.referrals_count||0));
+    }catch(_){}
+  }
+  function cacheGet(){
+    return {
+      points: +(localStorage.getItem('stat_points')||0),
+      prizes: JSON.parse(localStorage.getItem('last_prizes')||'[]')||[],
+      last_booking: localStorage.getItem('last_booking')||null,
+      referrals_count: +(localStorage.getItem('referrals_count')||0)
+    };
+  }
+  function fmtDate(x){ try{ return x ? new Date(x).toLocaleString() : 'Нет'; }catch(_){ return x||'Нет'; } }
+  function setVal(sel, txt){
+    const el = document.querySelector(sel); if (!el) return;
+    el.classList && el.classList.remove('skel');
+    if (el.textContent !== String(txt)) el.textContent = String(txt);
+  }
+  function hydrate(p){
+    if (!p) return;
+    const lastPrize = (Array.isArray(p.prizes) && p.prizes.length) ? (p.prizes.at(-1).title || p.prizes.at(-1).name || '—') : '—';
+    setVal('#ppPoints', String(p.points ?? 0));
+    setVal('#ppPrize', lastPrize);
+    setVal('#ppBooking', fmtDate(p.last_booking));
+    setVal('#ppRefs', String(p.referrals_count ?? 0));
+
+    const ul = document.querySelector('#ppPrizeList');
+    if (ul){
+      const wanted = (Array.isArray(p.prizes)?p.prizes:[]).map(x => (x && (x.title||x.name)) ? (x.title||x.name) : (typeof x==='string'?x:JSON.stringify(x)));
+      const cur = Array.from(ul.children).map(li=>li.textContent);
+      // minimal diff
+      // remove extras
+      for (let i=cur.length-1;i>=0;i--){ if(!wanted.includes(cur[i])) ul.removeChild(ul.children[i]); }
+      // add missing
+      const frag = document.createDocumentFragment();
+      wanted.forEach(txt=>{
+        if(!cur.includes(txt)){
+          const li=document.createElement('li');
+          li.textContent=txt;
+          li.style.cssText='padding:6px 8px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:rgba(255,255,255,.04)';
+          frag.appendChild(li);
+        }
+      });
+      if (frag.children && frag.children.length) ul.appendChild(frag);
+    }
+  }
+
+  async function refresh(force=false){
+    if (typeof window.apiBootstrap !== 'function') return;
+    const now = Date.now();
+    if (!force && (__profileFetching || (now - __profileFetchedAt) < 4000)) return;
+    __profileFetching = true;
+    try{
+      const p = await window.apiBootstrap();
+      window.__PROFILE = p; cachePut(p); hydrate(p);
+      __profileFetchedAt = Date.now();
+    }catch(_){}
+    finally{ __profileFetching = false; }
+  }
+
+  // Replace the click handler to guarantee instant open (no awaits before showing)
+  (function installFastOpen(){
+    // Ensure shell exists
+    document.addEventListener('DOMContentLoaded', function(){
+      const panel = document.getElementById('consolePanel');
+      if (!panel || panel.dataset.ready) return;
+      // If shell wasn't built, build a very thin shell (minimal cost)
+      if (!panel.querySelector('#ppPoints')){
+        panel.innerHTML = panel.innerHTML || `
+          <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px">
+            <div id="ppAvatar" class="skel" style="width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-weight:800"></div>
+            <div style="flex:1">
+              <div id="ppName" class="skel" style="height:14px;width:160px;border-radius:6px;margin-bottom:6px"></div>
+              <div id="ppUname" class="skel" style="height:12px;width:90px;border-radius:6px"></div>
+            </div>
+          </div>
+          <div class="grid" style="gap:8px">
+            <div class="card metric" style="padding:10px"><div class="label">Очки</div><div id="ppPoints" class="value skel" style="height:20px;border-radius:6px"></div></div>
+            <div class="card metric" style="padding:10px"><div class="label">Последний приз</div><div id="ppPrize" class="value skel" style="height:16px;border-radius:6px"></div></div>
+            <div class="card metric" style="padding:10px"><div class="label">Запись</div><div id="ppBooking" class="value skel" style="height:16px;border-radius:6px"></div></div>
+            <div class="card metric" style="padding:10px"><div class="label">Рефералы</div><div id="ppRefs" class="value skel" style="height:16px;border-radius:6px"></div></div>
+          </div>
+          <details style="margin-top:10px">
+            <summary class="btn btn-ghost" style="display:inline-flex">Показать призы</summary>
+            <ul id="ppPrizeList" style="list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px"></ul>
+          </details>
+          <div class="cta" style="margin-top:10px">
+            <a class="btn btn-primary" href="https://t.me/${(window.APP_CONFIG&&window.APP_CONFIG.TG_BOT_USERNAME)||'serge_kamensky_bot'}" target="_blank" rel="noopener">Открыть бота</a>
+            <button class="btn btn-ghost" id="ppClose">Закрыть</button>
+          </div>
+        `;
+        const u = (Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user)||null;
+        const name = [u?.first_name,u?.last_name].filter(Boolean).join(' ') || 'Гость';
+        const uname = u?.username ? '@'+u.username : '—';
+        const av = panel.querySelector('#ppAvatar');
+        if (av){ av.classList.remove('skel'); av.style.background='linear-gradient(135deg,var(--mint),var(--primary))'; av.textContent=(name[0]||'?')+(name.split(' ')[1]?.[0]||''); }
+        setVal('#ppName', name); setVal('#ppUname', uname);
+        panel.querySelector('#ppClose')?.addEventListener('click', ()=> panel.classList.remove('open'));
+      }
+      panel.dataset.ready = '1';
+    });
+
+    // Use rAF + small timers to stage work and avoid blocking click frame
+    document.addEventListener('click', function(ev){
+      const t = ev.target.closest && ev.target.closest('.console-toggle');
+      if (!t) return;
+      ev.preventDefault();
+      const panel = document.getElementById('consolePanel'); if (!panel) return;
+
+      // Stage 1: next frame — open instantly
+      requestAnimationFrame(() => {
+        panel.classList.add('open');
+      });
+
+      // Stage 2: quickly hydrate from cache without forcing layout
+      setTimeout(() => {
+        try { hydrate(window.__PROFILE || cacheGet()); } catch(_){}
+      }, 0);
+
+      // Stage 3: background fetch (throttled)
+      setTimeout(() => { refresh(false); }, 60);
+    }, true);
+
+    // Warm cache (but don't block load)
+    window.addEventListener('load', () => setTimeout(() => refresh(true), 120));
+  })();
+})();
+</script>
 
 </body>
 </html>
