@@ -1108,7 +1108,7 @@ html,body{-webkit-text-size-adjust:100%}
 
 <!-- Toasts & Console -->
 <div class="toasts" id="toasts"></div>
-<button class="btn btn-ghost console-toggle">🔧</button>
+<button class="btn btn-ghost console-toggle">🔧 Профиль</button>
 <div class="console-panel" id="consolePanel"></div>
 
 <script>
@@ -3492,6 +3492,248 @@ window.__domLog = function(){};
   });
 })();
 </script>
+
+
+<!-- === Profile Panel: instant open + async hydrate + skeleton === -->
+<style>
+  #consolePanel{ max-height: 78vh; overflow:auto; }
+  .skel{ position:relative; background:rgba(255,255,255,.08); border-radius:12px; overflow:hidden; }
+  .skel::after{
+    content:""; position:absolute; inset:0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
+    transform: translateX(-100%);
+    animation: skel 1.2s infinite;
+  }
+  @keyframes skel{ to { transform: translateX(100%); } }
+</style>
+<script>
+(function(){
+  function onReady(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+
+  // Cache helpers
+  function cachePut(p){
+    try{
+      localStorage.setItem('stat_points', String(p.points||0));
+      localStorage.setItem('last_booking', p.last_booking||'');
+      localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[]));
+      localStorage.setItem('referrals_count', String(p.referrals_count||0));
+    }catch(_){}
+  }
+  function cacheGet(){
+    return {
+      points: +(localStorage.getItem('stat_points')||0),
+      prizes: JSON.parse(localStorage.getItem('last_prizes')||'[]')||[],
+      last_booking: localStorage.getItem('last_booking')||null,
+      referrals_count: +(localStorage.getItem('referrals_count')||0)
+    };
+  }
+
+  // Skeleton HTML
+  function skeleton(){
+    return `
+      <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px">
+        <div class="skel" style="width:42px;height:42px;border-radius:12px"></div>
+        <div style="flex:1">
+          <div class="skel" style="height:14px;width:160px;border-radius:6px;margin-bottom:6px"></div>
+          <div class="skel" style="height:12px;width:90px;border-radius:6px"></div>
+        </div>
+      </div>
+      <div class="grid" style="gap:8px">
+        <div class="card skel" style="height:54px"></div>
+        <div class="card skel" style="height:54px"></div>
+        <div class="card skel" style="height:54px"></div>
+        <div class="card skel" style="height:54px"></div>
+      </div>
+      <div class="skel" style="height:38px;margin-top:10px;border-radius:10px"></div>
+      <div class="cta" style="margin-top:10px;display:flex;gap:8px">
+        <div class="skel" style="height:38px;width:140px;border-radius:10px"></div>
+        <div class="skel" style="height:38px;width:100px;border-radius:10px"></div>
+      </div>`;
+  }
+
+  // Patch existing openProfilePanel to show instantly with cache/skeleton
+  (function patchOpen(){
+    const prev = window.openProfilePanel;
+    window.openProfilePanel = async function(){
+      const panel = document.getElementById('consolePanel');
+      if (!panel) return;
+      // 1) instant open with cached data or skeleton
+      panel.style.display = 'block';
+      panel.innerHTML = skeleton();
+
+      // 2) if cached profile exists, render it quickly (soft UI update)
+      try{
+        const pCached = window.__PROFILE || cacheGet();
+        if (pCached && (pCached.points || (pCached.prizes||[]).length || pCached.last_booking || pCached.referrals_count)) {
+          try { (prev && prev()); } catch(_){}
+          // re-render using existing renderer if available
+        }
+      }catch(_){}
+
+      // 3) fetch fresh profile in background and render via original implementation
+      try{
+        if (typeof window.apiBootstrap === 'function'){
+          const p = await window.apiBootstrap();
+          window.__PROFILE = p; cachePut(p);
+        }
+      }catch(_){}
+      try { (prev && prev()); } catch(_){}
+    };
+  })();
+
+  // Prefetch profile on startup to warm cache & Apps Script
+  onReady(async function(){
+    try{
+      if (typeof window.apiBootstrap === 'function'){
+        const p = await window.apiBootstrap();
+        window.__PROFILE = p; cachePut(p);
+      }
+    }catch(_){/* ignore */}
+    // light ping endpoint if present
+    try{
+      const url = (window.APP_CONFIG && window.APP_CONFIG.GAS_WEBHOOK);
+      if (url) {
+        const s = document.createElement('script');
+        const cb = 'cb_ping_' + Math.random().toString(36).slice(2);
+        s.src = url + '?mode=ping&callback='+cb+'&_ts='+Date.now();
+        window[cb] = function(){ try{ delete window[cb]; }catch(_){ } s.remove(); };
+        document.head.appendChild(s);
+      }
+    }catch(_){}
+  });
+})();
+</script>
+<!-- === /instant profile panel patch === -->
+
+
+<!-- === Profile Panel: smooth hydrate (micro-loaders + gradual text updates) === -->
+<style>
+  .skel { position:relative; background:rgba(255,255,255,.08); border-radius:8px; overflow:hidden; }
+  .skel::after{
+    content:""; position:absolute; inset:0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
+    transform: translateX(-100%);
+    animation: skel 1.2s infinite;
+  }
+  @keyframes skel{ to { transform: translateX(100%); } }
+  .metric { display:flex; flex-direction:column; gap:2px; }
+  .metric .label { font-size:12px; opacity:.7 }
+  .metric .value { font-weight:800 }
+</style>
+<script>
+(function(){
+  function onReady(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+  function tgUser(){ try{ return Telegram?.WebApp?.initDataUnsafe?.user || null }catch(_){ return null } }
+  function initials(name){ const p=(name||'').trim().split(/\s+/); const a=(p[0]||'').charAt(0), b=(p[1]||'').charAt(0); return (a+b||a||'?').toUpperCase(); }
+  function cachePut(p){ try{ localStorage.setItem('stat_points', String(p.points||0)); localStorage.setItem('last_booking', p.last_booking||''); localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[])); localStorage.setItem('referrals_count', String(p.referrals_count||0)); }catch(_){ } }
+  function cacheGet(){ return { points:+(localStorage.getItem('stat_points')||0), prizes: JSON.parse(localStorage.getItem('last_prizes')||'[]')||[], last_booking: localStorage.getItem('last_booking')||null, referrals_count:+(localStorage.getItem('referrals_count')||0) }; }
+  function fmtDate(x){ try{ return x ? new Date(x).toLocaleString() : 'Нет'; }catch(_){ return x||'Нет'; } }
+
+  // Build minimal, controlled DOM for smooth updates
+  function buildPanelShell(panel){
+    const u = tgUser();
+    const name = [u?.first_name, u?.last_name].filter(Boolean).join(' ') || 'Гость';
+    const uname = u?.username ? '@'+u.username : '—';
+    panel.innerHTML = `
+      <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px">
+        <div id="ppAvatar" class="skel" style="width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-weight:800"></div>
+        <div style="flex:1">
+          <div id="ppName" class="skel" style="height:14px;width:160px;border-radius:6px;margin-bottom:6px"></div>
+          <div id="ppUname" class="skel" style="height:12px;width:90px;border-radius:6px"></div>
+        </div>
+      </div>
+      <div class="grid" style="gap:8px">
+        <div class="card metric" style="padding:10px"><div class="label">Очки</div><div id="ppPoints" class="value skel" style="height:20px;border-radius:6px"></div></div>
+        <div class="card metric" style="padding:10px"><div class="label">Последний приз</div><div id="ppPrize" class="value skel" style="height:16px;border-radius:6px"></div></div>
+        <div class="card metric" style="padding:10px"><div class="label">Запись</div><div id="ppBooking" class="value skel" style="height:16px;border-radius:6px"></div></div>
+        <div class="card metric" style="padding:10px"><div class="label">Рефералы</div><div id="ppRefs" class="value skel" style="height:16px;border-radius:6px"></div></div>
+      </div>
+      <details style="margin-top:10px">
+        <summary class="btn btn-ghost" style="display:inline-flex">Показать призы</summary>
+        <ul id="ppPrizeList" style="list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px"></ul>
+      </details>
+      <div class="cta" style="margin-top:10px">
+        <a class="btn btn-primary" href="https://t.me/${(window.APP_CONFIG&&window.APP_CONFIG.TG_BOT_USERNAME)||'serge_kamensky_bot'}" target="_blank" rel="noopener">Открыть бота</a>
+        <button class="btn btn-ghost" id="ppClose">Закрыть</button>
+      </div>
+    `;
+    // Fill avatar/name instantly (no shimmer after)
+    const av = panel.querySelector('#ppAvatar');
+    av.classList.remove('skel'); av.style.background = 'linear-gradient(135deg,var(--mint),var(--primary))';
+    av.textContent = initials(name);
+    const nm = panel.querySelector('#ppName'); nm.classList.remove('skel'); nm.textContent = name;
+    const un = panel.querySelector('#ppUname'); un.classList.remove('skel'); un.textContent = uname;
+    panel.querySelector('#ppClose')?.addEventListener('click', ()=> panel.style.display='none');
+  }
+
+  function setVal(el, text){ if(!el) return; el.classList.remove('skel'); el.textContent = text; }
+  function hydrateFrom(p){
+    const panel = document.getElementById('consolePanel');
+    if (!panel) return;
+    setVal(panel.querySelector('#ppPoints'), String(p.points ?? 0));
+    const lastPrize = (Array.isArray(p.prizes) && p.prizes.length) ? (p.prizes[p.prizes.length-1].title || p.prizes[p.prizes.length-1].name || '—') : '—';
+    setVal(panel.querySelector('#ppPrize'), lastPrize);
+    setVal(panel.querySelector('#ppBooking'), fmtDate(p.last_booking));
+    setVal(panel.querySelector('#ppRefs'), String(p.referrals_count ?? 0));
+
+    // diff render prize list
+    const ul = panel.querySelector('#ppPrizeList');
+    if (ul){
+      const wanted = (Array.isArray(p.prizes) ? p.prizes : []).map(x => (x && (x.title||x.name)) ? (x.title||x.name) : (typeof x === 'string' ? x : JSON.stringify(x)));
+      const current = Array.from(ul.children).map(li => li.textContent);
+      // remove extra
+      for (let i=current.length-1;i>=0;i--){ if (!wanted.includes(current[i])) ul.removeChild(ul.children[i]); }
+      // add missing in order
+      wanted.forEach((txt, idx)=>{
+        if (!current.includes(txt)){
+          const li = document.createElement('li');
+          li.textContent = txt;
+          li.style.cssText = 'padding:6px 8px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:rgba(255,255,255,.04)';
+          ul.appendChild(li);
+        }
+      });
+    }
+  }
+
+  // Override openProfilePanel to use shell + cache + async hydrate
+  (function(){
+    const prev = window.openProfilePanel;
+    window.openProfilePanel = async function(){
+      const panel = document.getElementById('consolePanel');
+      if (!panel) return;
+      panel.style.display = 'block';
+      buildPanelShell(panel);
+
+      // 1) show cached quickly
+      const cached = window.__PROFILE || cacheGet();
+      if (cached) hydrateFrom(cached);
+
+      // 2) fetch fresh and hydrate
+      try{
+        if (typeof window.apiBootstrap === 'function'){
+          const p = await window.apiBootstrap();
+          window.__PROFILE = p; cachePut(p);
+          hydrateFrom(p);
+        }
+      }catch(_){}
+
+      // call previous if it exists (to keep any side effects/animations)
+      try{ prev && prev(); }catch(_){}
+    };
+  })();
+
+  // Preload profile to warm cache
+  onReady(async function(){
+    try{
+      if (typeof window.apiBootstrap === 'function'){
+        const p = await window.apiBootstrap();
+        window.__PROFILE = p; cachePut(p);
+      }
+    }catch(_){}
+  });
+})();
+</script>
+<!-- === /smooth hydrate === -->
 
 </body>
 </html>
