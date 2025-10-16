@@ -3370,5 +3370,241 @@ window.__domLog = function(){};
 </script>
 <!-- END: MiniApp core (clean) -->
 
+
+<!-- === Profile Panel Enhancer: server profile + referrals === -->
+<script>
+(function(){
+  // Helper
+  function initials(name){
+    const parts = (name||'').trim().split(/\s+/);
+    const a = (parts[0]||'').charAt(0), b = (parts[1]||'').charAt(0);
+    return (a+b||a||'?').toUpperCase();
+  }
+  function tgUser(){ try{ return Telegram?.WebApp?.initDataUnsafe?.user || null }catch(_){ return null } }
+  function localFallback(){
+    return {
+      points: +(localStorage.getItem('stat_points')||0),
+      prizes: JSON.parse(localStorage.getItem('last_prizes')||'[]')||[],
+      last_booking: localStorage.getItem('last_booking')||null,
+      referrals_count: +(localStorage.getItem('referrals_count')||0)
+    };
+  }
+
+  async function getProfile(){
+    try{
+      if (typeof window.apiBootstrap === 'function'){
+        const p = await window.apiBootstrap();
+        window.__PROFILE = p;
+        // light cache to keep legacy widgets
+        try{
+          localStorage.setItem('stat_points', String(p.points||0));
+          localStorage.setItem('last_booking', p.last_booking||'');
+          localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[]));
+          localStorage.setItem('referrals_count', String(p.referrals_count||0));
+        }catch(_){}
+        return p;
+      }
+    }catch(e){}
+    return Object.assign({ method:'fallback' }, localFallback());
+  }
+
+  function renderProfileInto(panel, p){
+    let user = tgUser();
+    const name = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Гость';
+    const uname = user?.username ? '@'+user.username : '—';
+    const points = p.points ?? 0;
+    const lastPrize = (Array.isArray(p.prizes) && p.prizes.length) ? (p.prizes[p.prizes.length-1].title || p.prizes[p.prizes.length-1].name || '—') : '—';
+    const lastBooking = p.last_booking ? (function(x){ try{ return new Date(x).toLocaleString(); }catch(_){return x;} })(p.last_booking) : 'Нет';
+    const refCount = p.referrals_count ?? 0;
+
+    panel.innerHTML = `
+      <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px">
+        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--mint),var(--primary));display:grid;place-items:center;font-weight:800">${initials(name)}</div>
+        <div><div style="font-weight:800">${name}</div><div style="opacity:.7;font-size:12px">${uname}</div></div>
+      </div>
+      <div class="grid" style="gap:8px">
+        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Очки</div><div class="big">${points}</div></div>
+        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Последний приз</div><div class="big" style="font-size:14px">${lastPrize}</div></div>
+        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Запись</div><div class="big" style="font-size:14px">${lastBooking}</div></div>
+        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Рефералы</div><div class="big" style="font-size:14px">${refCount}</div></div>
+      </div>
+
+      <details style="margin-top:10px">
+        <summary class="btn btn-ghost" style="display:inline-flex">Показать призы</summary>
+        <ul id="prizeUL" style="list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px"></ul>
+      </details>
+
+      <div class="cta" style="margin-top:10px">
+        <a class="btn btn-primary" href="https://t.me/${(window.APP_CONFIG&&window.APP_CONFIG.TG_BOT_USERNAME)||'serge_kamensky_bot'}" target="_blank" rel="noopener">Открыть бота</a>
+        <button class="btn btn-ghost" id="profClose">Закрыть</button>
+      </div>
+    `;
+    // Fill prize list
+    const ul = panel.querySelector('#prizeUL');
+    if (ul && Array.isArray(p.prizes)){
+      p.prizes.forEach(x=>{
+        const li = document.createElement('li');
+        li.textContent = (x && (x.title||x.name)) ? (x.title||x.name) : (typeof x === 'string' ? x : JSON.stringify(x));
+        li.style.cssText = 'padding:6px 8px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:rgba(255,255,255,.04)';
+        ul.appendChild(li);
+      });
+    }
+    panel.querySelector('#profClose')?.addEventListener('click', ()=> panel.style.display='none');
+    panel.style.display='block'; panel.style.maxHeight='70vh'; panel.style.width='min(420px,92vw)';
+  }
+
+  // Hook the existing profile toggle (.console-toggle / #consolePanel)
+  document.addEventListener('DOMContentLoaded', function(){
+    const toggle = document.querySelector('.console-toggle');
+    const panel  = document.getElementById('consolePanel');
+    if(!toggle || !panel) return;
+
+    async function openProfile(){
+      try{
+        const p = await getProfile();
+        renderProfileInto(panel, p);
+      }catch(e){
+        // fall back to local
+        renderProfileInto(panel, localFallback());
+      }
+    }
+
+    // replace previous handler if any
+    toggle.onclick = function(){
+      if (panel.style.display==='block'){ panel.style.display='none'; }
+      else { openProfile(); }
+    };
+
+    // auto-refresh profile after any apiEvent
+    if (typeof window.apiEvent === 'function' && !window.__apiEventWrappedProfile){
+      const orig = window.apiEvent;
+      window.apiEvent = async function(type, data){
+        const res = await orig(type, data);
+        try{
+          const p = await getProfile();
+          // if panel open -> rerender
+          if (panel.style.display === 'block') renderProfileInto(panel, p);
+        }catch(_){}
+        return res;
+      };
+      window.__apiEventWrappedProfile = true;
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
+
+<!-- === Profile Panel: robust binder (capture click) === -->
+<script>
+(function(){
+  function onReady(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+  function tgUser(){ try{ return Telegram?.WebApp?.initDataUnsafe?.user || null }catch(_){ return null } }
+  function initials(name){ const p=(name||'').trim().split(/\s+/); const a=(p[0]||'').charAt(0), b=(p[1]||'').charAt(0); return (a+b||a||'?').toUpperCase(); }
+
+  async function getProfile(){
+    try{
+      if (typeof window.apiBootstrap === 'function'){
+        const p = await window.apiBootstrap();
+        window.__PROFILE = p;
+        try{
+          localStorage.setItem('stat_points', String(p.points||0));
+          localStorage.setItem('last_booking', p.last_booking||'');
+          localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[]));
+          localStorage.setItem('referrals_count', String(p.referrals_count||0));
+        }catch(_){}
+        return p;
+      }
+    }catch(e){}
+    return {
+      points: +(localStorage.getItem('stat_points')||0),
+      prizes: JSON.parse(localStorage.getItem('last_prizes')||'[]')||[],
+      last_booking: localStorage.getItem('last_booking')||null,
+      referrals_count: +(localStorage.getItem('referrals_count')||0)
+    };
+  }
+
+  function render(panel, p){
+    const u = tgUser();
+    const name = [u?.first_name, u?.last_name].filter(Boolean).join(' ') || 'Гость';
+    const uname = u?.username ? '@'+u.username : '—';
+    const points = p.points ?? 0;
+    const lastPrize = (Array.isArray(p.prizes) && p.prizes.length) ? (p.prizes[p.prizes.length-1].title || p.prizes[p.prizes.length-1].name || '—') : '—';
+    const lastBooking = p.last_booking ? (()=>{try{return new Date(p.last_booking).toLocaleString()}catch(_){return p.last_booking}})() : 'Нет';
+    const refCount = p.referrals_count ?? 0;
+
+    panel.innerHTML = `
+      <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px">
+        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--mint),var(--primary));display:grid;place-items:center;font-weight:800">${initials(name)}</div>
+        <div><div style="font-weight:800">${name}</div><div style="opacity:.7;font-size:12px">${uname}</div></div>
+      </div>
+      <div class="grid" style="gap:8px">
+        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Очки</div><div class="big">${points}</div></div>
+        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Последний приз</div><div class="big" style="font-size:14px">${lastPrize}</div></div>
+        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Запись</div><div class="big" style="font-size:14px">${lastBooking}</div></div>
+        <div class="card" style="padding:10px"><div class="lead" style="font-size:12px;opacity:.7">Рефералы</div><div class="big" style="font-size:14px">${refCount}</div></div>
+      </div>
+      <details style="margin-top:10px">
+        <summary class="btn btn-ghost" style="display:inline-flex">Показать призы</summary>
+        <ul id="prizeUL" style="list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px"></ul>
+      </details>
+      <div class="cta" style="margin-top:10px">
+        <a class="btn btn-primary" href="https://t.me/${(window.APP_CONFIG&&window.APP_CONFIG.TG_BOT_USERNAME)||'serge_kamensky_bot'}" target="_blank" rel="noopener">Открыть бота</a>
+        <button class="btn btn-ghost" id="profClose">Закрыть</button>
+      </div>
+    `;
+    const ul = panel.querySelector('#prizeUL');
+    if (ul && Array.isArray(p.prizes)){
+      p.prizes.forEach(x=>{
+        const li = document.createElement('li');
+        li.textContent = (x && (x.title||x.name)) ? (x.title||x.name) : (typeof x === 'string' ? x : JSON.stringify(x));
+        li.style.cssText = 'padding:6px 8px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:rgba(255,255,255,.04)';
+        ul.appendChild(li);
+      });
+    }
+    panel.querySelector('#profClose')?.addEventListener('click', ()=> panel.style.display='none');
+    panel.style.display='block';
+  }
+
+  async function openProfilePanel(){
+    const panel = document.getElementById('consolePanel');
+    if (!panel) return;
+    try{
+      const p = await getProfile();
+      render(panel, p);
+    }catch(e){
+      render(panel, await getProfile());
+    }
+  }
+  window.openProfilePanel = openProfilePanel;
+
+  onReady(function(){
+    // 1) capture click on toggle, stop other handlers
+    document.addEventListener('click', function(ev){
+      const t = ev.target.closest && ev.target.closest('.console-toggle');
+      if (!t) return;
+      ev.preventDefault(); ev.stopImmediatePropagation(); ev.stopPropagation();
+      const panel = document.getElementById('consolePanel');
+      if (!panel) return;
+      if (panel.style.display === 'block'){ panel.style.display='none'; return; }
+      openProfilePanel();
+    }, true);
+
+    // 2) auto-refresh after apiEvent
+    if (typeof window.apiEvent === 'function' && !window.__apiEventWrappedProfile2){
+      const orig = window.apiEvent;
+      window.apiEvent = async function(type, data){
+        const res = await orig(type, data);
+        const panel = document.getElementById('consolePanel');
+        if (panel && panel.style.display === 'block'){
+          try{ render(panel, await getProfile()); }catch(_){}
+        }
+        return res;
+      };
+      window.__apiEventWrappedProfile2 = true;
+    }
+  });
+})();
+</script>
+<!-- === /Profile Panel robust binder === -->
