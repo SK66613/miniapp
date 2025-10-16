@@ -3203,34 +3203,46 @@ window.__domLog = function(){};
 })();
 </script>
 
-<!-- --- BEGIN: fetch wrapper to avoid CORS preflight on GAS POST --- -->
+<!-- --- BEGIN: universal fetch wrapper for GAS (json -> form-urlencoded + auto type) --- -->
 <script>
 (function(){
   const C = window.APP_CONFIG || {};
-  const GAS = C.GAS_WEBHOOK || '';
+  const GAS = (C && C.GAS_WEBHOOK) || '';
+  if (!GAS) { console.warn('[fetch-wrapper] GAS_WEBHOOK not set'); return; }
 
-  if (!GAS) return;
-
+  const strip = (u)=> (u||'').split('#')[0].split('?')[0];
+  const GAS_BASE = strip(GAS);
   const _origFetch = window.fetch;
+
+  function _autoType(obj){
+    if (!obj || typeof obj !== 'object') return '';
+    if (obj.type || obj.event) return obj.type || obj.event;
+    if ('date' in obj && 'time' in obj) return 'consult_booking';
+    if ('inviter' in obj) return 'ref_join';
+    // пустой объект для простых действий
+    if (Object.keys(obj).length === 0) return 'register_business';
+    return '';
+  }
+
   window.fetch = function(input, init){
     try{
       const url = (typeof input === 'string') ? input : (input && input.url) || '';
       const method = (init && (init.method || 'GET')).toUpperCase();
-      const isGAS = GAS && url && url.split('#')[0].split('?')[0] === GAS.split('#')[0].split('?')[0];
+      const isGAS = GAS_BASE && strip(url) === GAS_BASE;
 
       if (isGAS && method === 'POST') {
-        // Detect JSON body
         const hdrs = (init && init.headers) || {};
         const ct = (typeof hdrs.get === 'function') ? (hdrs.get('Content-Type')||'') : (hdrs['Content-Type'] || hdrs['content-type'] || '');
         if (String(ct).toLowerCase().includes('application/json')) {
+          // Convert JSON body to x-www-form-urlencoded to avoid CORS preflight
           let obj = {};
           try { obj = JSON.parse(init.body || '{}'); } catch(_) {}
+
+          const type = _autoType(obj);
           const params = new URLSearchParams();
+          if (type) params.set('type', type);
 
-          // keep primary "type"
-          if (obj.type) params.set('type', obj.type);
-
-          // auth: prefer explicit fields, then TG init, then API_KEY
+          // auth: tg_init -> key
           if (obj.tg_init) params.set('tg_init', obj.tg_init);
           else {
             try {
@@ -3245,29 +3257,34 @@ window.__domLog = function(){};
           }
           if (obj.dev_id && !params.has('dev_id')) params.set('dev_id', obj.dev_id);
 
-          // Put the rest as data JSON
           const data = Object.assign({}, obj);
-          delete data.type; delete data.tg_init; delete data.key; delete data.dev_id;
+          delete data.type; delete data.event;
+          delete data.tg_init; delete data.key; delete data.dev_id;
+
           params.set('data', JSON.stringify(data));
 
           const newInit = Object.assign({}, init, {
             method: 'POST',
-            headers: Object.assign({}, hdrs, {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'}),
+            headers: (typeof Headers !== 'undefined' && hdrs instanceof Headers)
+              ? (hdrs.set('Content-Type', 'application/x-www-form-urlencoded;charset=UTF-8'), hdrs)
+              : Object.assign({}, hdrs, {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'}),
             body: params.toString(),
             credentials: 'omit'
           });
+
           return _origFetch.call(this, url, newInit);
         }
       }
     } catch (e) {
-      console.warn('[fetch-wrapper] fallback to original fetch due to error:', e);
+      console.warn('[fetch-wrapper] error:', e);
     }
     return _origFetch.apply(this, arguments);
   };
-  console.log('[fetch-wrapper] active for GAS:', GAS);
+
+  console.log('[fetch-wrapper] active →', GAS_BASE);
 })();
 </script>
-<!-- --- END: fetch wrapper --- -->
+<!-- --- END: universal fetch wrapper --- -->
 
 </body>
 </html>
