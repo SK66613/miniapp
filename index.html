@@ -3588,7 +3588,7 @@ window.__domLog = function(){};
     return {
       points: +(localStorage.getItem('stat_points')||0),
       prizes: JSON.parse(localStorage.getItem('last_prizes')||'[]')||[],
-      last_booking: localStorage.getItem('last_booking')||null,
+      last_booking: (function(){ try{ const lb=localStorage.getItem('last_booking')||''; if(lb.trim().startsWith('{')){ const o=JSON.parse(lb); return (o.date||'') + (o.time?(' '+o.time):'') + (o.duration_min?(' ('+o.duration_min+' мин)'):''); } return lb||null; }catch(_){ return localStorage.getItem('last_booking')||null; } })(),
       referrals_count: +(localStorage.getItem('referrals_count')||0)
     };
   }
@@ -3691,7 +3691,7 @@ window.__domLog = function(){};
   function tgUser(){ try{ return Telegram?.WebApp?.initDataUnsafe?.user || null }catch(_){ return null } }
   function initials(name){ const p=(name||'').trim().split(/\s+/); const a=(p[0]||'').charAt(0), b=(p[1]||'').charAt(0); return (a+b||a||'?').toUpperCase(); }
   function cachePut(p){ try{ localStorage.setItem('stat_points', String(p.points||0)); localStorage.setItem('last_booking', p.last_booking||''); localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[])); localStorage.setItem('referrals_count', String(p.referrals_count||0)); }catch(_){ } }
-  function cacheGet(){ return { points:+(localStorage.getItem('stat_points')||0), prizes: JSON.parse(localStorage.getItem('last_prizes')||'[]')||[], last_booking: localStorage.getItem('last_booking')||null, referrals_count:+(localStorage.getItem('referrals_count')||0) }; }
+  function cacheGet(){ return { points:+(localStorage.getItem('stat_points')||0), prizes: JSON.parse(localStorage.getItem('last_prizes')||'[]')||[], last_booking: (function(){ try{ const lb=localStorage.getItem('last_booking')||''; if(lb.trim().startsWith('{')){ const o=JSON.parse(lb); return (o.date||'') + (o.time?(' '+o.time):'') + (o.duration_min?(' ('+o.duration_min+' мин)'):''); } return lb||null; }catch(_){ return localStorage.getItem('last_booking')||null; } })(), referrals_count:+(localStorage.getItem('referrals_count')||0) }; }
   function fmtDate(x){ try{ return x ? new Date(x).toLocaleString() : 'Нет'; }catch(_){ return x||'Нет'; } }
 
   // Build minimal, controlled DOM for smooth updates
@@ -3818,7 +3818,7 @@ window.__domLog = function(){};
     return {
       points: +(localStorage.getItem('stat_points')||0),
       prizes: JSON.parse(localStorage.getItem('last_prizes')||'[]')||[],
-      last_booking: localStorage.getItem('last_booking')||null,
+      last_booking: (function(){ try{ const lb=localStorage.getItem('last_booking')||''; if(lb.trim().startsWith('{')){ const o=JSON.parse(lb); return (o.date||'') + (o.time?(' '+o.time):'') + (o.duration_min?(' ('+o.duration_min+' мин)'):''); } return lb||null; }catch(_){ return localStorage.getItem('last_booking')||null; } })(),
       referrals_count: +(localStorage.getItem('referrals_count')||0)
     };
   }
@@ -3957,7 +3957,7 @@ window.__domLog = function(){};
     return {
       points: +(localStorage.getItem('stat_points')||0),
       prizes: JSON.parse(localStorage.getItem('last_prizes')||'[]')||[],
-      last_booking: localStorage.getItem('last_booking')||null,
+      last_booking: (function(){ try{ const lb=localStorage.getItem('last_booking')||''; if(lb.trim().startsWith('{')){ const o=JSON.parse(lb); return (o.date||'') + (o.time?(' '+o.time):'') + (o.duration_min?(' ('+o.duration_min+' мин)'):''); } return lb||null; }catch(_){ return localStorage.getItem('last_booking')||null; } })(),
       referrals_count: +(localStorage.getItem('referrals_count')||0)
     };
   }
@@ -4209,24 +4209,39 @@ window.__domLog = function(){};
   try{
     var contact = document.querySelector('#contact');
     if (contact){
+      function setHint(state){
+        var hint = (window.__ensureContactHint && __ensureContactHint(contact)) || null;
+        if(!hint) return;
+        hint.style.padding='6px 8px'; hint.style.borderRadius='8px'; hint.style.border='1px solid rgba(255,255,255,.10)';
+        hint.style.background='rgba(255,255,255,.04)'; hint.style.fontWeight='600';
+        if(state==='empty'){ hint.textContent='Введите номер'; hint.style.color='#ffd95a'; }
+        else if(state==='ok'){ hint.textContent='Номер введён верно'; hint.style.color='#7CFFA7'; }
+        else if(state==='bad'){ hint.textContent='Проверь формат номера (пример: +7 999 123-45-67)'; hint.style.color='#ffd95a'; }
+        else if(state==='sent'){ hint.textContent='Ваша заявка отправлена'; hint.style.color='#7CFFA7'; }
+      }
+      setHint('empty');
       contact.addEventListener('input', function(){
         var raw = this.value;
         raw = raw.replace(/[^\d+]/g, '');
         if (raw.startsWith('+')) raw = '+' + raw.slice(1).replace(/\D/g,''); else raw = raw.replace(/\D/g,'');
         raw = raw.replace(/(?!^)\+/g, '');
         var norm = raw.replace(/^\+/, '');
+        if (!norm.length){
+          this.value=''; this.dataset.norm=''; this.classList.remove('ok','attn'); setHint('empty'); return;
+        }
         if (norm.length===11 && norm[0]==='8') norm = '7'+norm.slice(1);
         else if (norm.length===10 && norm[0]==='9') norm = '7'+norm;
-        try{ this.value = __maskPhoneRU(norm||raw); }catch(e){ this.value = raw; }
+        try{ this.value = (window.__maskPhoneRU ? __maskPhoneRU(norm) : raw); }catch(e){ this.value = raw; }
         this.dataset.norm = norm;
-        this.classList.remove('attn','ok');
-        var hint = __ensureContactHint(this);
-        if (hint) hint.textContent = 'Формат: +7 999 123-45-67 — при отправке нормализуем к 7XXXXXXXXXX';
-      });
+        this.classList.remove('attn');
+        if(norm.length===11 && norm[0]==='7'){ this.classList.add('ok'); setHint('ok'); }
+        else { this.classList.remove('ok'); setHint('empty'); }
+      }, {capture:true});
     }
   }catch(_){}
 
   // Confirm consult
+
   try{
     var confBtn = document.getElementById('confirmConsult');
     if (confBtn){
@@ -4411,5 +4426,45 @@ window.__addBookingDatePrefixTo = window.__addBookingDatePrefixTo || function(el
     }, {capture:true});
   }
 })();</script>
+
+<script>
+(function(){
+  window.__boom = function(x, y){
+    try{
+      const c = document.createElement('canvas');
+      c.width = innerWidth; c.height = innerHeight;
+      Object.assign(c.style,{position:'fixed',left:0,top:0,pointerEvents:'none',zIndex:999});
+      document.body.appendChild(c);
+      const ctx = c.getContext('2d'); const N=140, P=[];
+      for(let i=0;i<N;i++){
+        P.push({ x,y, vx:(Math.random()-0.5)*6, vy:Math.random()*-6-2, g:0.22+Math.random()*0.18, s:4+Math.random()*5, r:Math.random()*Math.PI, col:`hsl(${Math.random()*360},90%,60%)` });
+      }
+      let t=0;
+      (function tick(){
+        ctx.clearRect(0,0,c.width,c.height);
+        P.forEach(p=>{ p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.r+=0.08;
+          ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r); ctx.fillStyle=p.col; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s); ctx.restore();
+        });
+        t++; if (t<180) requestAnimationFrame(tick); else c.remove();
+      })();
+    }catch(_){}
+  };
+  window.__conf = function(){
+    try{ if (window.confetti) return confetti({particleCount:140, spread:70}); }catch(_){}
+    try{ window.__boom(innerWidth/2, innerHeight*0.33); }catch(_){}
+  };
+  window.__confAt = function(el){
+    try{
+      if(!el) return window.__conf();
+      const r = el.getBoundingClientRect();
+      const x = (r.left + r.width/2);
+      const y = (r.top + r.height/2);
+      if (window.confetti) return confetti({particleCount:140, spread:70, origin:{ x:x/innerWidth, y:y/innerHeight }});
+      return window.__boom(x,y);
+    }catch(_){ try{ window.__conf(); }catch(__){} }
+  };
+})();
+</script>
+
 </body>
 </html>
