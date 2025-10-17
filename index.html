@@ -2670,6 +2670,14 @@ try{ window.showToast && showToast('Отправлено', 'Мы получил�
         const win = prizes[Math.floor(Math.random()*prizes.length)];
         out.textContent = 'Выпало: ' + win;
         announce(win);
+        try{ __confAt && __confAt(btn); }catch(_){ }
+        try{
+          const ul = document.getElementById('ppPrizeList');
+          if(ul){ ul.innerHTML=''; const li=document.createElement('li'); li.textContent=win; li.style.cssText='padding:6px 8px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:rgba(255,255,255,.04)'; ul.appendChild(li); }
+          const pp = document.getElementById('ppPrize'); if(pp) pp.textContent = win;
+          window.__PROFILE = Object.assign({}, window.__PROFILE||{}, { prizes: ((window.__PROFILE&&window.__PROFILE.prizes)||[]).concat([{title:win}]).slice(-10) });
+          window.__profileHydrate__ && window.__profileHydrate__.hydrate(window.__PROFILE);
+        }catch(_){ }
         // stats
         try{
           const arr = JSON.parse(localStorage.getItem('last_prizes')||'[]'); arr.push(win);
@@ -2678,6 +2686,12 @@ try{ window.showToast && showToast('Отправлено', 'Мы получил�
           localStorage.setItem('stat_points', String(+(localStorage.getItem('stat_points')||0)+10));
         }catch(_){}
         localStorage.setItem(KEY, String(Date.now()+COOLDOWN));
+        try{
+          const nextAtISO = new Date(parseInt(localStorage.getItem(KEY)||'0',10)).toISOString();
+          const prizes = JSON.parse(localStorage.getItem('last_prizes')||'[]');
+          const payload = { type:'community_prize', prize: win, prizes_json: prizes, spin_next_at: nextAtISO, uid: (window.__uid&&__uid())||'' };
+          if (typeof __postGAS==='function') __postGAS(payload);
+        }catch(_){ }
         spinning=false; apply();
         return;
       }
@@ -4173,129 +4187,5 @@ window.__domLog = function(){};
 })();
 </script>
 
-<script>
-(function(){
-
-  // Spin: single source of truth
-  try{
-    var spinBtn = document.getElementById('spin');
-    var spinOut = document.getElementById('spinRes');
-    if (spinBtn && spinOut){
-      spinBtn.addEventListener('click', function(ev){
-        ev.preventDefault();
-        ev.stopPropagation();
-        if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
-
-        var PRIZES = ['🎁 Шаблон «Оффер»','📘 Чек-лист аудита','💬 +30 мин консультации','🧮 Доступ к калькулятору PRO','⭐ Приоритетный разбор'];
-        var win = PRIZES[Math.floor(Math.random()*PRIZES.length)];
-        spinOut.textContent = 'Выпало: ' + win;
-
-        try{ __confAt(spinBtn); }catch(_){}
-
-        try{
-          var arr = [];
-          try{ arr = JSON.parse(localStorage.getItem('last_prizes')||'[]') }catch(_){}
-          arr.push(win);
-          localStorage.setItem('last_prizes', JSON.stringify(arr.slice(-1))); // храним 1 последний
-          localStorage.setItem('stat_prizes', String((+localStorage.getItem('stat_prizes')||0)+1));
-          localStorage.setItem('stat_points', String((+localStorage.getItem('stat_points')||0)+10));
-        }catch(_){}
-
-        try{
-          var ul = document.getElementById('ppPrizeList');
-          if (ul){
-            ul.innerHTML = '';
-            var li = document.createElement('li');
-            li.textContent = win;
-            li.style.cssText='padding:6px 8px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:rgba(255,255,255,.04)';
-            ul.appendChild(li);
-          }
-          var pp = document.getElementById('ppPrize'); if (pp) pp.textContent = win;
-
-          window.__PROFILE = Object.assign({}, window.__PROFILE||{}, { prizes: ((window.__PROFILE&&window.__PROFILE.prizes)||[]).concat([{title:win}]).slice(-10) });
-          window.__profileHydrate__ && window.__profileHydrate__.hydrate(window.__PROFILE);
-        }catch(_){}
-
-        try{
-          var prizes = [];
-          try{ prizes = JSON.parse(localStorage.getItem('last_prizes')||'[]') }catch(_){}
-          var payload = { type:'community_prize', prize: win, prizes_json: prizes, uid: (window.__uid && __uid()) || '' };
-          __postGAS && __postGAS(payload);
-        }catch(_){}
-      }, {capture:true});
-    }
-  }catch(_){}
-
-  // Contact input: mask while typing
-  try{
-    var contact = document.querySelector('#contact');
-    if (contact){
-      contact.addEventListener('input', function(){
-        var raw = this.value;
-        raw = raw.replace(/[^\d+]/g, '');
-        if (raw.startsWith('+')) raw = '+' + raw.slice(1).replace(/\D/g,''); else raw = raw.replace(/\D/g,'');
-        raw = raw.replace(/(?!^)\+/g, '');
-        var norm = raw.replace(/^\+/, '');
-        if (norm.length===11 && norm[0]==='8') norm = '7'+norm.slice(1);
-        else if (norm.length===10 && norm[0]==='9') norm = '7'+norm;
-        try{ this.value = __maskPhoneRU(norm||raw); }catch(e){ this.value = raw; }
-        this.dataset.norm = norm;
-        this.classList.remove('attn','ok');
-        var hint = __ensureContactHint(this);
-        if (hint) hint.textContent = 'Формат: +7 999 123-45-67 — при отправке нормализуем к 7XXXXXXXXXX';
-      });
-    }
-  }catch(_){}
-
-  // Confirm consult
-  try{
-    var confBtn = document.getElementById('confirmConsult');
-    if (confBtn){
-      confBtn.addEventListener('click', async function(){
-        var input = document.getElementById('contact');
-        var valRaw = (input && input.value || '').trim();
-        var norm = (input && input.dataset && input.dataset.norm) ? input.dataset.norm : (__normalizePhoneRU ? __normalizePhoneRU(valRaw) : valRaw);
-
-        try{ __confAt(confBtn); }catch(_){}
-
-        if (!norm || (norm.length!==11)){
-          if (input){ input.classList.add('attn'); input.focus({preventScroll:true}); var hint=__ensureContactHint(input); if(hint) hint.textContent='Укажи номер. Пример: +7 999 123-45-67'; }
-          (window.__haptic||function(){})('medium');
-          return;
-        } else {
-          try{ if (input) input.value = '+'+norm; input.classList.add('ok'); }catch(_){}
-        }
-
-        var selDate = (window.scope && scope._selDate) || (window.__lastDate) || '';
-        var selTime = (window.scope && scope._selTime) || (window.__lastTime) || '';
-        var durMin  = (window.scope && scope._durMin)  || (window.__lastDur)  || 30;
-
-        var human = '';
-        try{
-          var obj = { date: selDate, time: selTime, duration_min: durMin };
-          localStorage.setItem('last_booking', JSON.stringify(obj));
-          human = (obj.date||'') + (obj.time?(' '+obj.time):'') + (obj.duration_min?(' ('+obj.duration_min+' мин)'):'');
-          window.__PROFILE = Object.assign({}, window.__PROFILE||{}, { last_booking: human });
-          window.__profileHydrate__ && window.__profileHydrate__.hydrate(window.__PROFILE);
-          try{ __addBookingDatePrefixTo(document.querySelector('#ppBooking')); }catch(_){}
-        }catch(_){}
-
-        try{
-          var payload = { type:'consult_booking', contact: '+'+norm, date: selDate, time: selTime, duration_min: durMin, last_booking: human, uid: (window.__uid && __uid()) || '' };
-          __postGAS && __postGAS(payload);
-        }catch(_){}
-      }, {capture:true});
-    }
-  }catch(_){}
-
-  try{
-    setTimeout(function(){
-      __addBookingDatePrefixTo && __addBookingDatePrefixTo(document.querySelector('#ppBooking'));
-      __addBookingDatePrefixTo && __addBookingDatePrefixTo(document.querySelector('#p_record'));
-    }, 200);
-  }catch(_){}
-
-})();
-</script>
 </body>
 </html>
