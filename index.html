@@ -2666,7 +2666,7 @@ document.addEventListener('click', function(e){ if(e.target.closest('.btn')) __h
   apply();
 })();
 
-<!-- removed: v20 profile panel block -->
+/* removed: v20 profile panel block */
 
 
 <script>
@@ -3442,10 +3442,10 @@ window.__domLog = function(){};
     panel.style.display='block'; panel.style.maxHeight='70vh'; panel.style.width='min(420px,92vw)';
   }
 
-  <!-- removed: legacy toggle hook block -->
+  /* removed: legacy toggle hook block */
 
 
-<!-- === Profile Panel: instant open + async hydrate + skeleton === -->
+/* === Profile Panel: instant open + async hydrate + skeleton === */
 <style>
   #consolePanel{ max-height: 78vh; overflow:auto; }
   .skel{ position:relative; background:rgba(255,255,255,.08); border-radius:12px; overflow:hidden; }
@@ -3935,191 +3935,5 @@ window.__domLog = function(){};
 
     <!-- removed: legacy fast-open rAF handler (duplicate) -->
 
-
-<!-- === Consult Phone + Confetti Patch (safe & minimal) === -->
-<script>
-(function(){
-  const phoneEl = document.getElementById('contact');
-  const btn = document.getElementById('confirmConsult');
-  if(!phoneEl || !btn) return;
-
-  let hint = document.getElementById('consultHint');
-  if(!hint){
-    hint = document.createElement('div');
-    hint.id = 'consultHint';
-    hint.style.cssText = 'font-size:12px;opacity:.8;margin-top:6px';
-    phoneEl.parentNode && phoneEl.parentNode.appendChild(hint);
-  }
-
-  phoneEl.addEventListener('input', () => {
-    let v = phoneEl.value;
-    v = v.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
-    phoneEl.value = v;
-    const norm = normalizePhone(v);
-    if (norm){
-      hint.textContent = 'Будет сохранено: ' + norm;
-      hint.style.color = '#7bffcb';
-      phoneEl.classList.remove('attn');
-    } else {
-      hint.textContent = 'Введите номер: +7XXXXXXXXXX / 8XXXXXXXXXX / 7XXXXXXXXXX';
-      hint.style.color = '';
-    }
-  });
-
-  function normalizePhone(raw){
-    if(!raw) return null;
-    let d = String(raw).replace(/\D+/g, '');
-    if (d[0] === '8') d = '7' + d.slice(1);
-    if (d.length === 10 && d[0] === '9') d = '7' + d;
-    if (d.length > 11) d = d.slice(0,11);
-    if (d.length === 11 && d[0] === '7') return d;
-    return null;
-  }
-
-  function fireConfetti(){
-    if (window.confetti){
-      try{ window.confetti({ particleCount: 140, spread: 70, startVelocity: 45, scalar: 0.9, origin: { y: 0.7 } }); }catch(e){}
-    } else {
-      try{
-        const c=document.createElement('div'); c.textContent='🎉';
-        Object.assign(c.style,{position:'fixed',right:'16px',bottom:'70px',fontSize:'28px',opacity:'0',transition:'all .8s ease',zIndex:9999});
-        document.body.appendChild(c); requestAnimationFrame(()=>{c.style.opacity='1'; c.style.transform='translateY(-40px)';});
-        setTimeout(()=>{c.style.opacity='0'; c.style.transform='translateY(-80px)';}, 600);
-        setTimeout(()=> c.remove(), 1500);
-      }catch(e){}
-    }
-  }
-
-  btn.addEventListener('click', () => {
-    const norm = normalizePhone(phoneEl.value);
-    if(!norm){
-      phoneEl.classList.add('attn');
-      hint.textContent = 'Проверьте номер. Пример: +7 999 888 6655';
-      hint.style.color = '#ff9b9b';
-      try{ window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('error'); }catch(_){}
-      return;
-    }
-    try{ localStorage.setItem('consult_phone_norm', norm); }catch(_){}
-    window.__CONSULT_LAST_PHONE__ = norm;
-
-    fireConfetti();
-    try{ window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success'); }catch(_){}
-
-    hint.textContent = 'Сохранено: ' + norm;
-    hint.style.color = '#7bffcb';
-    phoneEl.classList.remove('attn');
-
-    // Hook here your submit to GAS/Sheets if needed:
-    // if (window.apiEvent) apiEvent('consult_confirm', { phone: norm });
-  });
-})();
-</script>
-<!-- === /Consult Phone + Confetti Patch === -->
-
 </body>
 </html>
-
-<!-- removed: robust binder profile block -->
-<!-- === /Profile Panel robust binder === -->
-
-<!-- === FAST OPEN v2 — single source of truth (instant open + async refresh) === -->
-<script>
-(function(){
-  function onReady(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
-
-  // Minimal cache + hydrate (reuse if already defined)
-  window.__profileHydrate__ = window.__profileHydrate__ || (function(){
-    function cacheGet(){
-      return {
-        points: +(localStorage.getItem('stat_points')||0),
-        prizes: JSON.parse(localStorage.getItem('last_prizes')||'[]')||[],
-        last_booking: localStorage.getItem('last_booking')||null,
-        referrals_count: +(localStorage.getItem('referrals_count')||0)
-      };
-    }
-    function fmtDate(x){ try{ return x ? new Date(x).toLocaleString() : 'Нет'; }catch(_){ return x||'Нет'; } }
-    function setVal(sel, txt){
-      const el = document.querySelector(sel); if (!el) return;
-      el.classList && el.classList.remove('skel');
-      if (el.textContent !== String(txt)) el.textContent = String(txt);
-    }
-    function hydrate(p){
-      if (!p) return;
-      const lastPrize = (Array.isArray(p.prizes) && p.prizes.length) ? (p.prizes.at(-1).title || p.prizes.at(-1).name || '—') : '—';
-      setVal('#ppPoints', String(p.points ?? 0));
-      setVal('#ppPrize', lastPrize);
-      setVal('#ppBooking', fmtDate(p.last_booking));
-      setVal('#ppRefs', String(p.referrals_count ?? 0));
-      const ul = document.querySelector('#ppPrizeList');
-      if (ul){
-        const wanted = (Array.isArray(p.prizes)?p.prizes:[]).map(x => (x && (x.title||x.name)) ? (x.title||x.name) : (typeof x==='string'?x:JSON.stringify(x)));
-        const cur = Array.from(ul.children).map(li=>li.textContent);
-        for (let i=cur.length-1;i>=0;i--){ if(!wanted.includes(cur[i])) ul.removeChild(ul.children[i]); }
-        const frag = document.createDocumentFragment();
-        wanted.forEach(txt=>{ if(!cur.includes(txt)){ const li=document.createElement('li'); li.textContent=txt; li.style.cssText='padding:6px 8px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:rgba(255,255,255,.04)'; frag.appendChild(li);} });
-        if (frag.childNodes.length) ul.appendChild(frag);
-      }
-    }
-    return { cacheGet, hydrate };
-  })();
-
-  // Soft-throttled network refresh with timeout
-  window.__profileRefresh__ = window.__profileRefresh__ || (function(){
-    let fetching=false, fetchedAt=0;
-    async function refresh(force=false){
-      const api = window.apiBootstrap;
-      if (typeof api !== 'function') return;
-      const now = Date.now();
-      if (!force && (fetching || (now - fetchedAt) < 4000)) return;
-      fetching = true;
-      try{
-        const p = await Promise.race([ api(), new Promise((_,rej)=>setTimeout(()=>rej('timeout'),1500)) ]);
-        if (p){ window.__PROFILE = p;
-          try{
-            localStorage.setItem('stat_points', String(p.points||0));
-            localStorage.setItem('last_booking', p.last_booking||'');
-            localStorage.setItem('last_prizes', JSON.stringify(p.prizes||[]));
-            localStorage.setItem('referrals_count', String(p.referrals_count||0));
-          }catch(_){}
-          window.__profileHydrate__.hydrate(p);
-          fetchedAt = Date.now();
-        }
-      }catch(_){ /* silent */ }
-      finally{ fetching=false; }
-    }
-    return { refresh };
-  })();
-
-  // Single click handler: open instantly, hydrate cache, then refresh; capture+stop to disable legacy handlers
-  onReady(function(){
-    const toggle = document.querySelector('.console-toggle');
-    const panel  = document.getElementById('consolePanel');
-    if(!toggle || !panel) return;
-
-    function openInstant(){
-      panel.classList && panel.classList.add('open');
-      if (panel.style){ panel.style.display='block'; } // if legacy CSS relies on display
-      // Stage 2: cache hydrate
-      try{ window.__profileHydrate__.hydrate(window.__PROFILE || window.__profileHydrate__.cacheGet()); }catch(_){}
-      // Stage 3: background fetch
-      setTimeout(() => { try{ window.__profileRefresh__.refresh(false); }catch(_){} }, 60);
-    }
-
-    toggle.addEventListener('click', function(ev){
-      ev.preventDefault(); ev.stopImmediatePropagation(); ev.stopPropagation();
-      // toggle behavior
-      const isOpen = panel.classList ? panel.classList.contains('open') : (panel.style.display==='block');
-      if (isOpen){
-        panel.classList && panel.classList.remove('open');
-        if (panel.style) panel.style.display='none';
-      } else {
-        // next frame to ensure compositor path
-        requestAnimationFrame(openInstant);
-      }
-    }, { capture:true });
-
-    // Warm cache shortly after load
-    window.addEventListener('load', () => setTimeout(() => { try{ window.__profileRefresh__.refresh(true); }catch(_){} }, 200));
-  });
-})();
-</script>
