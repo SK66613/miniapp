@@ -4957,5 +4957,190 @@ window.__addBookingDatePrefixTo = window.__addBookingDatePrefixTo || function(el
 </script>
 <!-- === /soft-mask patch === -->
 
+
+<!-- === booking/date-time fix (guarded) === -->
+<script>
+(function(){
+  if (window.__BOOKING_FIX_V3__) return; window.__BOOKING_FIX_V3__ = true;
+
+  // Map RU month -> number
+  var RU_MONTH = {
+    'январ': '01','феврал': '02','март': '03','апрел': '04','ма': '05','июн': '06','июл': '07',
+    'август': '08','сентябр': '09','октябр': '10','ноябр': '11','декабр': '12'
+  };
+
+  function parseYearMonthFromHead(){
+    try{
+      var head = document.querySelector('#cal .cal-head .mon') || document.querySelector('#cal .mon') || null;
+      if(!head) return null;
+      var t = (head.textContent||'').trim().toLowerCase(); // e.g., "октябрь 2025"
+      var m = t.match(/([а-яa-z]+)\s+(\d{4})/i);
+      if(!m) return null;
+      var monKey = m[1].slice(0,5); // take stem like "октябр"
+      var mm = RU_MONTH[monKey] || null;
+      if(!mm) return null;
+      return { year: m[2], month: mm };
+    }catch(_){ return null; }
+  }
+
+  // Ensure #cal has data-ym="YYYY-MM"
+  function ensureCalYM(){
+    var ym = parseYearMonthFromHead();
+    if (ym){
+      var cal = document.getElementById('cal');
+      if (cal){ cal.dataset.ym = ym.year + '-' + ym.month; }
+    }
+  }
+
+  // Delegated click on calendar: compute data-date if missing and store selection
+  function hookCalendar(){
+    ensureCalYM();
+    var cal = document.getElementById('cal');
+    if (!cal) return;
+    cal.addEventListener('click', function(ev){
+      var cell = ev.target && (ev.target.closest ? ev.target.closest('.cal-cell') : null);
+      if(!cell) return;
+      ensureCalYM();
+      var ym = (cal.dataset && cal.dataset.ym) || '';
+      var day = String((cell.textContent||'').trim()).replace(/\D+/g,'');
+      if (ym && day){
+        var dd = day.padStart(2,'0');
+        cell.dataset.date = ym + '-' + dd; // YYYY-MM-DD
+      }
+      // visual select
+      Array.prototype.forEach.call(cal.querySelectorAll('.cal-cell'), function(x){ x.classList.remove('sel'); });
+      cell.classList.add('sel');
+      // expose
+      window.scope = window.scope || {};
+      scope._selDate = cell.dataset.date || scope._selDate || '';
+      window.__selDate = scope._selDate;
+    }, true);
+  }
+
+  // Delegated click on #slots buttons: set data-time + active + scope
+  function hookSlots(){
+    var slots = document.getElementById('slots');
+    if (!slots) return;
+    slots.addEventListener('click', function(ev){
+      var btn = ev.target && (ev.target.closest ? ev.target.closest('button') : null);
+      if(!btn) return;
+      var label = (btn.dataset && btn.dataset.time) || (btn.textContent||'').trim();
+      btn.dataset.time = label;
+      Array.prototype.forEach.call(slots.querySelectorAll('button'), function(x){ x.classList.remove('btn-primary','active'); });
+      btn.classList.add('btn-primary','active');
+      window.scope = window.scope || {};
+      scope._selTime = label;
+      window.__selTime = label;
+    }, true);
+  }
+
+  // Provide unified getter
+  window.getSelectedBooking = window.getSelectedBooking || function(){
+    var cal = document.getElementById('cal');
+    var cellSel = cal && cal.querySelector('.cal-cell.sel');
+    var date = (cellSel && cellSel.dataset && cellSel.dataset.date) || (window.scope && scope._selDate) || window.__selDate || '';
+
+    var slots = document.getElementById('slots');
+    var btnSel = slots && (slots.querySelector('.btn.active') || slots.querySelector('.btn.btn-primary'));
+    var time = (btnSel && btnSel.dataset && btnSel.dataset.time) || (window.scope && scope._selTime) || window.__selTime || '';
+
+    var durBtn = document.querySelector('.dur.btn-primary, .dur.active');
+    var duration = (durBtn && durBtn.dataset && parseInt(durBtn.dataset.min,10)) || (window.scope && scope._durMin) || 30;
+
+    var fmtBtn = document.querySelector('.consult-type.btn-primary, .consult-type.active');
+    var format = (fmtBtn && fmtBtn.dataset && fmtBtn.dataset.type) || 'call';
+
+    return { date: date||'', time: time||'', duration_min: duration||30, format: format||'call' };
+  };
+
+  // Always include tg_init for GAS
+  (function overridePostGAS(){
+    var prev = window.__postGAS;
+    window.__postGAS = async function(payload){
+      try{
+        payload = Object.assign({}, payload||{});
+        try{ payload.tg_init = (Telegram && Telegram.WebApp && Telegram.WebApp.initData) || payload.tg_init || ''; }catch(_){}
+        if (typeof prev === 'function') return await prev(payload);
+        var C = window.APP_CONFIG || {};
+        if (C && C.GAS_WEBHOOK){
+          return await fetch(C.GAS_WEBHOOK, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        }
+      }catch(_){}
+    };
+  })();
+
+  // Rebind Confirm: use unified getter; confetti only if valid & after send
+  (function rebindConfirm(){
+    var btn0 = document.getElementById('confirmConsult');
+    var input = document.getElementById('contact');
+    if(!btn0 || !input) return;
+    var btn = btn0.cloneNode(true); btn0.replaceWith(btn);
+
+    function setHintState(state){
+      var hint = document.getElementById('contactHint');
+      if(!hint) return;
+      if(state==='bad'){ hint.textContent='Проверьте номер: нужен формат +7 999 123-45-67'; hint.style.color='#FF6B6B'; }
+      if(state==='ok'){ hint.textContent='Номер введён верно'; hint.style.color='#7CFFA7'; }
+      if(state==='sent'){ hint.textContent='Ваша заявка отправлена'; hint.style.color='#7CFFA7'; }
+    }
+
+    btn.addEventListener('click', async function(){
+      var norm = (input.dataset && input.dataset.norm) || '';
+      if(!/^7\d{10}$/.test(norm)){
+        input.classList.add('attn'); input.focus({preventScroll:true});
+        setHintState('bad'); return;
+      }
+
+      var picked = window.getSelectedBooking ? getSelectedBooking() : { date:'', time:'', duration_min:30, format:'call' };
+      if(!picked.date || !picked.time){
+        if (window.showToast) window.showToast('Выберите дату и время', 'Тапните по дню и свободному слоту');
+        return;
+      }
+
+      try{ localStorage.setItem('last_booking', JSON.stringify(picked)); }catch(_){}
+      // Prefix date to labels
+      try{
+        var m = (picked.date||'').match(/(\d{4})-(\d{2})-(\d{2})/);
+        if(m){
+          var dmy = m[3]+'.'+m[2]+'.'+m[1];
+          ['#ppBooking','#p_record'].forEach(function(sel){
+            var el = document.querySelector(sel); if(!el) return;
+            var t = (el.textContent||'').trim();
+            if(!t.startsWith(dmy)) el.textContent = (dmy + ' ' + t).trim();
+          });
+        }
+      }catch(_){}
+
+      // Send to GAS
+      var payload = {
+        type:'consult_booking',
+        contact: '+'+norm,
+        date: picked.date,
+        time: picked.time,
+        duration_min: picked.duration_min||30,
+        format: picked.format||'call'
+      };
+      var res;
+      try{ res = await (window.__postGAS && __postGAS(payload)); }catch(_){}
+
+      if (res && (res.ok || res.status===200)) {
+        setHintState('sent');
+        try{ window.__confAt && __confAt(btn); }catch(_){}
+      } else {
+        if (window.showToast) window.showToast('Ошибка', 'Не удалось сохранить запись');
+      }
+    }, true);
+  })();
+
+  // init hooks
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ hookCalendar(); hookSlots(); });
+  } else {
+    hookCalendar(); hookSlots();
+  }
+})();
+</script>
+<!-- === /booking/date-time fix === -->
+
 </body>
 </html>
