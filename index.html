@@ -5035,16 +5035,31 @@ window.__addBookingDatePrefixTo = window.__addBookingDatePrefixTo || function(el
   }
 
   // Provide unified getter
-  window.getSelectedBooking = window.getSelectedBooking || function(){
+  window.getSelectedBooking = function(){
     var cal = document.getElementById('cal');
     var cellSel = cal && cal.querySelector('.cal-cell.sel');
     var date = (cellSel && cellSel.dataset && cellSel.dataset.date) || (window.scope && scope._selDate) || window.__selDate || '';
-
-    var slots = document.getElementById('slots');
+    if (!date) {
+      try {
+        var dp = document.getElementById('datePick');
+        if (dp && dp.value) {
+          var d = new Date(dp.value);
+          if (!isNaN(d)) {
+            var y = d.getFullYear(), m=('0'+(d.getMonth()+1)).slice(-2), dd=('0'+d.getDate()).slice(-2);
+            date = y+'-'+m+'-'+dd;
+          }
+        }
+      } catch (_){}
+    }
+var slots = document.getElementById('slots');
     var btnSel = slots && (slots.querySelector('.btn.active') || slots.querySelector('.btn.btn-primary'));
     var time = (btnSel && btnSel.dataset && btnSel.dataset.time) || (window.scope && scope._selTime) || window.__selTime || '';
-
-    var durBtn = document.querySelector('.dur.btn-primary, .dur.active');
+    if (!time) {
+      try {
+        if (window.SEL && SEL.time) time = SEL.time;
+      } catch(_){}
+    }
+var durBtn = document.querySelector('.dur.btn-primary, .dur.active');
     var duration = (durBtn && durBtn.dataset && parseInt(durBtn.dataset.min,10)) || (window.scope && scope._durMin) || 30;
 
     var fmtBtn = document.querySelector('.consult-type.btn-primary, .consult-type.active');
@@ -5091,7 +5106,7 @@ window.__addBookingDatePrefixTo = window.__addBookingDatePrefixTo || function(el
         setHintState('bad'); return;
       }
 
-      var picked = window.getSelectedBooking ? getSelectedBooking() : { date:'', time:'', duration_min:30, format:'call' };
+      var picked = getSelectedBooking();
       if(!picked.date || !picked.time){
         if (window.showToast) window.showToast('Выберите дату и время', 'Тапните по дню и свободному слоту');
         return;
@@ -5133,6 +5148,19 @@ window.__addBookingDatePrefixTo = window.__addBookingDatePrefixTo || function(el
   })();
 
   // init hooks
+  // Rehook on SPA page change
+  window.__BOOKING_FIX_V3_REHOOK__ = true;
+  (function(){
+    try{
+      var __oldShow = window.show;
+      window.show = function(id){
+        if (typeof __oldShow === 'function') __oldShow(id);
+        try{ hookCalendar(); hookSlots(); }catch(_){}
+      };
+      window.addEventListener('hashchange', function(){ try{ hookCalendar(); hookSlots(); }catch(_){} });
+    }catch(_){}
+  })();
+
   if (document.readyState === 'loading'){
     document.addEventListener('DOMContentLoaded', function(){ hookCalendar(); hookSlots(); });
   } else {
