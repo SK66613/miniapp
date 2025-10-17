@@ -3935,6 +3935,87 @@ window.__domLog = function(){};
 
     <!-- removed: legacy fast-open rAF handler (duplicate) -->
 
+
+<!-- === Consult Phone + Confetti Patch (safe & minimal) === -->
+<script>
+(function(){
+  const phoneEl = document.getElementById('contact');
+  const btn = document.getElementById('confirmConsult');
+  if(!phoneEl || !btn) return;
+
+  let hint = document.getElementById('consultHint');
+  if(!hint){
+    hint = document.createElement('div');
+    hint.id = 'consultHint';
+    hint.style.cssText = 'font-size:12px;opacity:.8;margin-top:6px';
+    phoneEl.parentNode && phoneEl.parentNode.appendChild(hint);
+  }
+
+  phoneEl.addEventListener('input', () => {
+    let v = phoneEl.value;
+    v = v.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
+    phoneEl.value = v;
+    const norm = normalizePhone(v);
+    if (norm){
+      hint.textContent = 'Будет сохранено: ' + norm;
+      hint.style.color = '#7bffcb';
+      phoneEl.classList.remove('attn');
+    } else {
+      hint.textContent = 'Введите номер: +7XXXXXXXXXX / 8XXXXXXXXXX / 7XXXXXXXXXX';
+      hint.style.color = '';
+    }
+  });
+
+  function normalizePhone(raw){
+    if(!raw) return null;
+    let d = String(raw).replace(/\D+/g, '');
+    if (d[0] === '8') d = '7' + d.slice(1);
+    if (d.length === 10 && d[0] === '9') d = '7' + d;
+    if (d.length > 11) d = d.slice(0,11);
+    if (d.length === 11 && d[0] === '7') return d;
+    return null;
+  }
+
+  function fireConfetti(){
+    if (window.confetti){
+      try{ window.confetti({ particleCount: 140, spread: 70, startVelocity: 45, scalar: 0.9, origin: { y: 0.7 } }); }catch(e){}
+    } else {
+      try{
+        const c=document.createElement('div'); c.textContent='🎉';
+        Object.assign(c.style,{position:'fixed',right:'16px',bottom:'70px',fontSize:'28px',opacity:'0',transition:'all .8s ease',zIndex:9999});
+        document.body.appendChild(c); requestAnimationFrame(()=>{c.style.opacity='1'; c.style.transform='translateY(-40px)';});
+        setTimeout(()=>{c.style.opacity='0'; c.style.transform='translateY(-80px)';}, 600);
+        setTimeout(()=> c.remove(), 1500);
+      }catch(e){}
+    }
+  }
+
+  btn.addEventListener('click', () => {
+    const norm = normalizePhone(phoneEl.value);
+    if(!norm){
+      phoneEl.classList.add('attn');
+      hint.textContent = 'Проверьте номер. Пример: +7 999 888 6655';
+      hint.style.color = '#ff9b9b';
+      try{ window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('error'); }catch(_){}
+      return;
+    }
+    try{ localStorage.setItem('consult_phone_norm', norm); }catch(_){}
+    window.__CONSULT_LAST_PHONE__ = norm;
+
+    fireConfetti();
+    try{ window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success'); }catch(_){}
+
+    hint.textContent = 'Сохранено: ' + norm;
+    hint.style.color = '#7bffcb';
+    phoneEl.classList.remove('attn');
+
+    // Hook here your submit to GAS/Sheets if needed:
+    // if (window.apiEvent) apiEvent('consult_confirm', { phone: norm });
+  });
+})();
+</script>
+<!-- === /Consult Phone + Confetti Patch === -->
+
 </body>
 </html>
 
