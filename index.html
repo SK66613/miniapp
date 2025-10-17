@@ -2376,6 +2376,8 @@ function __tgUser(){ try{ return Telegram && Telegram.WebApp && Telegram.WebApp.
 function __tgInit(){ try{ return Telegram && Telegram.WebApp && Telegram.WebApp.initData || null } catch(e){ return null } }
 async function __postGAS(payload){
   const C = window.APP_CONFIG || {};
+    try{ if(scope && scope._selDate){ localStorage.setItem('last_booking', JSON.stringify({date: scope._selDate, time: scope._selTime||'', duration_min: scope._durMin||0})); } }catch(_){}
+
   if(!C.GAS_WEBHOOK) return {ok:false, error:'no_webhook'};
   try{
     const body = Object.assign({}, payload);
@@ -2397,19 +2399,35 @@ document.addEventListener('click', function(e){ if(e.target.closest('.btn')) __h
   const input = scope.querySelector('#contact') || scope.querySelector('input,textarea');
   if(!btn || !input) return;
 
-  input.addEventListener('input', function(){ this.classList.remove('attn','ok'); });
+  input.addEventListener('input', function(){
+  let v = this.value;
+  v = v.replace(/[^\d+]/g, '');
+  if(v.startsWith('+')) v = '+' + v.slice(1).replace(/\D/g, ''); else v = v.replace(/\D/g, '');
+  v = v.replace(/(?!^)\+/g, '');
+  this.value = v; this.classList.remove('attn','ok');
+  const hint = __ensureContactHint(this);
+  if(hint) hint.textContent = 'Можно: +7 999 123-45-67, 8 999..., 999... — нормализуем к 7XXXXXXXXXX';
+});
 
   btn.addEventListener('click', async function(){
-    const val = (input.value||'').trim();
+  const valRaw = (input.value||'').trim();
+  const val = __normalizePhoneRU(valRaw);
+
     if(!val){
-      input.classList.add('attn'); __haptic('medium'); input.focus({preventScroll:true}); return;
-    }
+  input.classList.add('attn'); __haptic('medium'); input.focus({preventScroll:true});
+  const hint = __ensureContactHint(input); if(hint) hint.textContent = 'Укажи номер. Пример: +7 999 123-45-67';
+  return;
+}
+try{ input.value = '+'+val; }catch(_){}
+
     input.classList.add('ok');
-    try{ if(window.confetti) confetti({particleCount:120, spread:70}); }catch(e){}
-    __haptic('light');
+    try{ __confAt(btn); }catch(_){ try{ __conf(); }catch(__){} }
+__haptic('light');
 
     // Пытаемся отправить только если указан GAS_WEBHOOK (иначе тихо выходим)
     const C = window.APP_CONFIG || {};
+    try{ if(scope && scope._selDate){ localStorage.setItem('last_booking', JSON.stringify({date: scope._selDate, time: scope._selTime||'', duration_min: scope._durMin||0})); } }catch(_){}
+
     if (!C.GAS_WEBHOOK) return;
 
     const payload = {
@@ -2464,7 +2482,9 @@ document.addEventListener('click', function(e){ if(e.target.closest('.btn')) __h
 
 // v19 — normalize all t.me deeplinks to configured bot
 (function(){
-  const C = window.APP_CONFIG || {}; const bot = C.TG_BOT_USERNAME || 'serge_kamensky_bot';
+  const C = window.APP_CONFIG || {};
+    try{ if(scope && scope._selDate){ localStorage.setItem('last_booking', JSON.stringify({date: scope._selDate, time: scope._selTime||'', duration_min: scope._durMin||0})); } }catch(_){}
+ const bot = C.TG_BOT_USERNAME || 'serge_kamensky_bot';
   document.querySelectorAll('a[href*="t.me/"]').forEach(a=>{
     try{
       const u = new URL(a.href, location.href);
@@ -2492,6 +2512,8 @@ document.addEventListener('click', function(e){ if(e.target.closest('.btn')) __h
 
   async function postGAS(payload){
     const C = window.APP_CONFIG || {};
+    try{ if(scope && scope._selDate){ localStorage.setItem('last_booking', JSON.stringify({date: scope._selDate, time: scope._selTime||'', duration_min: scope._durMin||0})); } }catch(_){}
+
     if(!C.GAS_WEBHOOK) return {ok:false, error:'no_webhook'};
     const body = Object.assign({}, payload);
     if (C.USE_TG_SIGNATURE && tgInit()) body.tg_init = tgInit();
@@ -2504,8 +2526,8 @@ document.addEventListener('click', function(e){ if(e.target.closest('.btn')) __h
 
   btn.addEventListener('click', async ()=>{
     // confetti + toast
-    try{ if(window.confetti) confetti({particleCount:120, spread:70}); }catch(e){}
-    try{ window.showToast && showToast('Отправлено', 'Мы получили вводные и вернёмся с рекомендациями'); }catch(e){}
+    try{ __confAt(btn); }catch(_){ try{ __conf(); }catch(__){} }
+try{ window.showToast && showToast('Отправлено', 'Мы получили вводные и вернёмся с рекомендациями'); }catch(e){}
 
     const payload = {
       type: 'calc_lead',
@@ -2793,6 +2815,76 @@ function __tgUser(){ try{ return Telegram?.WebApp?.initDataUnsafe?.user||null }c
 function __tgInit(){ try{ return Telegram?.WebApp?.initData||null }catch(e){ return null } }
 function __haptic(level){ try{ Telegram.WebApp.HapticFeedback.impactOccurred(level||'light'); }catch(e){ navigator.vibrate && navigator.vibrate(25); } }
 function __conf(){ try{ if(window.confetti) confetti({particleCount:140, spread:70}); }catch(e){} }
+
+function __confAt(el){
+  try{
+    if(!el || !window.confetti){ __conf(); return; }
+    const r = el.getBoundingClientRect();
+    const x = (r.left + r.width/2) / window.innerWidth;
+    const y = (r.top + r.height/2) / window.innerHeight;
+    confetti({particleCount: 140, spread: 70, origin: {x, y}});
+  }catch(e){ try{ __conf(); }catch(_){} }
+}
+function __normalizePhoneRU(raw){
+  let s = (raw||'').replace(/[^\d+]/g, '');
+  if(s.startsWith('+')) s = '+' + s.slice(1).replace(/\D/g, '');
+  else s = s.replace(/\D/g, '');
+  s = s.replace(/^\+/, '');
+  if(s.startsWith('8') && s.length===11) s = '7' + s.slice(1);
+  if(s.startsWith('7') && s.length===11) return s;
+  if(s.length===10 && s[0]==='9') return '7'+s;
+  if(s.length>11 && /\d{10}$/.test(s)) return '7' + s.slice(-10);
+  return (s.length===11 ? (s[0]==='7'?s : (s[0]==='8'?'7'+s.slice(1):'')) : '');
+}
+function __ensureContactHint(input){
+  try{
+    const hintId = 'contactHint';
+    let hint = document.getElementById(hintId);
+    if(!hint){
+      hint = document.createElement('div');
+      hint.id = hintId;
+      hint.style.opacity = '.7';
+      hint.style.fontSize = '12px';
+      hint.style.marginTop = '4px';
+      input.insertAdjacentElement('afterend', hint);
+    }
+    return hint;
+  }catch(_) { return null; }
+}
+function __getBookingISODate(){
+  try{
+    const lb = localStorage.getItem('last_booking') || '';
+    try{
+      const obj = JSON.parse(lb);
+      if (obj && obj.date) return String(obj.date);
+    }catch(_){}
+    const m = lb.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+    if(m) return m[1];
+  }catch(_){}
+  try{
+    const bd = localStorage.getItem('booking_date') || (window.booking_date||'');
+    if(/\d{4}-\d{2}-\d{2}/.test(bd)) return bd.match(/\d{4}-\d{2}-\d{2}/)[0];
+  }catch(_){}
+  return '';
+}
+function __fmtDMY(iso){
+  if(!iso) return '';
+  const m = iso.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if(!m) return '';
+  return m[3]+'.'+m[2]+'.'+m[1];
+}
+function __addBookingDatePrefixTo(el){
+  try{
+    if(!el) return;
+    const iso = __getBookingISODate();
+    if(!iso) return;
+    const d = __fmtDMY(iso);
+    const t = (el.textContent||'').trim();
+    if(!t.startsWith(d)){
+      el.textContent = (d + ' ' + t).trim();
+    }
+  }catch(_){}
+}
 async function __postGAS(payload){
   const C = window.APP_CONFIG||{}; if(!C.GAS_WEBHOOK) return {ok:false, error:'no_webhook'};
   const body = Object.assign({}, payload);
@@ -3199,6 +3291,8 @@ window.__domLog = function(){};
 <script>
 (function(){
   const C = window.APP_CONFIG || {};
+    try{ if(scope && scope._selDate){ localStorage.setItem('last_booking', JSON.stringify({date: scope._selDate, time: scope._selTime||'', duration_min: scope._durMin||0})); } }catch(_){}
+
   const GAS = (C && C.GAS_WEBHOOK) || '';
   if (!GAS) { console.warn('[fetch-wrapper] GAS_WEBHOOK not set'); return; }
 
@@ -3308,6 +3402,8 @@ window.__domLog = function(){};
 
   function authParams(){
     const C = window.APP_CONFIG || {};
+    try{ if(scope && scope._selDate){ localStorage.setItem('last_booking', JSON.stringify({date: scope._selDate, time: scope._selTime||'', duration_min: scope._durMin||0})); } }catch(_){}
+
     const tg = (window.Telegram && Telegram.WebApp) || null;
     const init = tg ? (tg.initData || '') : '';
     if (init) return { tg_init: init };
@@ -3317,12 +3413,16 @@ window.__domLog = function(){};
 
   window.apiBootstrap = function(){
     const C = window.APP_CONFIG || {};
+    try{ if(scope && scope._selDate){ localStorage.setItem('last_booking', JSON.stringify({date: scope._selDate, time: scope._selTime||'', duration_min: scope._durMin||0})); } }catch(_){}
+
     if (!C.GAS_WEBHOOK) return Promise.reject(new Error('GAS_WEBHOOK not set'));
     return jsonp(C.GAS_WEBHOOK, { mode:'bootstrap', ...authParams() })
       .then(j => { if(!j || !j.ok) throw new Error(j && j.error || 'bootstrap_failed'); return j.profile; });
   };
   window.apiEvent = function(type, data = {}){
     const C = window.APP_CONFIG || {};
+    try{ if(scope && scope._selDate){ localStorage.setItem('last_booking', JSON.stringify({date: scope._selDate, time: scope._selTime||'', duration_min: scope._durMin||0})); } }catch(_){}
+
     if (!C.GAS_WEBHOOK) return Promise.reject(new Error('GAS_WEBHOOK not set'));
     let t = type || '';
     if (!t && 'date' in data && 'time' in data) t = 'consult_booking';
@@ -3625,6 +3725,7 @@ window.__domLog = function(){};
     const lastPrize = (Array.isArray(p.prizes) && p.prizes.length) ? (p.prizes[p.prizes.length-1].title || p.prizes[p.prizes.length-1].name || '—') : '—';
     setVal(panel.querySelector('#ppPrize'), lastPrize);
     setVal(panel.querySelector('#ppBooking'), fmtDate(p.last_booking));
+    try{ __addBookingDatePrefixTo(document.querySelector('#ppBooking')); __addBookingDatePrefixTo(document.querySelector('#p_record')); }catch(_){}
     setVal(panel.querySelector('#ppRefs'), String(p.referrals_count ?? 0));
 
     // diff render prize list
@@ -3762,6 +3863,7 @@ window.__domLog = function(){};
     setVal('#ppPoints', String(p.points ?? 0));
     const lastPrize = (Array.isArray(p.prizes) && p.prizes.length) ? (p.prizes.at(-1).title || p.prizes.at(-1).name || '—') : '—';
     setVal('#ppPrize', lastPrize);
+    try{ __addBookingDatePrefixTo(document.querySelector('#ppBooking')); __addBookingDatePrefixTo(document.querySelector('#p_record')); }catch(_){}
     setVal('#ppBooking', fmtDate(p.last_booking));
     setVal('#ppRefs', String(p.referrals_count ?? 0));
     const ul = panel.querySelector('#ppPrizeList');
@@ -3855,6 +3957,7 @@ window.__domLog = function(){};
     if (!p) return;
     const lastPrize = (Array.isArray(p.prizes) && p.prizes.length) ? (p.prizes.at(-1).title || p.prizes.at(-1).name || '—') : '—';
     setVal('#ppPoints', String(p.points ?? 0));
+    try{ __addBookingDatePrefixTo(document.querySelector('#ppBooking')); __addBookingDatePrefixTo(document.querySelector('#p_record')); }catch(_){}
     setVal('#ppPrize', lastPrize);
     setVal('#ppBooking', fmtDate(p.last_booking));
     setVal('#ppRefs', String(p.referrals_count ?? 0));
@@ -3937,5 +4040,42 @@ window.__domLog = function(){};
 
     <!-- removed: legacy fast-open rAF handler (duplicate) -->
 
+
+<script>
+// Spin: capture, single source of truth — prize + confetti-at-button + last_prizes(1) + webhook + render ppPrizeList
+(function(){
+  const btn = document.getElementById('spin'); const out = document.getElementById('spinRes');
+  if(!btn||!out) return;
+  btn.addEventListener('click', function(e){
+    e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+    const PRIZES = ['🎁 Шаблон «Оффер»','📘 Чек-лист аудита','💬 +30 мин консультации','🧮 Доступ к калькулятору PRO','⭐ Приоритетный разбор'];
+    const win = PRIZES[Math.floor(Math.random()*PRIZES.length)];
+    out.textContent = 'Выпало: ' + win;
+    try{ __confAt(btn); }catch(_){ try{ __conf(); }catch(__){} }
+    try{
+      const arr = JSON.parse(localStorage.getItem('last_prizes')||'[]'); arr.push(win);
+      localStorage.setItem('last_prizes', JSON.stringify(arr.slice(-1)));
+      localStorage.setItem('stat_prizes', String(+(localStorage.getItem('stat_prizes')||0)+1));
+      localStorage.setItem('stat_points', String(+(localStorage.getItem('stat_points')||0)+10));
+    }catch(_){}
+    try{
+      if(window.apiEvent){ window.apiEvent('community_prize', {prize: win, uid: (__uid&&__uid())||'', ts: new Date().toISOString()}); }
+      const C = window.APP_CONFIG||{};
+      if(C.GAS_WEBHOOK){
+        const payload = { type:'community_prize', prize: win, ts: new Date().toISOString(), uid: (__uid&&__uid())||'', page: (location.hash||'#home').slice(1) };
+        if (C.USE_TG_SIGNATURE && (typeof __tgInit==='function') && __tgInit()) payload.tg_init = __tgInit();
+        fetch(C.GAS_WEBHOOK, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }).catch(()=>{});
+      }
+    }catch(_){}
+    try{
+      const ul = document.getElementById('ppPrizeList');
+      if(ul){ ul.innerHTML=''; const li=document.createElement('li'); li.textContent = win; li.style.cssText='padding:6px 8px;border:1px solid rgba(255,255,255,.14);border-radius:8px;background:rgba(255,255,255,.04)'; ul.appendChild(li); }
+      const pp = document.getElementById('ppPrize'); if(pp) pp.textContent = win;
+    }catch(_){}
+  }, {capture:true});
+})();
+</script>
+
+<script>(function(){ try{ __addBookingDatePrefixTo(document.querySelector('#ppBooking')); __addBookingDatePrefixTo(document.querySelector('#p_record')); }catch(_){}})();</script>
 </body>
 </html>
