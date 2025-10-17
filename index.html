@@ -1174,7 +1174,7 @@ function __updateURL(page){
   const btn = document.querySelector('.console-toggle');
   if(btn && panel){
     btn.addEventListener('click', ()=>{
-      panel.style.display = panel.style.display==='block' ? 'none' : 'block';
+      panel.style.display='block'; panel.classList.toggle('open');
     });
   } //
 })();
@@ -2763,10 +2763,10 @@ document.addEventListener('click', function(e){ if(e.target.closest('.btn')) __h
     panel.style.maxHeight='70vh';
     panel.style.width='min(420px,92vw)';
   }
-  function closePanel(){ panel.style.display='none'; }
+  function closePanel(){ panel.classList.remove('open'); }
 
   btn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); 
-    if(panel.style.display==='block') closePanel(); else openPanel();
+    if (panel.classList.contains('open')) closePanel(); else openPanel();
   }, {passive:false});
   panel.addEventListener('click', (e)=>{
     if(e.target.id==='profClose') { closePanel(); }
@@ -2888,10 +2888,10 @@ window.__domLog = function(){};
         <a class="btn btn-primary" data-open-bot href="https://t.me/${bot}">Открыть бота</a>
         <button class="btn btn-ghost" id="profClose">Закрыть</button>
       </div>`;
-    panel.style.display='block'; panel.style.maxHeight='70vh'; panel.style.width='min(420px,92vw)';
-    panel.querySelector('#profClose')?.addEventListener('click', ()=> panel.style.display='none');
+    panel.style.display='block'; panel.classList.add('open'); panel.style.maxHeight='70vh'; panel.style.width='min(420px,92vw)';
+    panel.querySelector('#profClose')?.addEventListener('click', ()=> panel.classList.remove('open'));
   }
-  btn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); if(panel.style.display==='block') panel.style.display='none'; else { render(); let tries=0; const t=setInterval(()=>{ const u=__tgUser(); if(u||tries++>20){clearInterval(t); if(u) render();}},150); } }, {passive:false});
+  btn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); if(panel.style.display==='block') panel.classList.remove('open'); else { render(); let tries=0; const t=setInterval(()=>{ const u=__tgUser(); if(u||tries++>20){clearInterval(t); if(u) render();}},150); } }, {passive:false});
 })();
 
 /* 6) Bonuses CTA safe-handlers: конфетти + событие в бота, без ломки слоя */
@@ -3086,9 +3086,9 @@ window.__domLog = function(){};
     panel.style.display='block';
     panel.style.maxHeight='70vh'; panel.style.width='min(420px,92vw)';
   }
-  function open(){ render(); __haptic('light'); let tries=0; const t=setInterval(()=>{ const u = (Telegram?.WebApp?.initDataUnsafe?.user || null); if(u || tries++>20){ clearInterval(t); if(u) render(); }}, 150); }
-  function close(){ panel.style.display='none'; }
-  btn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); (panel.style.display==='block') ? close() : open(); }, {passive:false});
+  function open(){ panel.style.display='block'; panel.classList.add('open');  render(); __haptic('light'); let tries=0; const t=setInterval(()=>{ const u = (Telegram?.WebApp?.initDataUnsafe?.user || null); if(u || tries++>20){ clearInterval(t); if(u) render(); }}, 150); }
+  function close(){ panel.classList.remove('open'); }
+  btn.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); (panel.classList.contains('open')) ? close() : open(); }, {passive:false});
   panel.addEventListener('click', (e)=>{ if(e.target.id==='profClose'){ close(); }}, {passive:true});
 })();
 </script>
@@ -3438,7 +3438,7 @@ window.__domLog = function(){};
         ul.appendChild(li);
       });
     }
-    panel.querySelector('#profClose')?.addEventListener('click', ()=> panel.style.display='none');
+    panel.querySelector('#profClose')?.addEventListener('click', ()=> panel.classList.remove('open'));
     panel.style.display='block'; panel.style.maxHeight='70vh'; panel.style.width='min(420px,92vw)';
   }
 
@@ -3614,7 +3614,7 @@ window.__domLog = function(){};
     av.textContent = initials(name);
     const nm = panel.querySelector('#ppName'); nm.classList.remove('skel'); nm.textContent = name;
     const un = panel.querySelector('#ppUname'); un.classList.remove('skel'); un.textContent = uname;
-    panel.querySelector('#ppClose')?.addEventListener('click', ()=> panel.style.display='none');
+    panel.querySelector('#ppClose')?.addEventListener('click', ()=> panel.classList.remove('open'));
   }
 
   function setVal(el, text){ if(!el) return; el.classList.remove('skel'); el.textContent = text; }
@@ -3803,7 +3803,9 @@ window.__domLog = function(){};
     ev.preventDefault();
     const panel = document.getElementById('consolePanel'); if (!panel) return;
     const opening = !panel.classList.contains('open');
-    panel.classList.toggle('open');
+      if (opening) panel.style.display='block';
+
+  panel.classList.toggle('open');
     if (opening){
       // hydrate from cache instantly
       try{
