@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <title>Мини-апп</title>
+  <title>Правильный Учёт — мини‑приложение</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="format-detection" content="telephone=no" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -10,48 +10,58 @@
   <style>
     :root{
       --bg:#0b0d10; --card:#12161c; --muted:#7b8496; --text:#e8eef9; --primary:#69e1d0; --accent:#7b5bff; --border:rgba(255,255,255,0.08);
-      --radius:14px; --pad:14px;
+      --radius:14px; --pad:14px; --content-max:1080px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0;background:linear-gradient(180deg,#0b0d10 0%,#0e1218 100%);color:var(--text);font:16px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
-    .wrap{max-width:880px;margin:0 auto;padding:16px 14px 48px;}
-    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .wrap{max-width:var(--content-max);margin:0 auto;padding:16px 14px 48px;}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .brand-wrap{display:flex;align-items:center;gap:12px}
     .logo{width:44px;height:44px;border-radius:9px;background:#0f1318;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden}
     .brand{font-family:Montserrat,Inter,sans-serif;font-weight:700;letter-spacing:.2px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:var(--pad);}
-    h1,h2{margin:0 0 10px 0}
-    h1{font-family:Montserrat,Inter,sans-serif;font-size:20px}
-    h2{font-size:18px}
-    .muted{color:var(--muted)}
-    .grid{display:grid;gap:12px}
-    .grid.cols-2{grid-template-columns:1fr 1fr}
-    @media (max-width:720px){ .grid.cols-2{grid-template-columns:1fr} }
 
-    .btn{appearance:none;border:1px solid var(--border);background:#141a21;color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer;transition:transform .05s ease, border-color .2s ease;}
-    .btn:hover{border-color:#202a34}
-    .btn:active{transform:translateY(1px)}
-    .btn-primary{background:linear-gradient(180deg,#6de6d5,#46c6b1);color:#0b0f12;border-color:transparent;font-weight:600}
+    nav#spa-nav{position:sticky;top:0;z-index:20;display:flex;gap:8px;overflow:hidden;padding:6px;margin:8px 0 18px;background:rgba(10,12,22,.65);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.35)}
+    #spa-nav .track{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;-ms-overflow-style:none;scrollbar-width:none}
+    #spa-nav .track::-webkit-scrollbar{display:none}
+    #spa-nav .btn{appearance:none;border:1px solid transparent;background:transparent;color:var(--text);font-weight:700;font-size:14px;padding:9px 12px;border-radius:12px;cursor:pointer;text-decoration:none;transition:.18s;white-space:nowrap;position:relative;flex:0 0 auto}
+    #spa-nav .btn.active{background:linear-gradient(135deg,var(--accent),var(--primary));color:#0b0f12;box-shadow:0 10px 22px rgba(91,140,255,.35)}
+    #spa-nav .bubble{position:absolute;z-index:0;height:32px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--primary));box-shadow:0 10px 22px rgba(91,140,255,.35);transition:left .24s,width .24s;will-change:left,width}
+
+    .h1{font-size:19px;line-height:1.2;font-weight:800;margin:14px 0 10px}
+    .h1 span{background:linear-gradient(90deg,var(--accent),var(--primary));-webkit-background-clip:text;color:transparent}
+    .lead{color:var(--muted);font-size:17px;max-width:820px}
+
+    .grid{display:grid;gap:14px}
+    @media(min-width:920px){.grid-2{grid-template-columns:repeat(2,1fr)}.h1{font-size:44px}}
+
+    .card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:18px;backdrop-filter:blur(8px)}
+    .card h3{margin:0 0 8px;font-size:18px}
+
+    .list{list-style:none;margin:0;padding:0;display:grid;gap:10px;color:var(--muted)}
+    .list li{display:flex;gap:10px;align-items:flex-start}
+    .dot{width:10px;height:10px;border-radius:50%;margin-top:6px;background:linear-gradient(135deg,var(--primary),var(--accent))}
+
+    .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+    .btn{appearance:none;border:1px solid var(--border);background:#141a21;color:var(--text);padding:10px 12px;border-radius:14px;cursor:pointer;transition:.18s}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--primary));color:#0b0f12;border-color:transparent;font-weight:800}
     .btn-ghost{background:transparent;border-color:var(--border);color:var(--text)}
-    .btn-row{display:flex;flex-wrap:wrap;gap:8px}
 
-    /* Hero */
-    .hero{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .hero .copy{font-size:14px;color:var(--muted)}
-    .hero .cta{display:flex;gap:8px;align-items:center}
+    .highlight-banner{margin:14px 0;padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,rgba(61,224,197,.14),rgba(123,91,255,.14));color:var(--primary);font-weight:600;font-size:15px}
 
     /* Calendar */
     .cal-wrap{display:grid;gap:12px}
     .dur-row{display:flex;gap:8px;flex-wrap:wrap}
-    .cal{background:#0f141a;border:1px solid var(--border);border-radius:12px;padding:10px}
-    .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-    .cal-head .mon{font-weight:600}
+    .calendar{user-select:none;background:#0f141a;border:1px solid var(--border);border-radius:12px;padding:10px}
+    .cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .cal-head .mon{font-weight:800}
     .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-    .cal-cell{padding:8px 0;border:1px solid var(--border);border-radius:10px;text-align:center;user-select:none;cursor:pointer;min-height:36px;display:flex;align-items:center;justify-content:center}
-    .cal-dow{font-size:12px;color:var(--muted);background:transparent;border-color:transparent;cursor:default}
-    .cal-cell.off{opacity:.35}
-    .cal-cell.muted{color:var(--muted)}
-    .cal-cell.sel{outline:2px solid var(--accent);border-color:transparent;box-shadow:0 0 0 2px rgba(123,91,255,.25) inset}
+    .cal-cell{height:36px;display:grid;place-items:center;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);font-weight:600;cursor:pointer;transition:transform .15s ease, background .15s ease, color .15s ease}
+    .cal-cell:hover{transform:translateY(-1px)}
+    .cal-cell.muted{opacity:.35}
+    .cal-cell.off{opacity:.25;pointer-events:none}
+    .cal-cell.sel{color:#0b0f12;background:linear-gradient(135deg,var(--accent),var(--primary));border-color:transparent}
+    .cal-dow{opacity:.6;font-weight:700;font-size:12px}
 
     .slots{display:flex;gap:8px;flex-wrap:wrap;opacity:0;transform:translateY(4px);transition:all .2s ease}
     .slots.show{opacity:1;transform:translateY(0)}
@@ -59,87 +69,111 @@
     input[type="tel"],input[type="text"]{flex:1;min-width:220px;background:#0f141a;border:1px solid var(--border);border-radius:12px;color:var(--text);padding:10px 12px;font-size:16px;outline:none}
     input::placeholder{color:#6e7786}
 
-    /* Wheel, bonuses, profile */
-    .section{display:grid;gap:10px}
-    .profile-grid{display:grid;gap:6px}
-
     /* Toasts */
     .toasts{position:fixed;right:12px;bottom:12px;display:grid;gap:8px;z-index:99999}
     .toast{background:#0f1318;border:1px solid var(--border);border-radius:12px;padding:10px 12px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
-    .toast .t{font-weight:600;margin-bottom:2px}
+    .toast .t{font-weight:800;margin-bottom:2px}
     .toast .m{font-size:13px;color:var(--muted)}
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <div class="logo" aria-label="logo"></div>
-      <div class="brand">Правильный Учёт</div>
+      <div class="brand-wrap">
+        <div class="logo" aria-label="logo"></div>
+        <div>
+          <div class="brand">Правильный Учёт</div>
+          <div class="slogan" style="color:var(--muted);font-size:13px">Считаем прибыль, а не клики</div>
+        </div>
+      </div>
     </header>
 
-    <section class="card hero">
-      <div class="copy">Покажем, где утекают деньги, и дадим план действий с понятной экономией.</div>
-      <div class="cta">
-        <button id="ctaCalc" class="btn btn-primary">Получить персональный расчёт</button>
-      </div>
-    </section>
+    <nav id="spa-nav"><div class="track">
+      <a class="btn active" data-page="home" href="#home">🏠 Главная</a>
+      <a class="btn" data-page="services" href="#services">🧩 Услуги</a>
+      <a class="btn" data-page="about" href="#about">👩‍💼 Обо мне</a>
+      <a class="btn" data-page="bonuses" href="#bonuses">🎁 Бонусы</a>
+      <a class="btn" data-page="consult" href="#consult">📅 Консультация</a>
+      <a class="btn" data-page="invite" href="#invite">🎯 Партнёрка</a>
+      <span class="bubble" aria-hidden="true"></span>
+    </div></nav>
 
-    <!-- КАЛЕНДАРЬ -->
-    <section class="card cal-wrap" id="secCalendar">
-      <h2>Запись на консультацию</h2>
-      <div class="dur-row">
-        <button class="btn dur" data-min="30">30 мин</button>
-        <button class="btn dur" data-min="60">60 мин</button>
-        <button class="btn dur" data-min="90">90 мин</button>
-      </div>
-      <div id="cal" class="cal"></div>
-      <div id="slots" class="slots"></div>
-      <div class="contact-row">
-        <input id="contact" type="tel" inputmode="numeric" placeholder="@username или +79991234567" />
-        <button id="confirmConsult" class="btn btn-primary">Подтвердить</button>
-      </div>
-    </section>
+    <main>
+      <!-- HOME -->
+      <section class="card" id="home">
+        <div class="h1">Покажем, где утекают деньги и <span>дадим план действий</span> с понятной экономией</div>
+        <p class="lead">❗️ <strong>Если по итогам не станет ясно</strong>, как улучшить результат — дарим 60 минут консультации бесплатно.</p>
+        <div class="grid grid-2" style="margin-top:14px">
+          <div class="card" style="background:transparent;border-color:transparent;padding:0">
+            <div class="h1" style="margin-bottom:10px">Быстрый <span>расчёт прибыли</span></div>
+            <div class="cta"><button class="btn btn-primary" id="ctaCalc">Получить персональный расчёт</button></div>
+          </div>
+          <div class="card">
+            <div class="h1" style="margin-bottom:20px">Что <span>делать</span> дальше</div>
+            <ul class="list">
+              <li><span class="dot"></span>Запускаем калькулятор в боте</li>
+              <li><span class="dot"></span>Фиксируем источник «утечек»</li>
+              <li><span class="dot"></span>Формируем пошаговый план</li>
+            </ul>
+            <div class="highlight-banner" style="text-align:left"><strong>Бонус:</strong> мини‑гайд «Как перейти на выгодный режим»</div>
+          </div>
+        </div>
+      </section>
 
-    <!-- КОЛЕСО ПРИЗОВ -->
-    <section class="card section" id="secWheel">
-      <h2>Колесо призов</h2>
-      <div class="btn-row">
-        <button id="spin" class="btn">Крутить</button>
-      </div>
-      <div id="spinRes" class="muted">—</div>
-    </section>
+      <!-- BONUSES -->
+      <section class="card" id="bonuses" style="margin-top:18px">
+        <h2>Бонусы</h2>
+        <div class="btn-row cta">
+          <button class="btn bonus" data-code="Оформить регистрацию">Оформить регистрацию</button>
+          <button class="btn bonus" data-code="Подобрать режим">Подобрать режим</button>
+          <button class="btn bonus" data-code="Персональный экспресс-аудит">Получить экспресс‑аудит</button>
+        </div>
+      </section>
 
-    <!-- БОНУСЫ -->
-    <section class="card section" id="secBonuses">
-      <h2>Бонусы</h2>
-      <div class="btn-row">
-        <button class="btn bonus" data-code="Оформить регистрацию">Оформить регистрацию</button>
-        <button class="btn bonus" data-code="Подобрать режим">Подобрать режим</button>
-        <button class="btn bonus" data-code="Персональный экспресс-аудит">Получить экспресс-аудит</button>
-      </div>
-    </section>
+      <!-- WHEEL -->
+      <section class="card" id="wheel" style="margin-top:18px">
+        <h2>Колесо призов</h2>
+        <div class="cta"><button class="btn" id="spin">Крутить 🎡</button></div>
+        <div id="spinRes" class="muted">—</div>
+      </section>
 
-    <!-- ПРОФИЛЬ -->
-    <section class="card section" id="secProfile">
-      <h2>Профиль</h2>
-      <div class="profile-grid">
+      <!-- CONSULT (Calendar) -->
+      <section class="card cal-wrap" id="consult" style="margin-top:18px">
+        <h2>Запись на консультацию</h2>
+        <div class="dur-row">
+          <button class="btn dur btn-primary" data-min="30">30 мин</button>
+          <button class="btn dur" data-min="60">60 мин</button>
+          <button class="btn dur" data-min="90">90 мин</button>
+        </div>
+        <div id="cal" class="calendar"></div>
+        <div id="slots" class="slots"></div>
+        <div class="contact-row">
+          <input id="contact" type="tel" inputmode="numeric" placeholder="@username или +79991234567" />
+          <button id="confirmConsult" class="btn btn-primary">Подтвердить</button>
+        </div>
+      </section>
+
+      <!-- PROFILE (light) -->
+      <section class="card" id="profile" style="margin-top:18px">
+        <h2>Профиль</h2>
         <div><b>Последний приз:</b> <span id="profPrize">—</span></div>
         <div><b>Последняя запись:</b> <span id="profBook">—</span></div>
         <div><b>Реферальные очки:</b> <span id="profPoints">—</span></div>
-      </div>
-      <div class="muted" id="profHint">Открывается мгновенно; данные подгружаются плавно…</div>
-    </section>
+        <div class="muted" id="profHint">Открывается мгновенно; данные подгружаются…</div>
+      </section>
+
+    </main>
 
     <div class="toasts" aria-live="polite"></div>
   </div>
 
-  <!-- Telegram SDK (опционально, если внутри WebApp) -->
+  <!-- Telegram SDK (если запускаешь в WebApp) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <script>
     /* ==== CONFIG ==== */
     window.APP_CONFIG = window.APP_CONFIG || {};
-    APP_CONFIG.API_BASE = APP_CONFIG.API_BASE || "https://cifrovichkoff.cyberian13.workers.dev";
+    APP_CONFIG.API_BASE = APP_CONFIG.API_BASE || "https://cifrovichkoff.cyberian13.workers.dev"; // ← замени на свой воркер
     APP_CONFIG.ENABLE_HOOKS = (APP_CONFIG.ENABLE_HOOKS ?? true);
 
     /* ==== Автобрендинг: логотип + фавиконки ==== */
@@ -147,153 +181,68 @@
       const host = document.querySelector('.logo');
       if (host){
         const cand = ['logo.svg','logo.png','logo.jpg','logo.webp'];
-        (async () => {
-          for (const f of cand){
-            try{ const head = await fetch(f,{method:'HEAD'}); if (head.ok){ const img=new Image(); img.src=f; img.alt='logo'; img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block'; host.innerHTML=''; host.appendChild(img); break; } }
-            catch(_){}
-          }
-        })();
+        (async () => { for (const f of cand){ try{ const r=await fetch(f,{method:'HEAD'}); if(r.ok){ const img=new Image(); img.src=f; img.alt='logo'; img.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block'; host.innerHTML=''; host.appendChild(img); break; } }catch(_){}} })();
       }
-      ['favicon-16.png','favicon.png','favicon.ico','logo.svg'].forEach(h=>{
-        const l=document.createElement('link'); l.rel='icon'; l.href=h; document.head.appendChild(l);
-      });
+      ['favicon-16.png','favicon.png','favicon.ico','logo.svg'].forEach(h=>{ const l=document.createElement('link'); l.rel='icon'; l.href=h; document.head.appendChild(l); });
     })();
 
-    /* ==== Toast (с дедупликацией) ==== */
+    /* ==== Toast (дедупликация) ==== */
     const __toasts = new Set();
     function showToast(title, msg='', key='', timeout=2600){
-      if (key && __toasts.has(key)) return;
-      if (key) __toasts.add(key);
-      const box = document.querySelector('.toasts');
-      const t = document.createElement('div'); t.className='toast';
-      t.innerHTML = `<div class="t">${title}</div>${msg?`<div class="m">${msg}</div>`:''}`;
-      box.appendChild(t);
+      if (key && __toasts.has(key)) return; if (key) __toasts.add(key);
+      let box=document.querySelector('.toasts'); const t=document.createElement('div'); t.className='toast';
+      t.innerHTML=`<div class="t">${title}</div>${msg?`<div class="m">${msg}</div>`:''}`; box.appendChild(t);
       setTimeout(()=>{ t.remove(); if(key) __toasts.delete(key); }, timeout);
     }
 
     /* ==== Локальные конфетти у кнопки ==== */
     function blastConfetti(btn, count=24){
       try{
-        const rect = btn.getBoundingClientRect();
-        const root = document.createElement('div');
+        const rect = btn.getBoundingClientRect(); const root=document.createElement('div');
         root.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;pointer-events:none;overflow:visible;z-index:9999`;
         document.body.appendChild(root);
-        for (let i=0;i<count;i++){
-          const p=document.createElement('i');
-          const x=rect.width/2, y=rect.height/2;
-          const dx=(Math.random()*2-1)*80, dy=(Math.random()*-1)*120-40;
-          const rot=(Math.random()*360)|0, size=6+(Math.random()*6|0);
+        for(let i=0;i<count;i++){
+          const p=document.createElement('i'); const x=rect.width/2, y=rect.height/2; const dx=(Math.random()*2-1)*80, dy=(Math.random()*-1)*120-40; const rot=(Math.random()*360)|0; const size=6+(Math.random()*6|0);
           p.style.cssText=`position:absolute;left:${x}px;top:${y}px;width:${size}px;height:${size}px;background:currentColor;border-radius:2px;transform:translate(-50%,-50%) rotate(${rot}deg);opacity:1`;
-          p.style.color=['#7b5bff','#3de0c5','#5b8cff','#ffffff'][i%4];
-          root.appendChild(p);
+          p.style.color=['#7b5bff','#3de0c5','#5b8cff','#ffffff'][i%4]; root.appendChild(p);
           const tx=x+dx, ty=y+dy;
-          p.animate([{transform:`translate(-50%,-50%) rotate(${rot}deg)`,opacity:1},
-                     {transform:`translate(${tx-rect.left}px,${ty-rect.top}px) rotate(${rot+180}deg)`,opacity:0}],
-                    {duration:700+(Math.random()*400|0),easing:'cubic-bezier(.2,.8,.2,1)'}).onfinish=()=>p.remove();
+          p.animate([{transform:`translate(-50%,-50%) rotate(${rot}deg)`,opacity:1},{transform:`translate(${tx-rect.left}px,${ty-rect.top}px) rotate(${rot+180}deg)`,opacity:0}],{duration:700+(Math.random()*400|0),easing:'cubic-bezier(.2,.8,.2,1)'}).onfinish=()=>p.remove();
         }
-        setTimeout(()=>root.remove(), 1200);
+        setTimeout(()=>root.remove(),1200);
       }catch(_){}
     }
 
-    /* ==== Telegram context (если доступен) ==== */
+    /* ==== Telegram context ==== */
     const tg = (window.Telegram && Telegram.WebApp) ? Telegram.WebApp : null;
     function getTgId(){ try{ return tg?.initDataUnsafe?.user?.id || null }catch(_){ return null } }
     function getStartParam(){ try{ return tg?.initDataUnsafe?.start_param || '' }catch(_){ return '' } }
     function getInitData(){ try{ return tg?.initData || '' }catch(_){ return '' } }
+    try{ tg?.ready(); tg?.expand?.(); }catch(_){}
 
     /* ==== API helpers ==== */
     function qp(base, params){ const u=new URL(base); Object.entries(params||{}).forEach(([k,v])=>{ if(v!==undefined&&v!==null) u.searchParams.set(k,String(v)); }); return u; }
-    async function apiGet(path, params){
-      const r=await fetch(qp(APP_CONFIG.API_BASE+path, params));
-      const t=await r.text(); try{return JSON.parse(t)}catch{return {ok:false,error:'bad_json',raw:t}}
-    }
-    async function apiPost(path, body){
-      body = body || {};
-      if (!body.tg_id)        body.tg_id        = String(getTgId()||'');
-      if (!body._start_param) body._start_param = getStartParam();
-      if (!body._init_data)   body._init_data   = getInitData();
-      const r=await fetch(APP_CONFIG.API_BASE+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-      const t=await r.text(); try{return JSON.parse(t)}catch{return {ok:false,error:'bad_json',raw:t}}
-    }
+    async function apiGet(path, params){ const r=await fetch(qp(APP_CONFIG.API_BASE+path, params)); const t=await r.text(); try{return JSON.parse(t)}catch{return {ok:false,error:'bad_json',raw:t}} }
+    async function apiPost(path, body){ body=body||{}; if(!body.tg_id) body.tg_id=String(getTgId()||''); if(!body._start_param) body._start_param=getStartParam(); if(!body._init_data) body._init_data=getInitData(); const r=await fetch(APP_CONFIG.API_BASE+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); const t=await r.text(); try{return JSON.parse(t)}catch{return {ok:false,error:'bad_json',raw:t}} }
 
-    /* ==== Телефон: мягкая маска +7XXXXXXXXXX + анти-zoom ==== */
-    (function phoneMask(){
-      const el=document.getElementById('contact'); if(!el) return;
-      el.setAttribute('inputmode','numeric'); el.setAttribute('autocomplete','tel'); el.style.fontSize='16px';
-      const fmt=v=>{
-        const d=(v||'').replace(/\D+/g,''); let p=d;
-        if (p.startsWith('8')) p='7'+p.slice(1);
-        if (!p.startsWith('7')) p='7'+p;
-        return '+' + p.slice(0,11);
-      };
-      el.addEventListener('input', ()=>{
-        const s=el.selectionStart, before=el.value, after=fmt(before);
-        el.value=after; const shift=after.length-before.length; el.setSelectionRange(s+shift, s+shift);
-      });
-    })();
+    /* ==== Телефон: мягкая маска + анти‑zoom ==== */
+    (function phoneMask(){ const el=document.getElementById('contact'); if(!el) return; el.setAttribute('inputmode','numeric'); el.setAttribute('autocomplete','tel'); el.style.fontSize='16px'; const fmt=v=>{ const d=(v||'').replace(/\D+/g,''); let p=d; if(p.startsWith('8')) p='7'+p.slice(1); if(!p.startsWith('7')) p='7'+p; return '+'+p.slice(0,11) }; el.addEventListener('input', ()=>{ const s=el.selectionStart, before=el.value, after=fmt(before); el.value=after; const shift=after.length-before.length; el.setSelectionRange(s+shift, s+shift); }); })();
 
     /* ==== Персональный расчёт ==== */
-    (function personalCalc(){
-      const btn=document.getElementById('ctaCalc'); if(!btn) return;
-      btn.addEventListener('click', async ()=>{
-        blastConfetti(btn, 28);
-        showToast('Заявка отправлена', 'Подготовим персональный расчёт', 'calc_sent');
-        if (!APP_CONFIG.ENABLE_HOOKS) return;
-        try{
-          const res = await apiPost('/api/prize/code', { code:'Персональный расчет' });
-          if (!res?.ok) console.debug('prize/code skipped', res);
-        }catch(e){ console.debug('prize/code error', e); }
-      });
-    })();
+    (function personalCalc(){ const btn=document.getElementById('ctaCalc'); if(!btn) return; btn.addEventListener('click', async ()=>{ blastConfetti(btn, 28); showToast('Заявка отправлена','Подготовим персональный расчёт','calc_sent'); if(!APP_CONFIG.ENABLE_HOOKS) return; try{ await apiPost('/api/prize/code',{code:'Персональный расчет'}); }catch(_){}}); })();
 
     /* ==== Колесо призов ==== */
-    (function wheel(){
-      const btn=document.getElementById('spin'), out=document.getElementById('spinRes');
-      if(!btn||!out) return;
-      btn.addEventListener('click', async ()=>{
-        blastConfetti(btn, 30);
-        try{
-          const res = await apiPost('/api/prize/spin', {});
-          if (res?.ok){
-            out.textContent = 'Выпало: ' + (res.prize?.title || 'приз');
-            showToast('Приз зафиксирован', 'Смотри в профиле', 'spin_ok');
-          } else {
-            out.textContent='Крутилка скоро будет доступна';
-            showToast('Скоро будет доступно', 'Ведение в таблице отключено', 'spin_warn');
-          }
-        }catch(_){ out.textContent='Ошибка сети'; }
-      });
-    })();
+    (function wheel(){ const btn=document.getElementById('spin'), out=document.getElementById('spinRes'); if(!btn||!out) return; btn.addEventListener('click', async ()=>{ blastConfetti(btn, 30); try{ const res=await apiPost('/api/prize/spin',{}); if(res?.ok){ out.textContent='Выпало: '+(res.prize?.title||'приз'); showToast('Приз зафиксирован','Смотри в профиле','spin_ok'); } else { out.textContent='Крутилка скоро будет доступна'; showToast('Скоро будет доступно','Ведение в таблице отключено','spin_warn'); } }catch(_){ out.textContent='Ошибка сети'; } }); })();
 
     /* ==== Бонусы ==== */
-    (function bonuses(){
-      document.querySelectorAll('.btn.bonus').forEach(btn=>{
-        btn.addEventListener('click', async ()=>{
-          const code = btn.dataset.code || 'Бонус';
-          blastConfetti(btn, 24);
-          showToast('Отправлено', code, `bonus_${code}`);
-          if (!APP_CONFIG.ENABLE_HOOKS) return;
-          try{
-            await apiPost('/api/prize/code', { code });
-          }catch(_){}
-        });
-      });
-    })();
+    (function bonuses(){ document.querySelectorAll('.btn.bonus').forEach(btn=>{ btn.addEventListener('click', async ()=>{ const code=btn.dataset.code||'Бонус'; blastConfetti(btn,24); showToast('Отправлено',code,`bonus_${code}`); if(!APP_CONFIG.ENABLE_HOOKS) return; try{ await apiPost('/api/prize/code',{code}); }catch(_){} }); }); })();
 
     /* ==== Онбординг-бонус +100 ==== */
-    (function welcomeBonus(){
-      if (localStorage.getItem('onb_bonus_v1')) return;
-      localStorage.setItem('onb_bonus_v1','1');
-      (async ()=>{
-        try{ await apiPost('/api/bonus/grant', { kind:'welcome', points:100 }); }catch(_){}
-        showToast('+100 бонусов', 'Приветствуем 👋', 'onb100', 3000);
-      })();
-    })();
+    (function welcomeBonus(){ if(localStorage.getItem('onb_bonus_v1')) return; localStorage.setItem('onb_bonus_v1','1'); (async()=>{ try{ await apiPost('/api/bonus/grant',{kind:'welcome',points:100}); }catch(_){ } showToast('+100 бонусов','Приветствуем 👋','onb100',3000); })(); })();
 
     /* ================== КАЛЕНДАРЬ ================== */
     (function calendar(){
       const calWrap=document.getElementById('cal'), slotsBox=document.getElementById('slots');
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Moscow';
+      const tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'Europe/Moscow';
       const durBtns=[...document.querySelectorAll('.dur')];
       const confirmBtn=document.getElementById('confirmConsult');
       const contactEl=document.getElementById('contact');
@@ -302,132 +251,30 @@
       let cur=new Date(), y=cur.getFullYear(), m=cur.getMonth();
       let FREE={}, selDate=null, selTime=null, selDur=30, GRAN=30, SERVER_FILTERED=false;
 
-      durBtns.forEach(b=>{
-        b.addEventListener('click', async ()=>{
-          durBtns.forEach(x=>x.classList.remove('btn-primary')); b.classList.add('btn-primary');
-          selDur=+b.dataset.min||30; await syncMonth(); if(selDate) renderSlots(selDate);
-        });
-      });
+      durBtns.forEach(b=>{ b.addEventListener('click', async ()=>{ durBtns.forEach(x=>x.classList.remove('btn-primary')); b.classList.add('btn-primary'); selDur=+b.dataset.min||30; await syncMonth(); if(selDate) renderSlots(selDate); }); });
 
       function dd2(n){return String(n).padStart(2,'0')}
-      function drawCalendar(){
-        calWrap.innerHTML='';
-        const head=document.createElement('div'); head.className='cal-head';
-        const mon=new Date(y,m,1);
-        const label=mon.toLocaleDateString('ru-RU',{month:'long',year:'numeric'});
-        head.innerHTML=`<div class="mon">${label[0].toUpperCase()+label.slice(1)}</div>
-          <div class="cta"><button class="btn btn-ghost" id="pm">◀</button><button class="btn btn-ghost" id="nm">▶</button></div>`;
-        calWrap.appendChild(head);
+      function drawCalendar(){ calWrap.innerHTML=''; const head=document.createElement('div'); head.className='cal-head'; const mon=new Date(y,m,1); const label=mon.toLocaleDateString('ru-RU',{month:'long',year:'numeric'}); head.innerHTML=`<div class="mon">${label[0].toUpperCase()+label.slice(1)}</div><div class="cta"><button class="btn btn-ghost" id="pm">◀</button><button class="btn btn-ghost" id="nm">▶</button></div>`; calWrap.appendChild(head); const grid=document.createElement('div'); grid.className='cal-grid'; calWrap.appendChild(grid); ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(d=>{const c=document.createElement('div'); c.className='cal-cell cal-dow'; c.textContent=d; grid.appendChild(c);}); const firstDow=(new Date(y,m,1).getDay()+6)%7; for(let i=0;i<firstDow;i++){const s=document.createElement('div'); s.className='cal-cell muted'; grid.appendChild(s);} const count=new Date(y,m+1,0).getDate(); for(let d=1; d<=count; d++){ const iso=`${y}-${dd2(m+1)}-${dd2(d)}`; const cell=document.createElement('div'); cell.className='cal-cell'; cell.textContent=d; cell.dataset.iso=iso; cell.onclick=()=>{ selDate=iso; renderSlots(iso); grid.querySelectorAll('.cal-cell.sel').forEach(x=>x.classList.remove('sel')); cell.classList.add('sel'); }; grid.appendChild(cell);} document.getElementById('pm').onclick=async()=>{ m--; if(m<0){m=11;y--;} await syncMonth(true);}; document.getElementById('nm').onclick=async()=>{ m++; if(m>11){m=0;y++;} await syncMonth(true);}; applyDaysState(); }
 
-        const grid=document.createElement('div'); grid.className='cal-grid'; calWrap.appendChild(grid);
-        ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].forEach(d=>{const c=document.createElement('div');c.className='cal-cell cal-dow';c.textContent=d;grid.appendChild(c);});
-        const firstDow=(new Date(y,m,1).getDay()+6)%7;
-        for(let i=0;i<firstDow;i++){const s=document.createElement('div');s.className='cal-cell muted';grid.appendChild(s);}
-        const count=new Date(y,m+1,0).getDate();
-        for(let d=1; d<=count; d++){
-          const iso=`${y}-${dd2(m+1)}-${dd2(d)}`;
-          const cell=document.createElement('div'); cell.className='cal-cell'; cell.textContent=d; cell.dataset.iso=iso;
-          cell.onclick=()=>{ selDate=iso; renderSlots(iso); grid.querySelectorAll('.cal-cell.sel').forEach(x=>x.classList.remove('sel')); cell.classList.add('sel'); };
-          grid.appendChild(cell);
-        }
-        document.getElementById('pm').onclick=async()=>{m--; if(m<0){m=11;y--;} await syncMonth(true);};
-        document.getElementById('nm').onclick=async()=>{m++; if(m>11){m=0;y++;} await syncMonth(true);};
-        applyDaysState();
-      }
+      function applyDaysState(){ const grid=calWrap.querySelector('.cal-grid'); grid.querySelectorAll('.cal-cell').forEach(cell=>{ if(!cell.dataset.iso) return; const arr=FREE[cell.dataset.iso]||[]; const off=!(Array.isArray(arr)&&arr.length); cell.classList.toggle('off', off); cell.classList.toggle('muted', off); }); }
 
-      function applyDaysState(){
-        const grid=calWrap.querySelector('.cal-grid');
-        grid.querySelectorAll('.cal-cell').forEach(cell=>{
-          if(!cell.dataset.iso) return;
-          const arr=FREE[cell.dataset.iso]||[];
-          const off=!(Array.isArray(arr)&&arr.length);
-          cell.classList.toggle('off', off); cell.classList.toggle('muted', off);
-        });
-      }
+      function filterStartsByDuration(starts,dur,step){ if(!Array.isArray(starts)||!starts.length) return []; const toMin=t=>{ const m=t.match(/(\d{1,2}):(\d{2})/); return m?(+m[1])*60+(+m[2]):null }; const need=Math.ceil(dur/step); const set=new Set(starts.map(toMin).filter(x=>x!=null)); return starts.filter(t=>{ const m=toMin(t); if(m==null) return false; for(let i=0;i<need;i++){ if(!set.has(m+i*step)) return false } return true; }); }
 
-      function filterStartsByDuration(starts, dur, step){
-        if(!Array.isArray(starts)||!starts.length) return [];
-        const toMin=t=>{const m=t.match(/(\d{1,2}):(\d{2})/); return m?(+m[1])*60+(+m[2]):null};
-        const need=Math.ceil(dur/step); const set=new Set(starts.map(toMin).filter(x=>x!=null));
-        return starts.filter(t=>{const m=toMin(t); if(m==null) return false; for(let i=0;i<need;i++){ if(!set.has(m+i*step)) return false } return true;});
-      }
+      function renderSlots(dateIso){ slotsBox.innerHTML=''; slotsBox.classList.add('show'); selTime=null; const arr=FREE[dateIso]||[]; const list=SERVER_FILTERED?arr:filterStartsByDuration(arr, selDur, GRAN); if(!list.length){ slotsBox.innerHTML=`<div class="muted">Нет слотов для ${selDur} мин</div>`; return; } list.forEach(t=>{ const b=document.createElement('button'); b.className='btn'; b.textContent=t; b.dataset.time=t; b.onclick=()=>{ slotsBox.querySelectorAll('.btn').forEach(x=>x.classList.remove('btn-primary')); b.classList.add('btn-primary'); selTime=t; }; slotsBox.appendChild(b); }); }
 
-      function renderSlots(dateIso){
-        slotsBox.innerHTML=''; slotsBox.classList.add('show'); selTime=null;
-        const arr=FREE[dateIso]||[];
-        const list = SERVER_FILTERED ? arr : filterStartsByDuration(arr, selDur, GRAN);
-        if(!list.length){ slotsBox.innerHTML=`<div class="muted">Нет слотов для ${selDur} мин</div>`; return; }
-        list.forEach(t=>{
-          const b=document.createElement('button'); b.className='btn'; b.textContent=t; b.dataset.time=t;
-          b.onclick=()=>{ slotsBox.querySelectorAll('.btn').forEach(x=>x.classList.remove('btn-primary')); b.classList.add('btn-primary'); selTime=t; };
-          slotsBox.appendChild(b);
-        });
-      }
+      async function syncMonth(keepSel=false){ const first=`${y}-${dd2(m+1)}-01`; const last=`${y}-${dd2(m+1)}-${dd2(new Date(y,m+1,0).getDate())}`; const data=await apiGet('/api/slots/free',{from:first,to:last,tz,lead_min:60,duration_min:selDur}); if(data?.ok){ FREE=data.days||{}; GRAN=data.gran||30; SERVER_FILTERED=!!data.filtered_by_duration; drawCalendar(); if(keepSel && selDate && FREE[selDate]?.length){ const cell=calWrap.querySelector(`.cal-cell[data-iso="${selDate}"]`); if(cell){ cell.classList.add('sel'); renderSlots(selDate); } } else { const days=Object.keys(FREE).filter(d=>(FREE[d]||[]).length).sort(); selDate=days[0]||null; if(selDate){ const cell=calWrap.querySelector(`.cal-cell[data-iso="${selDate}"]`); if(cell) cell.classList.add('sel'); renderSlots(selDate); } else { slotsBox.innerHTML='<div class="muted">Нет свободных дат</div>'; } } } else { showToast('Ошибка загрузки','Не удалось получить слоты','slots_err'); } }
 
-      async function syncMonth(keepSel=false){
-        const first=`${y}-${dd2(m+1)}-01`;
-        const last =`${y}-${dd2(m+1)}-${dd2(new Date(y,m+1,0).getDate())}`;
-        const data=await apiGet('/api/slots/free',{from:first,to:last,tz,lead_min:60,duration_min:selDur});
-        if(data?.ok){
-          FREE=data.days||{}; GRAN=data.gran||30; SERVER_FILTERED=!!data.filtered_by_duration;
-          drawCalendar();
-          if (keepSel && selDate && FREE[selDate]?.length){
-            const cell=calWrap.querySelector(`.cal-cell[data-iso="${selDate}"]`); if(cell){ cell.classList.add('sel'); renderSlots(selDate); }
-          } else {
-            const days=Object.keys(FREE).filter(d=>(FREE[d]||[]).length).sort();
-            selDate=days[0]||null;
-            if (selDate){ const cell=calWrap.querySelector(`.cal-cell[data-iso="${selDate}"]`); if(cell) cell.classList.add('sel'); renderSlots(selDate); }
-            else { slotsBox.innerHTML='<div class="muted">Нет свободных дат</div>'; }
-          }
-        } else {
-          showToast('Ошибка загрузки', 'Не удалось получить слоты', 'slots_err');
-        }
-      }
-
-      confirmBtn.addEventListener('click', async ()=>{
-        if(!selDate||!selTime){ showToast('Выберите слот', 'Дата и время обязательны', 'pick_warn'); return; }
-        const contact=(contactEl?.value||'').trim();
-        if(!contact){ showToast('Нужен контакт', 'Телеграм @username или телефон', 'contact_warn'); return; }
-        confirmBtn.disabled=true;
-        try{
-          const hold=await apiPost('/api/slots/hold',{date:selDate,time:selTime,duration_min:selDur});
-          if(!hold?.ok){ await syncMonth(true); showToast('Слот занят','Обновил слоты','taken'); return; }
-          const res=await apiPost('/api/consult/book',{date:selDate,time:selTime,duration_min:selDur,format:'call',contact});
-          if(res?.ok){
-            blastConfetti(confirmBtn, 36);
-            showToast('Заявка отправлена','Мы свяжемся для подтверждения','booked',3200);
-            await syncMonth(true);
-          } else {
-            showToast('Не удалось записать','Попробуйте другой слот','book_err'); await syncMonth(true);
-          }
-        } finally { confirmBtn.disabled=false; }
-      });
+      confirmBtn.addEventListener('click', async ()=>{ if(!selDate||!selTime){ showToast('Выберите слот','Дата и время обязательны','pick_warn'); return; } const contact=(contactEl?.value||'').trim(); if(!contact){ showToast('Нужен контакт','Телеграм @username или телефон','contact_warn'); return; } confirmBtn.disabled=true; try{ const hold=await apiPost('/api/slots/hold',{date:selDate,time:selTime,duration_min:selDur}); if(!hold?.ok){ await syncMonth(true); showToast('Слот занят','Обновил слоты','taken'); return; } const res=await apiPost('/api/consult/book',{date:selDate,time:selTime,duration_min:selDur,format:'call',contact}); if(res?.ok){ blastConfetti(confirmBtn,36); showToast('Заявка отправлена','Мы свяжемся для подтверждения','booked',3200); await syncMonth(true); } else { showToast('Не удалось записать','Попробуйте другой слот','book_err'); await syncMonth(true); } } finally { confirmBtn.disabled=false; } });
 
       // init
-      durBtns.find(b=>+b.dataset.min===30)?.classList.add('btn-primary');
       syncMonth();
     })();
 
-    /* ==== Профиль: быстрая отрисовка + асинхронная подгрузка ==== */
-    (function profile(){
-      // быстрый пустой рендер уже есть в HTML; подцепим данные
-      (async ()=>{
-        try{
-          const res = await apiPost('/api/bootstrap', {});
-          // ожидаемые поля, если бэкенд готов:
-          // res.last_booking: { date, time }
-          // res.last_prize: { title } или res.prizes[0]
-          // res.points: number
-          if (res?.last_booking){
-            document.getElementById('profBook').textContent = `${res.last_booking.date} ${res.last_booking.time}`;
-          }
-          const lp = res?.last_prize?.title || (res?.prizes && res.prizes[0]?.title);
-          if (lp) document.getElementById('profPrize').textContent = lp;
-          if (typeof res?.points === 'number') document.getElementById('profPoints').textContent = String(res.points);
-          document.getElementById('profHint').textContent = 'Данные обновлены.';
-        }catch(_){ /*тихо фейлим, чтобы ничего не ломать*/ }
-      })();
-    })();
+    /* ==== Профиль: быстрая вставка + асинхронная подтяжка ==== */
+    (function profile(){ (async()=>{ try{ const res=await apiPost('/api/bootstrap',{}); if(res?.last_booking){ document.getElementById('profBook').textContent = `${res.last_booking.date} ${res.last_booking.time}`; } const lp=res?.last_prize?.title || (res?.prizes && res.prizes[0]?.title); if(lp) document.getElementById('profPrize').textContent=lp; if(typeof res?.points==='number') document.getElementById('profPoints').textContent=String(res.points); document.getElementById('profHint').textContent='Данные обновлены.'; }catch(_){ /* тихо */ } })(); })();
+
+    /* ==== Простая SPA-навигация + пузырь-индикатор ==== */
+    (function nav(){ const nav=document.getElementById('spa-nav'); if(!nav) return; const bubble=nav.querySelector('.bubble'); function activate(hash){ const page=(hash||location.hash||'#home').replace('#',''); document.querySelectorAll('main > section, section.page').forEach(s=>{ s.style.display = (s.id===page)?'block':'none'; }); nav.querySelectorAll('.btn').forEach(a=>a.classList.toggle('active', a.dataset.page===page)); const act=nav.querySelector('.btn.active'); if(act){ const r=act.getBoundingClientRect(); const n=nav.getBoundingClientRect(); bubble.style.left=(r.left-n.left)+'px'; bubble.style.width=r.width+'px'; } } window.addEventListener('hashchange',()=>activate()); activate(); setTimeout(()=>activate(),50); })();
   </script>
 </body>
 </html>
