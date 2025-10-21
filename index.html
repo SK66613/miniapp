@@ -922,6 +922,27 @@
 }
 #bonuses #claimBtn[disabled]{ opacity:.6; pointer-events:none; }
 
+/* когда нельзя жать */
+#bonuses #claimBtn[disabled]{
+  opacity: .55;
+  cursor: not-allowed;
+  background: rgba(255,255,255,.06) !important;
+  border: 1px dashed rgba(255,255,255,.18) !important;
+  color: rgba(255,255,255,.60) !important;
+  box-shadow: none !important;
+  filter: grayscale(.35) saturate(.75) brightness(.95);
+}
+
+/* активная — нормальный вид, можно усилить hover */
+#bonuses #claimBtn:not([disabled]):hover{
+  transform: translateY(-1px);
+}
+#bonuses #claimBtn:not([disabled]):active{
+  transform: translateY(0);
+  filter: brightness(.95);
+}
+
+
 /* Конфетти */
 #confetti{ position:fixed; inset:0; pointer-events:none; z-index:9998; overflow:hidden; }
 .confetti-piece{
@@ -1784,7 +1805,11 @@
   // Крутануть
 spin?.addEventListener('click', () => {
   const idx = Math.floor(Math.random() * N);
-  spinTo(idx, 1, 1600); // laps=1 → +1 полный круг; сделай 2 для двух кругов
+  spinTo(idx, 1, 1600); // крутим (laps=1, длительность 1600 мс)
+
+  // 👉 конфетти из центра кнопки "Крутануть"
+  const r = spin.getBoundingClientRect();
+  confettiBurst(r.left + r.width / 2, r.top + r.height / 2);
 });
 
 
@@ -1811,23 +1836,18 @@ spin?.addEventListener('click', () => {
     }
   }
 
-  // Забрать — открываем ссылку и кидаем конфетти
-  claim?.addEventListener('click', (e) => {
-    const idx = mod(Math.round(curr), N);
-    const name = items[idx]?.dataset?.name || '';
-    const url  = bonusLinks[name];
+  // Забрать — открываем ссылку
+claim?.addEventListener('click', () => {
+  const idx  = mod(Math.round(curr), N);
+  const name = items[idx]?.dataset?.name || '';
+  const url  = bonusLinks[name];
+  if (!url) return;
 
-    // конфетти из центра кнопки
-    const r = claim.getBoundingClientRect();
-    confettiBurst(r.left + r.width/2, r.top + r.height/2);
+  if (url.startsWith('#'))            location.hash = url;
+  else if (/^https?:\/\//.test(url))  window.open(url, '_blank');
+  else                                location.href = url;
+});
 
-    // переход по ссылке (если задана)
-    if (url){
-      if (url.startsWith('#'))       location.hash = url;
-      else if (/^https?:\/\//.test(url)) window.open(url, '_blank');
-      else                            window.location.href = url;
-    }
-  });
 
   // старт
   updateUI();
