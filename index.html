@@ -762,6 +762,52 @@
   #cal.calendar:empty::after { animation: none; }
 }
 
+</style>
+
+<style>
+
+/* === Confirm button UX, CSS-only === */
+#confirmConsult{
+  position: relative;
+  overflow: hidden;
+}
+
+/* 1) Моментальный отклик при нажатии */
+#confirmConsult:active{
+  transform: translateY(1px);
+  filter: brightness(.92);
+}
+
+/* 2) Состояние "отправляю" — работает при :disabled ИЛИ aria-busy="true" */
+#confirmConsult:is(:disabled, [aria-busy="true"]){
+  pointer-events: none;
+  opacity: .88;
+  color: transparent;                 /* прячем оригинальный текст */
+}
+
+/* Спиннер слева внутри кнопки */
+#confirmConsult:is(:disabled, [aria-busy="true"])::before{
+  content: "";
+  position: absolute; top: 50%; left: 14px;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,.8);
+  border-right-color: transparent;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  animation: btn-spin .8s linear infinite;
+}
+
+/* Текст вместо скрытого лейбла */
+#confirmConsult:is(:disabled, [aria-busy="true"])::after{
+  content: "Отправляю…";
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  color: #fff;                         /* видимый текст */
+  font-weight: 700;
+}
+
+@keyframes btn-spin { to { transform: translateY(-50%) rotate(360deg); } }
 
 </style>
 
