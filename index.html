@@ -912,7 +912,28 @@
 #picked{ opacity:.8; }
 
 </style>
+<style>
+/* Низ: две кнопки в ряд */
+#bonuses .bonus-card .actions{
+  margin-top:10px;
+  display:grid;
+  grid-template-columns: 1fr 1fr;  /* [Крутануть] [Забрать] */
+  gap:8px; align-items:center;
+}
+#bonuses #claimBtn[disabled]{ opacity:.6; pointer-events:none; }
 
+/* Конфетти */
+#confetti{ position:fixed; inset:0; pointer-events:none; z-index:9998; overflow:hidden; }
+.confetti-piece{
+  position:absolute; width:10px; height:14px; border-radius:2px;
+  animation: confetti-fall 900ms linear forwards;
+}
+@keyframes confetti-fall{
+  0%{ opacity:1; transform:translate(var(--x),var(--y)) rotate(0deg); }
+  100%{ opacity:0; transform:translate(calc(var(--x) + var(--dx)), calc(var(--y) + var(--dy))) rotate(360deg); }
+}
+
+</style>
 </head>
 
 <body>
@@ -1038,7 +1059,7 @@
   </div>
 
   <div class="card bonus-card">
-    <div class="h2">Колесо бонусов</div>
+    <div class="h2"></div>
 
     <!-- ВЕРХ: только плашка-подсказка -->
     <div class="bonus-head">
@@ -1058,11 +1079,10 @@
       <div class="wheel-center"></div>
     </div>
 
-    <!-- НИЗ: две кнопки в ряд + статус -->
+    <!-- НИЗ: две кнопки в ряд -->
     <div class="actions">
       <button class="btn btn-primary" id="spinBtn">Крутануть</button>
-      <button class="btn btn-primary" id="claimBtn" disabled>Забрать бонус</button>
-      <div class="muted-sm" id="picked">—</div>
+      <button class="btn btn-primary" id="claimBtn" disabled>Забрать</button>
     </div>
   </div>
 </section>
@@ -1619,83 +1639,202 @@
 
 <script>
 (function(){
-  const wheel = document.getElementById('bonusWheel');
-  const track = document.getElementById('wheelTrack');
+  const wheel  = document.getElementById('bonusWheel');
+  const track  = document.getElementById('wheelTrack');
   if (!wheel || !track) return;
 
-  const items = Array.from(track.children);
-  let STEP = 114; // будет уточнён после рендера (расстояние между карточками)
-  requestAnimationFrame(()=>{         // измеряем реальный шаг
+  const items  = Array.from(track.children);
+  const N      = items.length;
+
+  const pill   = document.getElementById('pickedPill');
+  const claim  = document.getElementById('claimBtn');
+  const spin   = document.getElementById('spinBtn');
+
+  /* Название -> ссылка (поменяй под себя) */
+  const bonusLinks = {
+    "Гайд": "/files/guide.pdf",
+    "Чек-лист": "/files/checklist.pdf",
+    "Шаблон": "https://t.me/yourbot?start=template",
+    "Аудит": "#consult",
+    "Скидка": "/promo?code=BONUS10",
+    "Консультация": "#consult"
+  };
+
+  /* скорость/шаг подхватываем по факту, чтобы не плыть */
+  let STEP = 114;
+  requestAnimationFrame(()=>{
     const a = items[0]?.getBoundingClientRect();
     const b = items[1]?.getBoundingClientRect();
-    if (a && b) STEP = Math.round(b.left - a.left) || 114;
+    if (a && b){
+      const dx = Math.round(b.left - a.left);
+      if (dx > 40 && dx < 300) STEP = dx;
+    }
   });
 
-  let curr = 0, startX = 0, startCurr = 0, dragging = false, lastX = 0, lastT = 0, vel = 0;
-  const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
-  const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+  let curr = 0; // текущее «плавающее» положение (может расти бесконечно)
+  let startX = 0, startCurr = 0, dragging = false, lastX = 0, lastT = 0, vel = 0;
+  let interacted = false;
 
-  function render(){
-    curr = clamp(curr, 0, items.length - 1);
-    items.forEach((el,i)=>{
-      const dx = i - curr;                // расстояние от центра в "шагax"
-      const x  = dx * STEP;               // смещение по X в px
-      const s  = 1 - Math.min(Math.abs(dx)*0.16, 0.48); // масштаб
-      el.style.transform = `translate(-50%,-50%) translateX(${x}px) scale(${s})`;
-      el.style.zIndex = String(1000 - Math.abs(dx)*10);
-      el.classList.toggle('active', Math.round(curr) === i);
-    });
+  const mod = (a,n)=>((a % n)+n)%n;
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+
+  function nearest(curr, idx, n){
+    let t = idx;
+    while (t - curr >  n/2) t -= n;
+    while (curr - t >  n/2) t += n;
+    return t;
   }
 
-  function snapTo(idx, dur=420){
-    idx = clamp(idx, 0, items.length - 1);
-    const from = curr, to = idx, t0 = performance.now();
+  function updatePillByIndex(idx){
+    const it   = items[idx];
+    const name = it?.dataset?.name || '—';
+    const img  = it?.querySelector('img')?.src || '';
+    if (!pill) return;
+    pill.classList.remove('muted');
+    pill.innerHTML = img ? `<img src="${img}" alt=""><span>${name}</span>` : name;
+    if (claim){
+      claim.disabled = false;
+      claim.dataset.bonus = name;
+    }
+  }
+
+  function updateUI(){
+    // позиционируем как «кольцо»: ближайшие воплощения карточек к центру
+    items.forEach((el, i) => {
+      let dx = i - curr;
+      dx = mod(dx + N/2, N) - N/2; // (-N/2; N/2]
+      const x = dx * STEP;
+      const s = 1 - Math.min(Math.abs(dx)*0.16, 0.48);
+      el.style.transform = `translate(-50%,-50%) translateX(${x}px) scale(${s})`;
+      el.style.zIndex = String(1000 - Math.abs(dx)*10);
+      el.classList.toggle('active', Math.round(Math.abs(dx)) === 0);
+    });
+
+    if (interacted){
+      updatePillByIndex(mod(Math.round(curr), N));
+    } else {
+      if (pill){ pill.classList.add('muted'); pill.textContent = 'Нажми «Крутануть»'; }
+      if (claim){ claim.disabled = true; delete claim.dataset.bonus; }
+    }
+  }
+
+  function spinTo(targetIdx, laps = 1, dur = 1400){
+  // ближайшая точка до нужного индекса
+  const base = nearest(curr, targetIdx, N);
+  // направление (куда уже повернулась бы карусель)
+  const dir  = (base >= curr ? 1 : -1) || 1;
+  // добавляем полных кругов по N шагов
+  const to   = base + dir * (laps * N);
+
+  const from = curr, t0 = performance.now();
+  function tick(t){
+    const k = Math.min((t - t0) / dur, 1);
+    curr = from + (to - from) * (1 - Math.pow(1 - k, 3)); // easeOut
+    updateUI();
+    if (k < 1) requestAnimationFrame(tick);
+    else { curr = to; interacted = true; updateUI(); }
+  }
+  requestAnimationFrame(tick);
+}
+
+  function snapTo(targetIdx, dur=420){
+    const to   = nearest(curr, targetIdx, N);
+    const from = curr;
+    const t0   = performance.now();
     function tick(t){
-      const k = Math.min((t - t0) / dur, 1);
-      curr = from + (to - from) * easeOutCubic(k);
-      render();
+      const k = Math.min((t - t0)/dur, 1);
+      curr = from + (to - from) * easeOut(k);
+      updateUI();
       if (k < 1) requestAnimationFrame(tick);
-      else { curr = to; render(); }
+      else { curr = to; interacted = true; updateUI(); }
     }
     requestAnimationFrame(tick);
   }
 
-  // клик по карточке — центрируем
-  track.addEventListener('click', e=>{
-    const b = e.target.closest('.bonus'); if(!b) return;
-    const idx = items.indexOf(b); if (idx>=0) snapTo(idx, 320);
+  // клики по карточкам
+  track.addEventListener('click', (e) => {
+    const b = e.target.closest('.bonus'); if (!b) return;
+    const idx = items.indexOf(b);
+    if (idx >= 0) snapTo(idx, 320);
   });
 
   // свайп/drag
-  track.addEventListener('pointerdown', e=>{
+  track.addEventListener('pointerdown', (e) => {
     dragging = true; wheel.classList.add('dragging');
     startX = lastX = e.clientX; lastT = e.timeStamp; startCurr = curr;
     track.setPointerCapture(e.pointerId);
   });
-  track.addEventListener('pointermove', e=>{
+  track.addEventListener('pointermove', (e) => {
     if (!dragging) return;
     const dx = e.clientX - startX;
-    curr = startCurr - dx / STEP;
+    curr = startCurr - dx / STEP;               // бесконечная карусель
     const dt = e.timeStamp - lastT;
-    if (dt > 0){ vel = (e.clientX - lastX) / dt; lastX = e.clientX; lastT = e.timeStamp; }
-    render();
+    if (dt > 0){ vel = (e.clientX - lastX)/dt; lastX = e.clientX; lastT = e.timeStamp; }
+    updateUI();
   }, {passive:true});
   function endDrag(){
-    if (!dragging) return; dragging = false; wheel.classList.remove('dragging');
-    snapTo(Math.round(curr - vel*6), 480); // инерция
+    if (!dragging) return;
+    dragging = false; wheel.classList.remove('dragging');
+    interacted = true;
+    snapTo(mod(Math.round(curr - vel*6), N), 480); // инерция + привязка
   }
   track.addEventListener('pointerup', endDrag);
   track.addEventListener('pointercancel', endDrag);
 
-  // «Крутануть» (если есть кнопка)
-  document.getElementById('spinBtn')?.addEventListener('click', ()=>{
-    const idx = Math.floor(Math.random()*items.length);
-    snapTo(idx, 650);
+  // Крутануть
+spin?.addEventListener('click', () => {
+  const idx = Math.floor(Math.random() * N);
+  spinTo(idx, 1, 1600); // laps=1 → +1 полный круг; сделай 2 для двух кругов
+});
+
+
+  // Конфетти
+  function confettiBurst(x, y){
+    let layer = document.getElementById('confetti');
+    if(!layer){ layer = document.createElement('div'); layer.id='confetti'; document.body.appendChild(layer); }
+    const colors = ['#7b5bff','#3de0c5','#ffd166','#ef476f','#06d6a0','#118ab2'];
+    const rect = document.body.getBoundingClientRect();
+    const ox = (x ?? rect.width / 2), oy = (y ?? rect.height / 3);
+    for (let i=0; i<36; i++){
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.background = colors[i % colors.length];
+      const angle = (i / 36) * Math.PI * 2;
+      const speed = 140 + Math.random()*120;
+      const dx = Math.cos(angle) * speed, dy = Math.sin(angle) * speed + 220;
+      el.style.setProperty('--x',  ox + 'px');
+      el.style.setProperty('--y',  oy + 'px');
+      el.style.setProperty('--dx', dx + 'px');
+      el.style.setProperty('--dy', dy + 'px');
+      layer.appendChild(el);
+      setTimeout(()=> el.remove(), 950);
+    }
+  }
+
+  // Забрать — открываем ссылку и кидаем конфетти
+  claim?.addEventListener('click', (e) => {
+    const idx = mod(Math.round(curr), N);
+    const name = items[idx]?.dataset?.name || '';
+    const url  = bonusLinks[name];
+
+    // конфетти из центра кнопки
+    const r = claim.getBoundingClientRect();
+    confettiBurst(r.left + r.width/2, r.top + r.height/2);
+
+    // переход по ссылке (если задана)
+    if (url){
+      if (url.startsWith('#'))       location.hash = url;
+      else if (/^https?:\/\//.test(url)) window.open(url, '_blank');
+      else                            window.location.href = url;
+    }
   });
 
-  render();
+  // старт
+  updateUI();
 })();
 </script>
+
+
 
 
 </body>
