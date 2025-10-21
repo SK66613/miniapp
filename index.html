@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <title>Правильный Учёт — мини‑приложение</title>
+  <title>Маркетолог — мини‑приложение</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="format-detection" content="telephone=no" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -75,7 +75,16 @@
     .toast{background:#0f1318;border:1px solid var(--border);border-radius:12px;padding:10px 12px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
     .toast .t{font-weight:800;margin-bottom:2px}
     .toast .m{font-size:13px;color:var(--muted)}
-  </style>
+  
+
+/* === HOME blocks (calc + steps) === */
+.savings { display:grid; gap:8px; }
+.savings .row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.savings .row label{ font-size:14px; opacity:.9; }
+.savings input[type=range]{ width:50%; }
+.savings .stat{ display:flex; gap:8px; flex-wrap:wrap; }
+.big{ font-size:28px; font-weight:800; letter-spacing:0.3px; }
+</style>
   <style>
     /* Tables */
     .table{width:100%;border-collapse:separate;border-spacing:0 8px}
@@ -122,7 +131,7 @@
       <div class="brand-wrap">
         <div class="logo" aria-label="logo"></div>
         <div>
-          <div class="brand">Правильный Учёт</div>
+          <div class="brand">Маркетолог</div>
           <div class="slogan" style="color:var(--muted);font-size:13px">Считаем прибыль, а не клики</div>
         </div>
       </div>
@@ -142,29 +151,73 @@
     <main>
       <!-- HOME -->
       <section class="card" id="home">
-        <div class="h1">Покажем, где утекают деньги и <span>дадим план действий</span> с понятной экономией</div>
-        <p class="lead">❗️ <strong>Если по итогам не станет ясно</strong>, как улучшить результат — дарим 60 минут консультации бесплатно.</p>
-        <div class="grid grid-2" style="margin-top:14px">
-          <div class="card" style="background:transparent;border-color:transparent;padding:0">
-            <div class="h1" style="margin-bottom:10px">Быстрый <span>расчёт прибыли</span></div>
-            <div class="cta"><button class="btn btn-primary" id="ctaCalc">Получить персональный расчёт</button></div>
-          </div>
-          <div class="card">
-            <div class="h1" style="margin-bottom:20px">Что <span>делать</span> дальше</div>
-            <ul class="list">
-              <li><span class="dot"></span>Запускаем калькулятор в боте</li>
-              <li><span class="dot"></span>Фиксируем источник «утечек»</li>
-              <li><span class="dot"></span>Формируем пошаговый план</li>
-            </ul>
-            <div class="highlight-banner" style="text-align:left"><strong>Бонус:</strong> мини‑гайд «Как перейти на выгодный режим»</div>
-          </div>
-        </div>
+          <h2>Услуги</h2>
+        <p class="muted-sm">Раздел-заглушка. Скажи, что подтянуть из твоего файла — вставлю контент блоками.</p>
       </section>
+  <div class="grid grid-2" style="margin-top:14px">
+    <!-- Быстрый расчет прибыли бизнеса -->
+    <div class="card savings">
+      <div class="h1">Быстрый <span>расчет прибыли</span> бизнеса</div>
+
+      <div class="row">
+        <label>Выручка: <strong id="revVal">10 000 000 ₽</strong></label>
+        <input id="rev" type="range" min="500000" max="50000000" step="500000" value="10000000">
+      </div>
+
+      <div class="row">
+        <label>Эффект оптимизации: <strong id="pctVal">12%</strong></label>
+        <input id="pct" type="range" min="1" max="30" step="1" value="12">
+      </div>
+
+      <div class="stat">
+        <div class="badge">Было: <span id="oldTax">1 500 000 ₽</span></div>
+        <div class="badge">Стало: <span id="newTax">1 320 000 ₽</span></div>
+      </div>
+
+      <div>Потенциальная экономия:</div>
+      <div class="big" id="saveCounter">0 ₽</div>
+
+      <div class="cta">
+        <button class="btn btn-primary confetti" id="ctaCalc">Получить персональный расчёт</button>
+      </div>
+    </div>
+
+    <!-- Как мы работаем -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="h1" style="margin-bottom:20px">Как <span>мы</span> работаем</div>
+      <div id="flow" style="display:grid;gap:8px">
+        <div class="badge">Шаг 1 · Диагностика</div>
+        <div class="badge">Шаг 2 · План оптимизации</div>
+        <div class="badge">Шаг 3 · Внедрение</div>
+        <div class="badge">Шаг 4 · Контроль и отчёты</div>
+      </div>
+      <div class="cta" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-primary" id="flowNext">Дальше</button>
+        <button class="btn btn-ghost" id="flowReset">Сбросить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Что делать дальше -->
+  <div class="card">
+    <div class="h1" style="margin-bottom:20px">Что <span>делать</span> дальше</div>
+    <ul class="list">
+      <li><span class="dot"></span>Запускаем калькулятор в боте</li>
+      <li><span class="dot"></span>Фиксируем источник «утечек»</li>
+      <li><span class="dot"></span>Формируем пошаговый план</li>
+    </ul>
+    <div class="highlight-banner" style="text-align:left">
+      <strong>Бонус:</strong> мини-гайд «Как перейти на выгодный режим»
+    </div>
+  </div>
+</section>
       <!-- SERVICES -->
       <section class="card" id="services" style="margin-top:18px;display:none">
         <h2>Услуги</h2>
         <p class="muted-sm">Раздел-заглушка. Скажи, что подтянуть из твоего файла — вставлю контент блоками.</p>
       </section>
+
+      
 
       <!-- ABOUT -->
       <section class="card" id="about" style="margin-top:18px;display:none">
@@ -291,7 +344,7 @@
   <script>
     /* ==== CONFIG ==== */
     window.APP_CONFIG = window.APP_CONFIG || {};
-    APP_CONFIG.API_BASE = APP_CONFIG.API_BASE || "https://cifrovichkoff.cyberian13.workers.dev"; // ← замени на свой воркер
+    APP_CONFIG.API_BASE = APP_CONFIG.API_BASE || "https://<YOUR-WORKER-DOMAIN>"; // ← замени на свой воркер
     APP_CONFIG.ENABLE_HOOKS = (APP_CONFIG.ENABLE_HOOKS ?? true);
 
     /* ==== Автобрендинг: логотип + фавиконки ==== */
@@ -578,5 +631,80 @@
     })();
 
   </script>
+
+<script>
+// === Quick profit calc (sliders) ===
+(function(){
+  const rev = document.getElementById('rev');
+  const pct = document.getElementById('pct');
+  const revVal = document.getElementById('revVal');
+  const pctVal = document.getElementById('pctVal');
+  const oldTax = document.getElementById('oldTax');
+  const newTax = document.getElementById('newTax');
+  const saveCounter = document.getElementById('saveCounter');
+  if(!rev || !pct) return;
+
+  function fmt(n){ return (n||0).toLocaleString('ru-RU') + ' ₽'; }
+  function animateTo(el, target){
+    const start = parseInt((el.textContent||'0').replace(/[^\d]/g,''))||0;
+    const dur = 600; const t0 = performance.now();
+    function tick(t){
+      const k = Math.min(1, (t - t0) / dur);
+      const val = Math.round(start + (target - start) * k);
+      el.textContent = fmt(val);
+      if(k < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function recalc(){
+    const R = +rev.value;
+    const P = +pct.value / 100;
+    revVal.textContent = fmt(R);
+    pctVal.textContent = Math.round(P*100) + '%';
+
+    const oldT = Math.round(R * 0.15);
+    const newT = Math.round(oldT * (1 - P));
+    const save = oldT - newT;
+
+    oldTax.textContent = fmt(oldT);
+    newTax.textContent = fmt(newT);
+    animateTo(saveCounter, save);
+  }
+
+  rev.addEventListener('input', recalc);
+  pct.addEventListener('input', recalc);
+  recalc();
+})();
+
+// === Steps: "Как мы работаем" ===
+(function(){
+  const flow = document.getElementById('flow');
+  const next = document.getElementById('flowNext');
+  const reset = document.getElementById('flowReset');
+  if(!flow || !next) return;
+  const steps = Array.from(flow.querySelectorAll('.badge'));
+  let i = 0;
+
+  function render(){
+    steps.forEach((s,idx)=>{
+      s.style.opacity = idx<=i ? 1 : .45;
+      s.style.filter  = idx<=i ? 'none' : 'grayscale(.3)';
+    });
+    next.textContent = (i >= steps.length-1) ? 'Перейти к консультации' : 'Дальше';
+  }
+
+  next.addEventListener('click', ()=>{
+    if(i < steps.length-1){ i++; render(); }
+    else {
+      try{ window.showToast && showToast('Готово', 'Открыл раздел «Консультация»'); }catch(_){}
+      location.hash = '#consult';
+      try{ const a = document.querySelector('#spa-nav .btn[data-page=\"consult\"]'); a && a.click(); }catch(_){}
+    }
+  });
+  reset && reset.addEventListener('click', ()=>{ i = 0; render(); });
+  render();
+})();
+</script>
 </body>
 </html>
