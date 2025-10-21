@@ -655,6 +655,51 @@
     }
   </style>
 
+<style>
+/* База */
+.savings input[type=range]{
+  -webkit-appearance:none; appearance:none;
+  width:100%; height:14px; background:transparent;
+}
+
+/* Дорожка (WebKit/Chromium/Edge) */
+.savings input[type=range]::-webkit-slider-runnable-track{
+  height:8px; border-radius:999px;
+  background:rgba(255,255,255,.18);
+}
+/* Бегунок (квадратный, крупный) */
+.savings input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:24px; height:24px; border-radius:6px;            /* квадрат + скругление */
+  background:linear-gradient(135deg, var(--mint,#3de0c5), var(--primary,#7b5bff));
+  border:0; box-shadow:0 2px 6px rgba(0,0,0,.35);
+  margin-top:-8px; cursor:pointer;                       /* центрируем по дорожке */
+}
+
+/* Firefox дорожка/прогресс */
+.savings input[type=range]::-moz-range-track{
+  height:8px; border-radius:999px;
+  background:rgba(255,255,255,.18);
+}
+.savings input[type=range]::-moz-range-progress{
+  height:8px; border-radius:999px;
+  background:linear-gradient(90deg, var(--primary,#7b5bff), var(--mint,#3de0c5));
+}
+/* Бегунок Firefox */
+.savings input[type=range]::-moz-range-thumb{
+  width:24px; height:24px; border-radius:6px;
+  background:linear-gradient(135deg, var(--mint,#3de0c5), var(--primary,#7b5bff));
+  border:0; box-shadow:0 2px 6px rgba(0,0,0,.35);
+  cursor:pointer;
+}
+
+/* Фокус/актив */
+.savings input[type=range]:focus{ outline:none; }
+.savings input[type=range]:active::-webkit-slider-thumb{ transform:scale(1.04); }
+.savings input[type=range]:active::-moz-range-thumb{ transform:scale(1.04); }
+
+</style>
+
 </head>
 
 <body>
