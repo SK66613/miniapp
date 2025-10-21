@@ -1706,6 +1706,19 @@
     return t;
   }
 
+  // положи рядом со своими утилитами
+const TG = window.Telegram && window.Telegram.WebApp;
+function haptic(kind='light'){
+  try{
+    if (TG?.HapticFeedback){
+      if (kind === 'selection') return TG.HapticFeedback.selectionChanged();
+      return TG.HapticFeedback.impactOccurred(kind); // 'light'|'medium'|'heavy'|'soft'|'rigid'
+    }
+  }catch(_){}
+  try{ navigator.vibrate && navigator.vibrate(kind==='heavy'?30:kind==='medium'?20:12); }catch(_){}
+}
+
+
   function updatePillByIndex(idx){
     const it   = items[idx];
     const name = it?.dataset?.name || '—';
@@ -1739,24 +1752,37 @@
     }
   }
 
-  function spinTo(targetIdx, laps = 1, dur = 1400){
-  // ближайшая точка до нужного индекса
-  const base = nearest(curr, targetIdx, N);
-  // направление (куда уже повернулась бы карусель)
-  const dir  = (base >= curr ? 1 : -1) || 1;
-  // добавляем полных кругов по N шагов
-  const to   = base + dir * (laps * N);
+// замени свою spinTo на эту
+function spinTo(targetIdx, laps = 1, dur = 1600){
+  return new Promise(resolve => {
+    const base = nearest(curr, targetIdx, N);
+    const dir  = (base >= curr ? 1 : -1) || 1;
+    const to   = base + dir * (laps * N);
 
-  const from = curr, t0 = performance.now();
-  function tick(t){
-    const k = Math.min((t - t0) / dur, 1);
-    curr = from + (to - from) * (1 - Math.pow(1 - k, 3)); // easeOut
-    updateUI();
-    if (k < 1) requestAnimationFrame(tick);
-    else { curr = to; interacted = true; updateUI(); }
-  }
-  requestAnimationFrame(tick);
+    const from = curr, t0 = performance.now();
+    let lastPulse = 0;
+
+    const lerp = (a,b,t)=>a+(b-a)*t;   // интерполяция для темпа пульсов
+
+    function tick(t){
+      const k = Math.min((t - t0) / dur, 1);         // прогресс 0..1
+      curr = from + (to - from) * (1 - Math.pow(1 - k, 3)); // easeOut
+      updateUI();
+
+      // 🔔 пульс каждые ~80ms в начале → ~260ms к концу
+      const period = lerp(80, 260, k);
+      if (t - lastPulse >= period){
+        haptic('light');              // хочешь мягче — 'soft', мощнее — 'medium'
+        lastPulse = t;
+      }
+
+      if (k < 1) requestAnimationFrame(tick);
+      else { curr = to; updateUI(); resolve(); }
+    }
+    requestAnimationFrame(tick);
+  });
 }
+
 
   function snapTo(targetIdx, dur=420){
     const to   = nearest(curr, targetIdx, N);
