@@ -1094,7 +1094,6 @@
   <!-- Telegram SDK (если запускаешь в WebApp) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-
   <script>
 // ==== normalize ?page=... -> #... ПЕРЕД первым showPage() ====
 (function(){
@@ -1118,6 +1117,60 @@
     if (p && document.getElementById(p)) location.hash = p;
     else if (!location.hash) location.hash = 'home';
   }
+})();
+</script>
+
+<script>
+(function(){
+  const TG = window.Telegram && window.Telegram.WebApp;
+  try{ TG && TG.ready(); }catch(_){}
+
+  // Универсальный хелпер
+  function haptic(kind='light', notify){
+    try{
+      if (TG && TG.HapticFeedback){
+        if (notify){ TG.HapticFeedback.notificationOccurred(notify); return; } // 'success'|'warning'|'error'
+        if (kind === 'selection'){ TG.HapticFeedback.selectionChanged(); return; }
+        TG.HapticFeedback.impactOccurred(kind); // 'light'|'medium'|'heavy'|'rigid'|'soft'
+        return;
+      }
+    }catch(_){}
+    // Фоллбек (Android)
+    try{
+      if (navigator.vibrate){
+        if (notify === 'success') return void navigator.vibrate([10,20,10]);
+        if (notify === 'warning') return void navigator.vibrate([20,30,20]);
+        if (notify === 'error')   return void navigator.vibrate([35,35,35]);
+        navigator.vibrate(kind === 'heavy' ? 35 : kind === 'medium' ? 25 : 15);
+      }
+    }catch(_){}
+  }
+
+  // 👉 Рекомендуется срабатывать на pointerdown — так отклик мгновеннее
+  const onTap = (sel, fn) => {
+    const root = document.querySelector(sel);
+    if (!root) return;
+    root.addEventListener('pointerdown', e => {
+      if (fn(e) !== false) haptic('selection');
+    }, {passive:true});
+  };
+
+  // Табы в навигации
+  onTap('#spa-nav', e => e.target.closest('[data-page]'));
+
+  // Кнопки длительности (30/60/90)
+  onTap('.dur-row', e => e.target.closest('.dur'));
+
+  // Слоты времени
+  onTap('#slots', e => e.target.closest('button,.btn,.slot,.slot-btn'));
+
+  // Кнопка «Подтвердить» — заметнее
+  const confirmBtn = document.getElementById('confirmConsult');
+  confirmBtn && confirmBtn.addEventListener('pointerdown', () => haptic('medium'), {passive:true});
+
+  // если где-то в коде у тебя есть успешное подтверждение — дерни:
+  // haptic('heavy', 'success');  // на успех
+  // haptic('medium', 'error');   // на ошибку
 })();
 </script>
 
