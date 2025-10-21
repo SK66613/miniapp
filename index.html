@@ -700,6 +700,48 @@
 
 </style>
 
+<style>
+#consult .consult-card{ margin-top:12px; }
+#consult .page-title{ margin-bottom:12px; }
+#consult .h3{ margin:0 0 10px; font-weight:800; }
+
+/* Длительность: ряд кнопок */
+#consult .dur-row{ display:flex; gap:8px; flex-wrap:wrap; }
+#consult .dur-row .btn{
+  padding:10px 14px; border-radius:12px;
+  border:1px solid var(--border, rgba(255,255,255,.14));
+  background:rgba(255,255,255,.04); font-weight:700;
+}
+#consult .dur-row .btn.active,
+#consult .dur-row .btn.btn-primary{
+  background:linear-gradient(135deg, var(--mint,#3de0c5), var(--primary,#7b5bff));
+  color:#0b0f12; border-color:transparent;
+}
+
+/* Сетка слотов (если у тебя сейчас просто список — стили всё равно подхватятся) */
+#consult #slots{
+  display:grid; gap:8px; margin-top:6px;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+}
+@media (min-width:760px){
+  #consult #slots{ grid-template-columns: repeat(5, minmax(0,1fr)); }
+}
+#consult #slots .btn, 
+#consult #slots button{
+  display:flex; align-items:center; justify-content:center;
+  height:40px; padding:0 10px; border-radius:12px;
+  border:1px solid var(--border, rgba(255,255,255,.14));
+  background:rgba(255,255,255,.04); font-weight:700;
+}
+#consult #slots .btn.active,
+#consult #slots button.active{
+  background:linear-gradient(135deg, var(--mint,#3de0c5), var(--primary,#7b5bff));
+  color:#0b0f12; border-color:transparent;
+}
+
+
+</style>
+
 </head>
 
 <body>
@@ -907,20 +949,43 @@
       </section>
 
       <!-- CONSULT (Calendar) -->
-      <section class="card cal-wrap" id="consult" style="margin-top:18px">
-        <h2>Запись на консультацию</h2>
-        <div class="dur-row">
-          <button class="btn dur btn-primary" data-min="30">30 мин</button>
-          <button class="btn dur" data-min="60">60 мин</button>
-          <button class="btn dur" data-min="90">90 мин</button>
-        </div>
-        <div id="cal" class="calendar"></div>
-        <div id="slots" class="slots"></div>
-        <div class="contact-row">
-          <input id="contact" type="tel" inputmode="numeric" placeholder="@username или +79991234567" />
-          <button id="confirmConsult" class="btn btn-primary">Подтвердить</button>
-        </div>
-      </section>
+<section class="page cal-wrap" id="consult" style="margin-top:18px">
+  <div class="card page-title">
+    <h2>Запись на консультацию</h2>
+  </div>
+
+  <!-- Блок 1: Длительность -->
+  <div class="card consult-card" id="dur-card">
+    <div class="h3">Длительность</div>
+    <div class="dur-row">
+      <button class="btn dur btn-primary" data-min="30">30 мин</button>
+      <button class="btn dur" data-min="60">60 мин</button>
+      <button class="btn dur" data-min="90">90 мин</button>
+    </div>
+  </div>
+
+  <!-- Блок 2: Календарь -->
+  <div class="card consult-card" id="cal-card">
+    <div class="h3">Календарь</div>
+    <div id="cal" class="calendar"></div>
+  </div>
+
+  <!-- Блок 3: Доступное время -->
+  <div class="card consult-card" id="slots-card">
+    <div class="h3">Доступное время</div>
+    <div id="slots" class="slots"></div>
+  </div>
+
+  <!-- Блок 4: Контакты -->
+  <div class="card consult-card" id="contact-card">
+    <div class="h3">Контакты</div>
+    <div class="contact-row">
+      <input id="contact" type="tel" inputmode="numeric" placeholder="@username или +79991234567" />
+      <button id="confirmConsult" class="btn btn-primary">Подтвердить</button>
+    </div>
+  </div>
+</section>
+
 
       <!-- PROFILE (light) -->
       <section class="card" id="profile" style="margin-top:18px">
