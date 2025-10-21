@@ -813,74 +813,6 @@
 </style>
 
 
-<script>
-/* ==== Телеграм-устойчивая инициализация страниц (3 пути) ==== */
-(function(){
-  const tg = window.Telegram && window.Telegram.WebApp;
-  const links = Array.from(document.querySelectorAll('[data-page]'));
-  const pages = Array.from(document.querySelectorAll('main > section.page, section.page'));
-
-  function has(id){ return !!document.getElementById(id); }
-  function norm(id){ return id && has(id) ? id : 'home'; }
-
-  // 1) Telegram start_param (deep link)
-  function fromTG(){
-    try{
-      const p = tg?.initDataUnsafe?.start_param || tg?.initDataUnsafe?.startParam;
-      if (!p) return null;
-      // сопоставь свои алиасы тут при желании
-      const map = { start:'home', home:'home', services:'services', consult:'consult', calendar:'consult' };
-      return map[p] || (has(p) ? p : null);
-    }catch(_){ return null; }
-  }
-
-  // 2) URL: ?page=... → 3) #hash
-  function fromURL(){
-    const u = new URL(location.href);
-    const q = u.searchParams.get('page'); if (q && has(q)) return q;
-    const h = (location.hash||'').replace('#','');      if (h && has(h)) return h;
-    return null;
-  }
-
-  // Показ страницы (оставляем совместимость с твоими centerActive/moveBubble)
-  window.showPage = function(hash){
-    const id = norm((hash||'').replace('#',''));
-    pages.forEach(s => s.hidden = (s.id !== id)); // не ломаем display/grid/flex
-    (links.length ? links : document.querySelectorAll('[data-page]'))
-      .forEach(a => a.classList.toggle('active', a.dataset.page === id));
-    try{ typeof centerActive==='function' && centerActive(); }catch(_){}
-    try{ typeof moveBubble==='function'  && moveBubble();  }catch(_){}
-  };
-
-  // Выбор начальной страницы с приоритетом: TG → URL → hash → home
-  function boot(){
-    const id = norm(
-      (typeof window.__pickInitialPage === 'function' && window.__pickInitialPage()) ||
-      fromTG() || fromURL() || 'home'
-    );
-    // синхронизируем hash (полезно для внешних ссылок/back)
-    if (location.hash !== '#'+id){
-      try{ history.replaceState(null,'','#'+id); }catch(_){ location.hash = id; }
-    }
-    showPage('#'+id);
-  }
-
-  // Реакция на смену hash (внешние переходы …#services)
-  addEventListener('hashchange', ()=> showPage(location.hash));
-
-  // Старт: даём шанс Telegram проинициализировать initDataUnsafe
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', boot, {once:true});
-  } else {
-    setTimeout(boot, 0);
-  }
-  // Когда Telegram готов — ещё раз перепроверим (на iOS часто initData приходит позже)
-  try{ tg?.ready(); setTimeout(boot, 60); }catch(_){}
-})();
-</script>
-
-
-
 </head>
 
 <body>
@@ -1161,6 +1093,34 @@
 
   <!-- Telegram SDK (если запускаешь в WebApp) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+
+  <script>
+// ==== normalize ?page=... -> #... ПЕРЕД первым showPage() ====
+(function(){
+  try{
+    const u = new URL(location.href);
+    const p = (u.searchParams.get('page') || '').trim();
+
+    // если ?page задан и такая секция существует — переводим в #hash
+    if (p && document.getElementById(p)) {
+      u.searchParams.delete('page');   // убрать query
+      u.hash = '#' + p;                // поставить нужный #hash
+      history.replaceState(null, '', u.pathname + u.search + u.hash);
+    }
+    // если ни hash, ни валидного page — по умолчанию #home
+    else if (!location.hash) {
+      history.replaceState(null, '', '#home');
+    }
+  }catch(_){
+    // на всякий — простая запасная ветка
+    const p = (location.search.match(/[?&]page=([^&]+)/)||[])[1];
+    if (p && document.getElementById(p)) location.hash = p;
+    else if (!location.hash) location.hash = 'home';
+  }
+})();
+</script>
+
 
   <script>
     /* ==== CONFIG ==== */
