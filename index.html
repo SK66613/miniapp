@@ -24,15 +24,14 @@
     .logo{width:44px;height:44px;border-radius:9px;background:#0f1318;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden}
     .brand{font-family:Montserrat,Inter,sans-serif;font-weight:700;letter-spacing:.2px}
 
-    nav#spa-nav{position:sticky;top:0;z-index:20;display:flex;gap:8px;overflow:hidden;padding:6px;margin:8px 0 18px;background:rgba(10,12,22,.65);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.35)}
-    #spa-nav .track{ position:relative; display:flex; gap:8px; overflow-x:auto; -ms-overflow-style:none; scrollbar-width:none; padding:6px; }
+    nav#spa-nav{position:sticky;top:0;z-index:20;display:flex;gap:8px;overflow:hidden;padding:6px;margin:8px 0 18px;background:rgba(10,12,22,.65);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.06);border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.35);justify-content:flex-start;align-items:center}
+    #spa-nav .track{ position:relative; display:flex; gap:8px; overflow-x:auto; -ms-overflow-style:none; scrollbar-width:none; padding:6px 8px; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; scroll-snap-stop:always; overscroll-behavior-x:contain; align-items:center; touch-action:pan-x; }
     #spa-nav .track::-webkit-scrollbar{display:none}
-    #spa-nav .btn{appearance:none;border:1px solid transparent;background:transparent;color:var(--text);font-weight:700;font-size:14px;padding:9px 12px;border-radius:12px;cursor:pointer;text-decoration:none;transition:.18s;white-space:nowrap;position:relative;flex:0 0 auto}
+#spa-nav .btn{appearance:none;border:1px solid transparent;background:transparent;color:var(--text);font-weight:700;font-size:14px;padding:9px 12px;border-radius:12px;cursor:pointer;text-decoration:none;transition:.18s;white-space:nowrap;position:relative;flex:0 0 auto;z-index:1;-webkit-tap-highlight-color:transparent;scroll-snap-align:center; scroll-snap-stop:always; }
     #spa-nav .btn.active{background:transparent;color:var(--text);box-shadow:none}
-    #spa-nav .bubble{position:absolute;z-index:0;height:34px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--mint));box-shadow:0 10px 22px rgba(91,140,255,.35);left:0;top:50%;transform:translateY(-50%);transition:left .18s cubic-bezier(.2,.8,.2,1), width .18s cubic-bezier(.2,.8,.2,1);will-change:left,width;pointer-events:none;opacity:.95}
+    #spa-nav .bubble{position:absolute;z-index:0;height:34px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--mint));box-shadow:0 10px 22px rgba(91,140,255,.35);left:0;top:50%;transform:translateY(-50%);transition:left .12s cubic-bezier(.2,.8,.2,1), width .12s cubic-bezier(.2,.8,.2,1);will-change:left,width;pointer-events:none;opacity:.95}
     #spa-nav .bubble.fast{transition:none}
-
-    .h1{font-size:19px;line-height:1.2;font-weight:800;margin:14px 0 10px}
+.h1{font-size:19px;line-height:1.2;font-weight:800;margin:14px 0 10px}
     .h1 span{background:linear-gradient(90deg,var(--blue),var(--mint));-webkit-background-clip:text;color:transparent}
     .lead{color:var(--muted);font-size:17px;max-width:820px}
 
@@ -90,8 +89,8 @@
   <!-- overrides for nav menu look & behavior -->
   <style>
     /* Center the nav row and keep carousel scroll */
-    nav#spa-nav{ justify-content:center; }
-    #spa-nav .track{ position:relative; display:flex; justify-content:center; width:100%; margin:0 auto; padding:6px; }
+    nav#spa-nav{ justify-content:flex-start; }
+    #spa-nav .track{ position:relative; display:flex; gap:8px; overflow-x:auto; -ms-overflow-style:none; scrollbar-width:none; padding:6px 8px; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; }
 
     /* Buttons sit ABOVE the moving bubble so text is never covered */
     #spa-nav .btn{ position:relative; z-index:1; -webkit-tap-highlight-color: transparent; }
@@ -292,7 +291,7 @@
   <script>
     /* ==== CONFIG ==== */
     window.APP_CONFIG = window.APP_CONFIG || {};
-    APP_CONFIG.API_BASE = APP_CONFIG.API_BASE || "https://<YOUR-WORKER-DOMAIN>"; // ← замени на свой воркер
+    APP_CONFIG.API_BASE = APP_CONFIG.API_BASE || "https://cifrovichkoff.cyberian13.workers.dev"; // ← замени на свой воркер
     APP_CONFIG.ENABLE_HOOKS = (APP_CONFIG.ENABLE_HOOKS ?? true);
 
     /* ==== Автобрендинг: логотип + фавиконки ==== */
@@ -409,61 +408,95 @@
       sheet.addEventListener('touchend',()=>{ if(dy>40){ hide(); sheet.style.transform=''; } else { sheet.style.transform=''; } });
     })();
 
-    /* ==== Простая SPA-навигация + пузырь-индикатор ==== */
-    (function nav(){
-      const nav=document.getElementById('spa-nav'); if(!nav) return;
-      const bubble=nav.querySelector('.bubble');
-      const track=nav.querySelector('.track');
-      const links=[...nav.querySelectorAll('.btn')];
+    /* ==== SPA‑навигация + пузырь (mobile‑proof) ==== */
+(function nav(){
+  const nav = document.getElementById('spa-nav'); if(!nav) return;
+  const track = nav.querySelector('.track') || nav;
+  const bubble = track.querySelector('.bubble');
+  const links = Array.from(track.querySelectorAll('.btn,[data-page]'));
 
-      function compute(){
-        const act=nav.querySelector('.btn.active'); if(!act) return null;
-        const x = act.offsetLeft - track.scrollLeft;
-        const w = act.offsetWidth;
-        return { x, w };
-      }
-      function setBubble(pos, animate=true){
-        if(!pos) return;
-        if(!animate) bubble.classList.add('fast'); else bubble.classList.remove('fast');
-        bubble.style.left = Math.max(0, Math.round(pos.x)) + 'px';
-        bubble.style.width = Math.max(32, Math.round(pos.w)) + 'px';
-      }
-      function moveBubbleImmediate(){ setBubble(compute(), false); }
-      function moveBubbleAnimated(){ setBubble(compute(), true); }
+  const ALLOW_DRAG = (window.matchMedia && matchMedia('(pointer: coarse)').matches);
 
-      function centerActive(){
-        const a = nav.querySelector('.btn.active'); if(!a) return;
-        const target = a.offsetLeft - (track.clientWidth - a.offsetWidth)/2;
-        track.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
-        // обновляем позицию плашки сразу, чтобы она не отставала
-        moveBubbleImmediate();
-      }
-      function activate(hash){
-        const page=(hash||location.hash||'#home').replace('#','');
-        document.querySelectorAll('main > section, section.page').forEach(s=>{
-          s.style.display = (s.id===page)?'block':'none';
-        });
-        links.forEach(a=>a.classList.toggle('active', a.dataset.page===page));
-        moveBubbleAnimated();
-        centerActive();
-      }
+  function pageIdFromHash(h){ return (h||location.hash||'#home').replace('#','') || 'home'; }
 
-      // плавное следование при прокрутке и после остановки — мягкая анимация
-      let scrollTimer=null;
-      function onScroll(){
-        moveBubbleImmediate();
-        clearTimeout(scrollTimer);
-        scrollTimer = setTimeout(()=>{ moveBubbleAnimated(); }, 90);
-      }
-      track.addEventListener('scroll', onScroll, {passive:true});
-      window.addEventListener('resize', moveBubbleImmediate);
-      window.addEventListener('orientationchange', moveBubbleImmediate);
-      track.addEventListener('click', (e)=>{ const a=e.target.closest('.btn'); if(!a) return; setTimeout(()=>{ centerActive(); moveBubbleAnimated(); }, 40); });
-      window.addEventListener('hashchange',()=>activate());
-      activate(); setTimeout(()=>{ moveBubbleImmediate(); centerActive(); }, 30);
-    })();
+  function showPage(hash){
+    const id = pageIdFromHash(hash);
+    document.querySelectorAll('main > section, section.page').forEach(s=>{
+      s.style.display = (s.id===id) ? 'block' : 'none';
+    });
+    links.forEach(a=> a.classList.toggle('active', (a.dataset && a.dataset.page)===id ));
+    centerActive();
+    moveBubble();
+  }
 
-    /* ==== История + Партнёрка: загрузка и рендер ==== */
+  function moveBubble(){
+    if (!bubble) return;
+    const a = track.querySelector('.btn.active,[data-page].active') || links[0];
+    if (!a) return;
+    const aRect = a.getBoundingClientRect();
+    const tRect = track.getBoundingClientRect();
+    // left внутри .track (учитываем прокрутку самого track)
+    const left = (aRect.left - tRect.left) + track.scrollLeft + 6;
+    bubble.style.left = Math.max(0, Math.round(left)) + 'px';
+    bubble.style.width = Math.max(32, Math.round(aRect.width)) + 'px';
+  }
+
+  function centerActive(){
+    const a = track.querySelector('.btn.active,[data-page].active');
+    if (!a) return;
+    if (a.scrollIntoView){
+      a.scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
+      setTimeout(moveBubble, 220);
+    } else {
+      const target = a.offsetLeft - (track.clientWidth - a.offsetWidth)/2;
+      const max = Math.max(0, track.scrollWidth - track.clientWidth);
+      track.scrollTo({ left: Math.min(max, Math.max(0, target)), behavior:'smooth' });
+      setTimeout(moveBubble, 220);
+    }
+  }
+
+  // Делегированные клики + порог для drag, чтобы не стреляли «ложные» клики
+  let isDown=false, sx=0, sl=0, moved=false;
+  track.addEventListener('pointerdown', (e)=>{
+    if (!ALLOW_DRAG) return;
+    isDown = true; moved = false; sx = e.clientX; sl = track.scrollLeft;
+    track.setPointerCapture(e.pointerId);
+  });
+  track.addEventListener('pointermove', (e)=>{
+    if (!ALLOW_DRAG || !isDown) return;
+    const dx = e.clientX - sx;
+    if (Math.abs(dx) > 6) moved = true;
+    track.scrollLeft = sl - dx;
+    requestAnimationFrame(moveBubble);
+  });
+  track.addEventListener('pointerup', ()=>{ isDown = false; });
+
+  track.addEventListener('click', (e)=>{
+    const a = e.target.closest('.btn,[data-page]'); if(!a) return;
+    if (moved) { moved = false; return; } // это был drag, не клик
+    const id = a.dataset && a.dataset.page;
+    if (id){
+      // Позволяем hashchange, он вызовет showPage()
+      history.replaceState(null, '', '#'+id);
+      showPage();
+    } else {
+      setTimeout(()=>{ moveBubble(); centerActive(); }, 0);
+    }
+  }, {passive:false});
+
+  // Обновляем пузырь при скролле/изменении размеров
+  track.addEventListener('scroll', ()=>{ requestAnimationFrame(moveBubble); }, {passive:true});
+  window.addEventListener('resize', ()=>{ requestAnimationFrame(moveBubble); });
+  window.addEventListener('orientationchange', ()=>{ setTimeout(()=>{ moveBubble(); centerActive(); }, 0); });
+  window.addEventListener('hashchange', ()=> showPage());
+
+  // Инициализация
+  showPage();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(()=> setTimeout(()=>{ moveBubble(); centerActive(); }, 0));
+  window.addEventListener('load', ()=>{ moveBubble(); centerActive(); });
+})();
+
+/* ==== История + Партнёрка: загрузка и рендер ==== */
     (function historyAndInvite(){
       function fmtDate(s){ try{ if(!s) return '—'; const d=new Date(s.replace(' ','T')); return d.toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(_){ return s; } }
       function el(id){ return document.getElementById(id); }
