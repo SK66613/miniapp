@@ -1598,7 +1598,7 @@
   transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
 }
 .wheel-list .tariff.active{
-  transform: scale(1.01);          /* было 1.015 — меньше «выпирает» */
+  transform: scale(0.99);          /* было 1.015 — меньше «выпирает» */
   border-color: rgba(255,255,255,.22);
   box-shadow:
     0 12px 28px rgba(0,0,0,.26),
@@ -1620,7 +1620,7 @@
 }
 
 /* служебное: отступ между заголовком и колесом */
-#services .page-title + .tariff-wheel{ margin-top:14px; }
+#services .page-title + .tariff-wheel{ margin-top:1px; }
 
 /* цена/подпись */
 #services .price-row{ display:flex; gap:10px; align-items:baseline; margin-top:8px; }
@@ -1628,8 +1628,14 @@
 #services .price-note{ opacity:.8; }
 
 
+#services .tariff-wheel{ padding-bottom: 0; }  /* убираем нижний запас */
+#services .wheel-center-mask{ top:50%; transform: translateY(-50%); } /* так же, как было */
 
-  </style>
+#services .tariff-wheel{ padding-inline: 0; }            /* убираем боковые поля контейнера */
+#services .wheel-list .tariff{ width: 100%; }            /* карточка растягивается */
+#services .wheel-center-mask{ left:8px; right:8px; }     /* тонкая рамка не упирается в край */
+
+</style>
 
 
 </head>
@@ -3432,12 +3438,6 @@
   document.addEventListener('tariff:ready', apply);
 })();
 </script>
-
-
-
-
-
-
 
 
 </body>
