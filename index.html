@@ -1757,122 +1757,99 @@
       </section>
 
 
-      <!-- SERVICES -->
-      <section class="page" id="services">
-        <!-- Заголовок + переключатель -->
-        <div class="card page-title">
-          <h2 class="h1">Тарифы</h2>
+ <!-- SERVICES -->
+<section class="page" id="services">
+  <!-- Заголовок + переключатель -->
+  <div class="card page-title">
+    <h2 class="h1">Тарифы</h2>
 
-          <div id="planRow" class="plan-toggle">
-            <button class="plan-btn active" data-plan="month">Месяц</button>
-            <button class="plan-btn" data-plan="year">Год −15%</button>
-          </div>
-        </div>
-
-        <!-- ВЕРТИКАЛЬНАЯ КАРУСЕЛЬ ТАРИФОВ -->
-        <div class="tariff-wheel" id="tariffWheel">
-          <div class="wheel-list" id="tariffList">
-            <!-- ↓↓↓ сюда перенеси ВСЕ карточки тарифов, КРОМЕ блока с переключателем -->
-            <article class="card tariff" data-id="avito">
-              <div class="card service-card" data-month="30000">
-                <div class="h2">Продвижение на Авито</div>
-                <p class="muted-sm">Первые позиции объявлений при минимальном бюджете.</p>
-                <div class="price-row">
-                  <div class="price"><span class="num"></span> ₽</div>
-                  <div class="price-note"></div>
-                </div>
-              </div>
-            </article>
-
-            <article class="card tariff" data-id="ads">
-              <div class="card service-card" data-month="60000">
-                <div class="h2">Контекстная реклама</div>
-                <p class="muted-sm">Яндекс.Директ и Google Ads под KPI, без слива бюджета.</p>
-                <div class="price-row">
-                  <div class="price"><span class="num"></span> ₽</div>
-                  <div class="price-note"></div>
-                </div>
-              </div>
-            </article>
-
-            <article class="card tariff" data-id="ads">
-              <div class="card service-card" data-month="45000">
-                <div class="h2">SEO и сайты</div>
-                <p class="muted-sm">Сайт-магнит: структура, тексты, техничка, оптимизация.</p>
-                <div class="price-row">
-                  <div class="price"><span class="num"></span> ₽</div>
-                  <div class="price-note"></div>
-                </div>
-              </div>
-            </article>
-
-            <article class="card tariff" data-id="ads">
-              <div class="card service-card" data-month="55000">
-                <div class="h2">CRM и чат-боты</div>
-                <p class="muted-sm">Amo/B24 + автоворонки, заявки 24/7, ничего не теряется.</p>
-                <div class="price-row">
-                  <div class="price"><span class="num"></span> ₽</div>
-                  <div class="price-note"></div>
-                </div>
-              </div>
-            </article>
-
-            <article class="card tariff" data-id="ads">
-              <div class="card service-card" data-month="40000">
-                <div class="h2">Маркетплейсы</div>
-                <p class="muted-sm">Карточки, ключи, продвижение — полный цикл.</p>
-                <div class="price-row">
-                  <div class="price"><span class="num"></span> ₽</div>
-                  <div class="price-note"></div>
-                </div>
-              </div>
-            </article>
-
-            <article class="card tariff" data-id="ads">
-              <div class="card service-card" data-month="50000">
-                <div class="h2">Аналитика и стратегия</div>
-                <p class="muted-sm">Сквозная аналитика + карта действий на 6–12 мес.</p>
-                <div class="price-row">
-                  <div class="price"><span class="num"></span> ₽</div>
-                  <div class="price-note"></div>
-                </div>
-              </div>
-            </article>
-
-            <article class="card tariff" data-id="ads">
-              <div class="card service-card" data-month="35000">
-                <div class="h2">Репутация и SMM</div>
-                <p class="muted-sm">Образ бренда и работа с отзывами.</p>
-                <div class="price-row">
-                  <div class="price"><span class="num"></span> ₽</div>
-                  <div class="price-note"></div>
-                </div>
-              </div>
-            </article>
-
-            <article class="card tariff" data-id="ads">
-              <div class="card service-card" data-month="38000">
-                <div class="h2">Telegram-маркетинг</div>
-                <p class="muted-sm">Каналы, рассылки, автоворонки, связка с CRM.</p>
-                <div class="price-row">
-                  <div class="price"><span class="num"></span> ₽</div>
-                  <div class="price-note"></div>
-                </div>
-              </div>
-          </div>
-          </article>
-
-          <!-- …и так далее для всех тарифов… -->
-        </div>
-
-        <!-- мягкая подсветка центра -->
-        <div class="wheel-center-mask" aria-hidden="true"></div>
+    <div id="planRow" class="plan-toggle">
+      <button class="plan-btn active" data-plan="month">Месяц</button>
+      <button class="plan-btn" data-plan="year">Год −15%</button>
+    </div>
   </div>
 
-  </section>
+  <!-- ВЕРТИКАЛЬНАЯ КАРУСЕЛЬ ТАРИФОВ -->
+  <div class="tariff-wheel" id="tariffWheel">
+    <div class="wheel-list" id="tariffList">
+      <!-- КАЖДЫЙ тариф — ОДНА карточка (article), без вложенной .card -->
+      <article class="card tariff service-card" data-id="avito" data-month="30000">
+        <div class="h2">Продвижение на Авито</div>
+        <p class="muted-sm">Первые позиции объявлений при минимальном бюджете.</p>
+        <div class="price-row">
+          <div class="price"><span class="num"></span> ₽</div>
+          <div class="price-note"></div>
+        </div>
+      </article>
 
+      <article class="card tariff service-card" data-id="ads" data-month="60000">
+        <div class="h2">Контекстная реклама</div>
+        <p class="muted-sm">Яндекс.Директ и Google Ads под KPI, без слива бюджета.</p>
+        <div class="price-row">
+          <div class="price"><span class="num"></span> ₽</div>
+          <div class="price-note"></div>
+        </div>
+      </article>
 
+      <article class="card tariff service-card" data-id="seo" data-month="45000">
+        <div class="h2">SEO и сайты</div>
+        <p class="muted-sm">Сайт-магнит: структура, тексты, техничка, оптимизация.</p>
+        <div class="price-row">
+          <div class="price"><span class="num"></span> ₽</div>
+          <div class="price-note"></div>
+        </div>
+      </article>
 
+      <article class="card tariff service-card" data-id="crm" data-month="55000">
+        <div class="h2">CRM и чат-боты</div>
+        <p class="muted-sm">Amo/B24 + автоворонки, заявки 24/7, ничего не теряется.</p>
+        <div class="price-row">
+          <div class="price"><span class="num"></span> ₽</div>
+          <div class="price-note"></div>
+        </div>
+      </article>
+
+      <article class="card tariff service-card" data-id="mp" data-month="40000">
+        <div class="h2">Маркетплейсы</div>
+        <p class="muted-sm">Карточки, ключи, продвижение — полный цикл.</p>
+        <div class="price-row">
+          <div class="price"><span class="num"></span> ₽</div>
+          <div class="price-note"></div>
+        </div>
+      </article>
+
+      <article class="card tariff service-card" data-id="analytics" data-month="50000">
+        <div class="h2">Аналитика и стратегия</div>
+        <p class="muted-sm">Сквозная аналитика + карта действий на 6–12 мес.</p>
+        <div class="price-row">
+          <div class="price"><span class="num"></span> ₽</div>
+          <div class="price-note"></div>
+        </div>
+      </article>
+
+      <article class="card tariff service-card" data-id="smm" data-month="35000">
+        <div class="h2">Репутация и SMM</div>
+        <p class="muted-sm">Образ бренда и работа с отзывами.</p>
+        <div class="price-row">
+          <div class="price"><span class="num"></span> ₽</div>
+          <div class="price-note"></div>
+        </div>
+      </article>
+
+      <article class="card tariff service-card" data-id="tg" data-month="38000">
+        <div class="h2">Telegram-маркетинг</div>
+        <p class="muted-sm">Каналы, рассылки, автоворонки, связка с CRM.</p>
+        <div class="price-row">
+          <div class="price"><span class="num"></span> ₽</div>
+          <div class="price-note"></div>
+        </div>
+      </article>
+    </div>
+
+    <!-- мягкая подсветка центра — ДОЛЖНА быть внутри .tariff-wheel -->
+    <div class="wheel-center-mask" aria-hidden="true"></div>
+  </div>
+</section>
 
 
   <!-- ABOUT -->
