@@ -1363,12 +1363,12 @@
   </style>
 
 <style>
-/* Раздел "Обо мне": разлипание карточек */
+/* === About: разлипание карточек === */
 #about > .card { margin-top: 14px; }
 #about > .card:first-child { margin-top: 0; }
 #about .page-title + .about-chat { margin-top: 14px; }
 
-/* Мини-чат */
+/* === Мини-чат === */
 #about .about-chat{ padding:14px; display:grid; gap:10px; }
 #about .chat-window{
   height: 280px; overflow:auto; padding:10px; border-radius:14px;
@@ -1377,21 +1377,22 @@
   scroll-behavior: smooth;
 }
 
-/* Сообщения и аватарки */
+/* === Сообщения и аватарки === */
 #about .msg{ display:flex; gap:10px; margin:10px 0; align-items:flex-end; }
 #about .msg.user{ flex-direction: row-reverse; } /* пользователь справа */
 
+/* ВАЖНО: один-единственный способ задавать картинку — через переменную */
 #about .avatar{
-  width:34px; height:34px; border-radius:50%; flex:0 0 34px;
-  background-color:#222; background-position:center; background-size:cover; background-repeat:no-repeat;
-  border:1px solid rgba(255,255,255,.18);
+  background: var(--ava-bg, #222) center/cover no-repeat !important;
+  width:34px; height:34px; border-radius:50%;
+  flex:0 0 34px; border:1px solid rgba(255,255,255,.18);
 }
+/* Кто отвечает (я) — слева */
+#about .msg.me   .avatar{ --ava-bg: var(--ava-me,   url('me.png')); }
+/* Пользователь — справа */
+#about .msg.user .avatar{ --ava-bg: var(--ava-user, url('user.png')); }
 
-/* ⬇️ Подставляем картинки из корня через переменные контейнера */
-#about .msg.me   .avatar{ background-image: var(--ava-me,   url('/me.png')); }
-#about .msg.user .avatar{ background-image: var(--ava-user, url('/user.png')); }
-
-/* Пузырьки */
+/* Пузыри */
 #about .bubble{
   max-width: 75%; padding:10px 12px; border-radius:14px; line-height:1.25;
   border:1px solid var(--border, rgba(255,255,255,.12));
@@ -1402,35 +1403,21 @@
   color:#fafbfb; border-color: transparent; font-weight:800;
 }
 
-/* Индикатор "печатает…" (оставил как был) */
+/* "Печатает…" */
 #about .typing{ width:60px; display:flex; justify-content:space-between; }
 #about .dot{ width:6px; height:6px; border-radius:50%; background: currentColor; opacity:.7; animation: typing 1s infinite ease-in-out; }
 #about .dot:nth-child(2){ animation-delay:.15s } 
 #about .dot:nth-child(3){ animation-delay:.3s }
 @keyframes typing{ 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-3px) } }
 
+/* Быстрые кнопки */
 #about .chat-quick{ display:flex; gap:8px; flex-wrap:wrap; }
 #about .chip{
   padding:8px 10px; border-radius:999px; font-weight:700;
   border:1px solid var(--border, rgba(255,255,255,.14));
-  background: rgba(240, 235, 235, 0.971);
+  background: rgba(240,235,235,.97);
 }
 #about .chip:disabled{ opacity:.55; pointer-events:none; }
-
-/* === About: аватарки из корня, без сюрпризов === */
-#about .avatar{
-  /* весь background задаём одной переменной, чтобы ничто выше не «сбило» картинку */
-  background: var(--ava-bg, #222) center/cover no-repeat !important;
-  width:34px; height:34px; border-radius:50%;
-  flex:0 0 34px; border:1px solid rgba(255,255,255,.18);
-}
-
-/* Кто отвечает (я) — слева */
-#about .msg.me   .avatar{ --ava-bg: var(--ava-me,   url('me.png')); }
-/* Пользователь — справа */
-#about .msg.user .avatar{ --ava-bg: var(--ava-user, url('user.png')); }
-
-
 
 </style>
 
