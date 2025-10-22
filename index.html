@@ -1635,6 +1635,52 @@
 #services .wheel-list .tariff{ width: 100%; }            /* карточка растягивается */
 #services .wheel-center-mask{ left:8px; right:8px; }     /* тонкая рамка не упирается в край */
 
+/* отключаем центральную маску, чтобы ничего не перекрывало карточки */
+#services .wheel-center-mask{ display:none !important; }
+
+/* база: подготовка карточки */
+#services .wheel-list .tariff{
+  position: relative;
+  overflow: hidden;                 /* чтобы свет не выходил наружу */
+  transform-origin: center;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+
+/* цвета свечения (как у тебя: фиолетовый + мята) */
+:root{
+  --acc1: #7b5bff;                  /* фиолетовый */
+  --acc2: #3de0c5;                  /* мятный */
+}
+
+/* активная: лёгкий scale + ВНУТРЕННИЕ (inset) тени */
+#services .wheel-list .tariff.active{
+  transform: scale(1.005);
+  border-color: rgba(255,255,255,.20);
+  /* всё ВНУТРИ карточки */
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--acc1) 70%, transparent) inset,
+    0 0 22px color-mix(in srgb, var(--acc1) 50%, transparent)   inset,
+    0 0 46px color-mix(in srgb, var(--acc2) 40%, transparent)   inset;
+}
+
+/* дополнительный «ореол» ВНУТРИ через псевдо-элемент */
+#services .wheel-list .tariff.active::after{
+  content:"";
+  position:absolute; inset:0;
+  /* сужаем область и сохраняем скругления — свет только по краям внутри */
+  clip-path: inset(6px round 16px);     /* ← регулируется: ширина «кольца» */
+  pointer-events:none; z-index:0;
+  filter: blur(10px); opacity:.9;
+  background:
+    radial-gradient(120% 140% at 50% 0,
+      color-mix(in srgb, var(--acc2) 30%, transparent), transparent 60%),
+    radial-gradient(120% 140% at 50% 100%,
+      color-mix(in srgb, var(--acc1) 45%, transparent), transparent 60%);
+  transition: filter .22s ease, opacity .22s ease;
+}
+
+
+
 </style>
 
 
@@ -3336,7 +3382,7 @@
     let vy = v0;
     const spin = ()=>{
       vy *= friction;
-      wheel.scrollTop -= vy * 16;
+      wheel.scrollTop -= vy * 1;
       infiniteLoopFix();
       requestAnimationFrame(updateActive);
       if (Math.abs(vy) > minV) animId = requestAnimationFrame(spin);
@@ -3397,6 +3443,16 @@
 
   // сообщаем ценовику, что карусель собралась (для пересчёта цен и клонов)
   document.dispatchEvent(new CustomEvent('tariff:ready'));
+
+  // когда экран снова становится видимым — заново центрируем активную
+document.addEventListener('visibilitychange', ()=>{
+  if (document.hidden) return;
+  const all = nodes();
+  if (!all.length) return;
+  const mid = all[pre.length];         // «средняя» первая
+  requestAnimationFrame(()=> { centerOn(mid, 'auto'); });
+});
+
 })();
 </script>
 
