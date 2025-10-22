@@ -1577,58 +1577,57 @@
 
   <style>
 
-/* Вертикальная карусель */
+/* окно карусели — даём боковые поля, фикс оси Y */
 .tariff-wheel{
   --gap:12px;
-  --centerH:132px;          /* высота зоны подсветки центра */
+  --centerH:132px;
   height:420px;
   position:relative;
-  overflow-y:auto;
-  scroll-snap-type: y proximity;     /* помогаем нативному снэпу */
-  -webkit-overflow-scrolling: touch;
+  overflow:hidden;
   padding-block: calc(var(--centerH)/2);
-  touch-action: pan-y;               /* блокируем горизонтальную дрожь */
-  overscroll-behavior: contain;      /* без «резинки» в iOS/Telegram */
+  padding-inline: 12px;            /* ← добавили «воздух» слева/справа */
+  border-radius:16px;
+  touch-action: none;              /* управляем жестом сами */
+  overscroll-behavior: contain;
 }
-.tariff-wheel::before,
-.tariff-wheel::after{
-  content:""; position:sticky; left:0; right:0; height:56px; pointer-events:none; z-index:3;
-}
-.tariff-wheel::before{ top:0;    background: linear-gradient(#0b0f12, transparent); }
-.tariff-wheel::after{  bottom:0; background: linear-gradient(transparent, #0b0f12); }
 
+/* список и карточки */
 .wheel-list{ display:flex; flex-direction:column; gap:var(--gap); }
-.wheel-list .tariff{ scroll-snap-align:center; transition: transform .22s, box-shadow .22s, border-color .22s, background .22s; }
+.wheel-list .tariff{
+  transform-origin: center;        /* чтобы не «терло» края при scale */
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
 .wheel-list .tariff.active{
-  transform: scale(1.015);
-  background: inherit;
+  transform: scale(1.01);          /* было 1.015 — меньше «выпирает» */
   border-color: rgba(255,255,255,.22);
-  box-shadow: 0 16px 32px rgba(0,0,0,.28), 0 0 0 2px rgba(123,91,255,.30) inset;
+  box-shadow:
+    0 12px 28px rgba(0,0,0,.26),
+    0 0 0 2px rgba(123,91,255,.28) inset;
 }
 
+/* маска центра — без белой вуали и подальше от краёв */
 .wheel-center-mask{
-  position:absolute; left:8px; right:8px; top:50%;
+  position:absolute; left:16px; right:16px; top:50%;
   height: var(--centerH); transform: translateY(-50%);
   pointer-events:none; z-index:2; border-radius:16px;
-  background: transparent !important; mix-blend-mode: normal !important;
+  background: transparent !important;
+  mix-blend-mode: normal !important;
   box-shadow:
-    0 0 0 1px rgba(123,91,255,.24) inset,
-    0 12px 28px rgba(0,0,0,.28),
-    0 0 60px rgba(123,91,255,.16),
-    0 0 100px rgba(61,224,197,.12);
+    0 0 0 1px rgba(123,91,255,.22) inset,
+    0 10px 24px rgba(0,0,0,.26),
+    0 0 54px rgba(123,91,255,.14),
+    0 0 90px rgba(61,224,197,.10);
 }
 
-/* Внутри карточки — цены */
+/* служебное: отступ между заголовком и колесом */
+#services .page-title + .tariff-wheel{ margin-top:14px; }
+
+/* цена/подпись */
 #services .price-row{ display:flex; gap:10px; align-items:baseline; margin-top:8px; }
 #services .price .num{ font-size:26px; font-weight:900; letter-spacing:.3px; }
 #services .price-note{ opacity:.8; }
 
-/* разлипание */
-#services .page-title + .tariff-wheel{ margin-top:14px; }
 
-
-/* жесткий запрет горизонтального «дрейфа» на iOS */
-#services .tcard, #services .vwheel { overscroll-behavior: contain; }
 
   </style>
 
@@ -3256,100 +3255,186 @@
   const list  = document.getElementById('tariffList');
   if (!wheel || !list) return;
 
-  // Чёткая ось: не даём уезжать вбок и гасим «резинку»
-  wheel.style.touchAction = 'pan-y';
+  wheel.style.touchAction = 'none';
+  wheel.style.userSelect = 'none';
   wheel.style.overscrollBehavior = 'contain';
 
-  // исходные карточки
   const orig = Array.from(list.querySelectorAll('.tariff'));
   if (orig.length < 2) return;
 
-  // размеры
-  const cs   = getComputedStyle(list);
-  const gap  = parseFloat(cs.rowGap || cs.gap || 12) || 12;
-  let   cardH= Math.round(orig[0].getBoundingClientRect().height);
-  let   STEP = cardH + gap;
-  const N    = orig.length;
+  const cs    = getComputedStyle(list);
+  const gap   = parseFloat(cs.rowGap || cs.gap || 12) || 12;
+  let   cardH = Math.round(orig[0].getBoundingClientRect().height);
+  let   STEP  = cardH + gap;
+  const N     = orig.length;
 
-  // бесконечная лента: копии вверх/вниз
+  // бесконечная лента
   const pre  = orig.map(n => n.cloneNode(true));
   const post = orig.map(n => n.cloneNode(true));
   list.prepend(...pre);
   list.append(...post);
 
-  const all = () => Array.from(list.querySelectorAll('.tariff'));
+  const nodes = () => Array.from(list.querySelectorAll('.tariff'));
 
-  // центрирование карточки
+  function infiniteLoopFix(){
+    const min = STEP * (N * 0.5);
+    const max = STEP * (N * 2.5);
+    if (wheel.scrollTop < min)      wheel.scrollTop += STEP * N;
+    else if (wheel.scrollTop > max) wheel.scrollTop -= STEP * N;
+  }
+
+  // центрирование (наша анимация)
+  let animId = 0, fromTop=0, toTop=0, t0=0, DUR=420;
+  function animateTo(dest){
+    cancelAnimationFrame(animId);
+    fromTop = wheel.scrollTop; toTop = dest; t0 = performance.now();
+    DUR = Math.min(620, 240 + Math.abs(dest - fromTop)*0.25);
+    const tick = (t)=>{
+      const k = Math.min((t - t0)/DUR, 1);
+      const e = 1 - Math.pow(1 - k, 3);
+      wheel.scrollTop = fromTop + (toTop - fromTop)*e;
+      infiniteLoopFix();
+      requestAnimationFrame(updateActive);
+      if (k < 1) animId = requestAnimationFrame(tick);
+      else animId = 0;
+    };
+    animId = requestAnimationFrame(tick);
+  }
   function centerOn(el, behavior='smooth'){
     const vH = wheel.clientHeight;
     const h  = el.getBoundingClientRect().height || cardH;
     const target = el.offsetTop - (vH - h)/2;
-    wheel.scrollTo({ top: target, behavior });
+    if (behavior==='auto'){ wheel.scrollTop = target; infiniteLoopFix(); updateActive(); }
+    else animateTo(target);
   }
 
-  // старт: показать «среднюю» первую
-  const midFirst = all()[pre.length];
-  requestAnimationFrame(()=> centerOn(midFirst,'auto'));
-
-  // активная карточка в центре
-  let raf = 0;
+  // активная карточка
   function updateActive(){
-    raf = 0;
     const centerY = wheel.scrollTop + wheel.clientHeight/2;
     let best=null, bestDist=1e9;
-    for (const el of all()){
+    for (const el of nodes()){
       const r = el.getBoundingClientRect();
       const c = el.offsetTop + r.height/2;
       const d = Math.abs(c - centerY);
       if (d < bestDist){ bestDist = d; best = el; }
     }
-    all().forEach(el => el.classList.toggle('active', el === best));
+    nodes().forEach(el => el.classList.toggle('active', el === best));
   }
 
-  // плавный доснэп после остановки
-  let stopTimer = 0;
-  function snapAfterStop(delay=90){
-    clearTimeout(stopTimer);
-    stopTimer = setTimeout(()=>{
-      const centerY = wheel.scrollTop + wheel.clientHeight/2;
-      let best=null, bestDist=1e9;
-      for (const el of all()){
-        const r = el.getBoundingClientRect();
-        const c = el.offsetTop + r.height/2;
-        const d = Math.abs(c - centerY);
-        if (d < bestDist){ bestDist = d; best = el; }
+  // докрутка (инерция)
+  let dragging=false, lastY=0, lastT=0, v=0, pid=0;
+  function stopAnim(){ cancelAnimationFrame(animId); animId = 0; }
+  function startMomentum(v0){
+    stopAnim();
+    const friction = 0.92, minV = 0.08;
+    let vy = v0;
+    const spin = ()=>{
+      vy *= friction;
+      wheel.scrollTop -= vy * 16;
+      infiniteLoopFix();
+      requestAnimationFrame(updateActive);
+      if (Math.abs(vy) > minV) animId = requestAnimationFrame(spin);
+      else {
+        // доснэп к ближайшей
+        const centerY = wheel.scrollTop + wheel.clientHeight/2;
+        let best=null, bestDist=1e9;
+        for (const el of nodes()){
+          const r = el.getBoundingClientRect();
+          const c = el.offsetTop + r.height/2;
+          const d = Math.abs(c - centerY);
+          if (d < bestDist){ bestDist = d; best = el; }
+        }
+        if (best) centerOn(best,'smooth');
       }
-      if (best) centerOn(best,'smooth');
-    }, delay);
+    };
+    animId = requestAnimationFrame(spin);
   }
 
-  // «бесконечность» и подсветка при скролле
-  wheel.addEventListener('scroll', ()=>{
-    if (!raf) raf = requestAnimationFrame(updateActive);
+  wheel.addEventListener('pointerdown', (e)=>{
+    dragging = true; wheel.setPointerCapture(e.pointerId); pid = e.pointerId;
+    stopAnim(); lastY = e.clientY; lastT = e.timeStamp; v = 0;
+  });
+  wheel.addEventListener('pointermove', (e)=>{
+    if (!dragging || e.pointerId !== pid) return;
+    const dy = e.clientY - lastY;
+    const dt = Math.max(1, e.timeStamp - lastT);
+    wheel.scrollTop -= dy;
+    infiniteLoopFix();
+    v = (dy / dt);
+    lastY = e.clientY; lastT = e.timeStamp;
+    e.preventDefault();
+    updateActive();
+  }, {passive:false});
+  function endDrag(e){
+    if (!dragging || (e && e.pointerId !== pid)) return;
+    dragging=false; startMomentum(v * 22);
+  }
+  wheel.addEventListener('pointerup', endDrag);
+  wheel.addEventListener('pointercancel', endDrag);
+  wheel.addEventListener('pointerleave', endDrag);
 
-    const min = STEP * (N * 0.5);
-    const max = STEP * (N * 2.5);
-    if (wheel.scrollTop < min)           wheel.scrollTop += STEP * N;
-    else if (wheel.scrollTop > max)      wheel.scrollTop -= STEP * N;
-
-    snapAfterStop(110);
-  }, { passive:true });
-
-  // тап по карточке — центрируем её
   list.addEventListener('click', (e)=>{
     const card = e.target.closest('.tariff'); if (!card) return;
     centerOn(card,'smooth');
   });
 
-  // перерасчёт при изменении размеров/шрифтов
+  // старт
+  const midFirst = nodes()[pre.length];
+  requestAnimationFrame(()=> { centerOn(midFirst,'auto'); });
+
+  // ресайз
   window.addEventListener('resize', ()=>{
-    cardH = Math.round(all()[pre.length].getBoundingClientRect().height);
+    cardH = Math.round(nodes()[pre.length].getBoundingClientRect().height);
     STEP  = cardH + gap;
     updateActive();
-    snapAfterStop(0);
   });
+
+  // сообщаем ценовику, что карусель собралась (для пересчёта цен и клонов)
+  document.dispatchEvent(new CustomEvent('tariff:ready'));
 })();
 </script>
+
+
+<script>
+(function tariffPricing(){
+  const row  = document.getElementById('planRow');
+  const list = document.getElementById('tariffList');
+  if (!row || !list) return;
+
+  let plan = 'month';                           // старт — Месяц
+  const fmt  = n => n.toLocaleString('ru-RU');
+  const note = p => p==='year' ? ' / мес (годовой план, −15%)' : ' / мес';
+
+  function apply(){
+    // считаем ВСЕ карточки, включая клоны
+    list.querySelectorAll('.service-card').forEach(card=>{
+      const base  = +card.dataset.month || 0;
+      const price = (plan==='year') ? Math.round(base*0.85) : base;
+      const num  = card.querySelector('.price .num');
+      const nte  = card.querySelector('.price-note');
+      if (num) num.textContent = fmt(price);
+      if (nte) nte.textContent = note(plan);
+    });
+  }
+
+  // старт
+  apply();
+
+  // пересчёт при переключении
+  row.addEventListener('click', e=>{
+    const b = e.target.closest('.plan-btn'); if (!b) return;
+    row.querySelectorAll('.plan-btn').forEach(x=>x.classList.toggle('active', x===b));
+    plan = b.dataset.plan || 'month';
+    apply();
+  });
+
+  // когда карусель закончила клонировать — ещё раз пересчитать
+  document.addEventListener('tariff:ready', apply);
+})();
+</script>
+
+
+
 
 
 
