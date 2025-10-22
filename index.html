@@ -2470,23 +2470,31 @@
         confettiBurst(r.left + r.width / 2, r.top + r.height / 2);
       });
 
-      // «Забрать бонус» — учёт кулдауна + переход по ссылке
-      claim?.addEventListener('click', () => {
-        if (claim.disabled) return; // на всякий
+// «Забрать бонус» — учёт кулдауна + запись в профиль + переход по ссылке
+claim?.addEventListener('click', () => {
+  if (claim.disabled) return; // на всякий
 
-        const idx = mod(Math.round(curr), N);
-        const name = items[idx]?.dataset?.name || '';
-        const url = bonusLinks[name];
+  const idx  = mod(Math.round(curr), N);
+  const name = items[idx]?.dataset?.name || '';
+  const url  = bonusLinks[name];
 
-        // фиксируем время клика и обновляем кнопку/таймер
-        setLastClaim();
-        refreshClaimState();
+  // фиксируем время клика и обновляем кнопку/таймер
+  setLastClaim();
+  refreshClaimState();
 
-        if (!url) return;
-        if (url.startsWith('#')) location.hash = url;
-        else if (/^https?:\/\//.test(url)) window.open(url, '_blank');
-        else window.location.href = url;
-      });
+  // ⬇️ ДОБАВЛЕНО: обновляем профиль (кэш + UI)
+  try {
+    window.Profile?.incPoints(1);     // +1 очко
+    window.Profile?.setPrize(name);   // последний приз
+  } catch(_) {}
+
+  // переход по ссылке приза
+  if (!url) return;
+  if (url.startsWith('#'))                 location.hash = url;
+  else if (/^https?:\/\//.test(url))       window.open(url, '_blank');
+  else                                      window.location.href = url;
+});
+
 
       /* ================== конфетти ================== */
       function confettiBurst(x, y) {
