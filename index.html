@@ -1581,7 +1581,7 @@
 .tariff-wheel{
   --gap:12px;
   --centerH:132px;
-  height:420px;
+  height:620px;
   position:relative;
   overflow:hidden;
   padding-block: calc(var(--centerH)/2);
@@ -1620,7 +1620,7 @@
 }
 
 /* служебное: отступ между заголовком и колесом */
-#services .page-title + .tariff-wheel{ margin-top:1px; }
+#services .page-title + .tariff-wheel{ margin-top:14px; }
 
 /* цена/подпись */
 #services .price-row{ display:flex; gap:10px; align-items:baseline; margin-top:8px; }
@@ -1638,46 +1638,20 @@
 /* отключаем центральную маску, чтобы ничего не перекрывало карточки */
 #services .wheel-center-mask{ display:none !important; }
 
-/* база: подготовка карточки */
-#services .wheel-list .tariff{
-  position: relative;
-  overflow: hidden;                 /* чтобы свет не выходил наружу */
-  transform-origin: center;
-  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+
+/* отключаем затемнения сверху/снизу у окна карусели */
+#services .tariff-wheel::before,
+#services .tariff-wheel::after{ display:none !important; }
+
+/* делаем окно без лишних отступов по вертикали */
+#services .tariff-wheel{
+  padding-top: 0;      /* якорный зазор теперь через TOP_OFFSET_PX в JS */
+  padding-bottom: 0;   /* уберёт «подвал» */
 }
 
-/* цвета свечения (как у тебя: фиолетовый + мята) */
-:root{
-  --acc1: #7b5bff;                  /* фиолетовый */
-  --acc2: #3de0c5;                  /* мятный */
-}
+/* если есть глобальные безопасные отступы — обнулим для этой секции */
+#services{ padding-bottom: 0 !important; }
 
-/* активная: лёгкий scale + ВНУТРЕННИЕ (inset) тени */
-#services .wheel-list .tariff.active{
-  transform: scale(1.005);
-  border-color: rgba(255,255,255,.20);
-  /* всё ВНУТРИ карточки */
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--acc1) 70%, transparent) inset,
-    0 0 22px color-mix(in srgb, var(--acc1) 50%, transparent)   inset,
-    0 0 46px color-mix(in srgb, var(--acc2) 40%, transparent)   inset;
-}
-
-/* дополнительный «ореол» ВНУТРИ через псевдо-элемент */
-#services .wheel-list .tariff.active::after{
-  content:"";
-  position:absolute; inset:0;
-  /* сужаем область и сохраняем скругления — свет только по краям внутри */
-  clip-path: inset(6px round 16px);     /* ← регулируется: ширина «кольца» */
-  pointer-events:none; z-index:0;
-  filter: blur(10px); opacity:.9;
-  background:
-    radial-gradient(120% 140% at 50% 0,
-      color-mix(in srgb, var(--acc2) 30%, transparent), transparent 60%),
-    radial-gradient(120% 140% at 50% 100%,
-      color-mix(in srgb, var(--acc1) 45%, transparent), transparent 60%);
-  transition: filter .22s ease, opacity .22s ease;
-}
 
 
 
@@ -3307,32 +3281,31 @@
   const list  = document.getElementById('tariffList');
   if (!wheel || !list) return;
 
-  /* управление жестом — только ось Y */
   wheel.style.touchAction = 'none';
   wheel.style.userSelect = 'none';
   wheel.style.overscrollBehavior = 'contain';
 
-  /* исходные карточки */
   const orig = Array.from(list.querySelectorAll('.tariff'));
   if (orig.length < 2) return;
 
-  /* геометрия */
   const cs    = getComputedStyle(list);
   const gap   = parseFloat(cs.rowGap || cs.gap || 12) || 12;
   let   cardH = Math.round(orig[0].getBoundingClientRect().height);
   let   STEP  = cardH + gap;
   const N     = orig.length;
 
-  /* бесконечная лента */
+  // 👇 якорный зазор сверху (поставь 2–4 по вкусу)
+  const TOP_OFFSET_PX = 5;
+
+  // бесконечная лента
   const pre  = orig.map(n => n.cloneNode(true));
   const post = orig.map(n => n.cloneNode(true));
   list.prepend(...pre);
   list.append(...post);
 
   const nodes = () => Array.from(list.querySelectorAll('.tariff'));
-  const padTop = () => parseFloat(getComputedStyle(wheel).paddingTop) || 0;
+  const padTop = () => (parseFloat(getComputedStyle(wheel).paddingTop) || 0) + TOP_OFFSET_PX;
 
-  /* прыжки в среднюю секцию (для «бесконечности») */
   function infiniteLoopFix(){
     const min = STEP * (N * 0.5);
     const max = STEP * (N * 2.5);
@@ -3340,7 +3313,6 @@
     else if (wheel.scrollTop > max) wheel.scrollTop -= STEP * N;
   }
 
-  /* найти карточку, чей ВЕРХ ближе всего к верху окна */
   function findNearestTop(){
     const anchor = wheel.scrollTop + padTop();
     let best = null, bestDist = 1e9;
@@ -3351,13 +3323,12 @@
     return best || nodes()[0];
   }
 
-  /* подсветка активной (верхней) карточки */
   function markActiveTop(){
     const best = findNearestTop();
     nodes().forEach(el => el.classList.toggle('active', el === best));
   }
 
-  /* анимация прокрутки */
+  // анимация прокрутки (easeOut)
   let animId = 0, fromTop=0, toTop=0, t0=0, DUR=420;
   function animateTo(dest){
     cancelAnimationFrame(animId);
@@ -3365,7 +3336,7 @@
     DUR = Math.min(620, 240 + Math.abs(dest - fromTop)*0.25);
     const tick = (t)=>{
       const k = Math.min((t - t0)/DUR, 1);
-      const e = 1 - Math.pow(1 - k, 3);                // easeOutCubic
+      const e = 1 - Math.pow(1 - k, 3);
       wheel.scrollTop = fromTop + (toTop - fromTop)*e;
       infiniteLoopFix();
       requestAnimationFrame(markActiveTop);
@@ -3375,14 +3346,13 @@
     animId = requestAnimationFrame(tick);
   }
 
-  /* выравнивание К ВЕРХУ */
   function alignTop(el, behavior='smooth'){
     const target = el.offsetTop - padTop();
     if (behavior === 'auto'){ wheel.scrollTop = target; infiniteLoopFix(); markActiveTop(); }
     else animateTo(target);
   }
 
-  /* инерционная докрутка */
+  // инерция
   let dragging=false, lastY=0, lastT=0, v=0, pid=0;
   function stopAnim(){ cancelAnimationFrame(animId); animId = 0; }
   function startMomentum(v0){
@@ -3391,19 +3361,15 @@
     let vy = v0;
     const spin = ()=>{
       vy *= friction;
-      wheel.scrollTop -= vy * 16;                    // 16 ~ ms/frame
+      wheel.scrollTop -= vy * 6;
       infiniteLoopFix();
       requestAnimationFrame(markActiveTop);
       if (Math.abs(vy) > minV) animId = requestAnimationFrame(spin);
-      else {
-        const best = findNearestTop();               // доснэп к ближайшей «по верху»
-        if (best) alignTop(best, 'smooth');
-      }
+      else alignTop(findNearestTop(),'smooth'); // доснэп к верху
     };
     animId = requestAnimationFrame(spin);
   }
 
-  /* жесты */
   wheel.addEventListener('pointerdown', (e)=>{
     dragging = true; wheel.setPointerCapture(e.pointerId); pid = e.pointerId;
     stopAnim(); lastY = e.clientY; lastT = e.timeStamp; v = 0;
@@ -3427,34 +3393,28 @@
   wheel.addEventListener('pointercancel', endDrag);
   wheel.addEventListener('pointerleave', endDrag);
 
-  /* простая реакция на скролл (если кто-то поменял scrollTop программно) */
-  wheel.addEventListener('scroll', ()=>{ requestAnimationFrame(markActiveTop); infiniteLoopFix(); }, {passive:true});
-
-  /* тап по карточке — выравниваем её К ВЕРХУ */
+  // клик по карточке — к верху
   list.addEventListener('click', (e)=>{
     const card = e.target.closest('.tariff'); if (!card) return;
     alignTop(card,'smooth');
   });
 
-  /* стартовая позиция — первая «средняя» карточка наверху */
+  // стартовая позиция
   const firstMid = nodes()[pre.length];
   requestAnimationFrame(()=> { alignTop(firstMid,'auto'); });
 
-  /* ресайз/перерисовка */
   window.addEventListener('resize', ()=>{
     cardH = Math.round(nodes()[pre.length].getBoundingClientRect().height);
     STEP  = cardH + gap;
     markActiveTop();
   });
 
-  /* после возврата на страницу (iOS/BFCache) — поправить позицию */
   document.addEventListener('visibilitychange', ()=>{
     if (document.hidden) return;
     const mid = nodes()[pre.length];
     requestAnimationFrame(()=> { alignTop(mid,'auto'); });
   });
 
-  /* сообщаем ценовику, что лента готова (для пересчёта всех клонов) */
   document.dispatchEvent(new CustomEvent('tariff:ready'));
 })();
 </script>
