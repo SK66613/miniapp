@@ -1581,7 +1581,7 @@
 .tariff-wheel{
   --gap:12px;
   --centerH:132px;
-  height:620px;
+  height:420px;
   position:relative;
   overflow:hidden;
   padding-block: calc(var(--centerH)/2);
@@ -3357,11 +3357,11 @@
   function stopAnim(){ cancelAnimationFrame(animId); animId = 0; }
   function startMomentum(v0){
     stopAnim();
-    const friction = 0.92, minV = 0.08;
+    const friction = 0.62, minV = 0.08;
     let vy = v0;
     const spin = ()=>{
       vy *= friction;
-      wheel.scrollTop -= vy * 6;
+      wheel.scrollTop -= vy * 16;
       infiniteLoopFix();
       requestAnimationFrame(markActiveTop);
       if (Math.abs(vy) > minV) animId = requestAnimationFrame(spin);
@@ -3429,7 +3429,7 @@
 
   let plan = 'month';                           // старт — Месяц
   const fmt  = n => n.toLocaleString('ru-RU');
-  const note = p => p==='year' ? ' / мес (годовой план, −15%)' : ' / мес';
+  const note = p => p==='year' ? ' / мес / 15%' : ' / мес';
 
   function apply(){
     // считаем ВСЕ карточки, включая клоны
@@ -3453,6 +3453,7 @@
     plan = b.dataset.plan || 'month';
     apply();
   });
+  
 
   // когда карусель закончила клонировать — ещё раз пересчитать
   document.addEventListener('tariff:ready', apply);
