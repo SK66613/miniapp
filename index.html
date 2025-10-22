@@ -1418,9 +1418,9 @@
       <div class="track">
         <a class="btn active" data-page="home" href="#home">🏠 Главная</a>
         <a class="btn" data-page="services" href="#services">🧩 Услуги</a>
-        <a class="btn" data-page="about" href="#about">👩‍💼 Обо мне</a>
+        <a class="btn" data-page="about" href="#about">👨‍💻 Обо мне</a>
         <a class="btn" data-page="bonuses" href="#bonuses">🎁 Бонусы</a>
-        <a class="btn" data-page="history" href="#history">📋 История</a>
+        <!-- <a class="btn" data-page="history" href="#history">📋 История</a> -->
         <a class="btn" data-page="consult" href="#consult">📅 Консультация</a>
         <a class="btn" data-page="invite" href="#invite">🎯 Партнёрка</a>
         <span class="bubble" aria-hidden="true"></span>
@@ -1789,6 +1789,40 @@
 
   <!-- Telegram SDK (если запускаешь в WebApp) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <script>
+/* === Referral tracker: читаем start_param и шлём на бэкенд === */
+(function trackReferral(){
+  const TG = window.Telegram && window.Telegram.WebApp;
+  if (!TG || !TG.initDataUnsafe) return;       // не в Telegram — выходим
+  try { TG.ready && TG.ready(); } catch(_) {}
+
+  const user       = TG.initDataUnsafe.user || null;
+  const myUid      = user?.id ? String(user.id) : 'anon';
+  const startParam = (TG.initDataUnsafe.start_param || '').trim();
+
+  // ждём формат ref_<uid пригласившего>
+  const m = /^ref_(.+)$/i.exec(startParam);
+  if (!m) return;
+
+  const refUid = m[1];
+  if (refUid === myUid) return;                // сам себя — игнор
+
+  // дедупликация на этом устройстве (чтоб не спамить сервер)
+  const dedupKey = `ref:tracked:${myUid}:${refUid}`;
+  if (localStorage.getItem(dedupKey)) return;
+
+  // fire-and-forget на бэкенд/GAS: он начислит +100 очков ПРИГЛАСИВШЕМУ (refUid)
+  fetch('/api/ref/track', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify({ refUid, newUid: myUid })
+  })
+  .then(()=> localStorage.setItem(dedupKey, '1'))
+  .catch(()=> {/* можно тихо игнорировать или логировать */});
+})();
+</script>
+
 
   <script>
     // ==== normalize ?page=... -> #... ПЕРЕД первым showPage() ====
@@ -2534,7 +2568,7 @@ claim?.addEventListener('click', () => {
 
   // ⬇️ ДОБАВЛЕНО: обновляем профиль (кэш + UI)
   try {
-    window.Profile?.incPoints(1);     // +1 очко
+    window.Profile?.incPoints(100);     // +100 очков
     window.Profile?.setPrize(name);   // последний приз
   } catch(_) {}
 
