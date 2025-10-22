@@ -656,314 +656,714 @@
     }
   </style>
 
-<style>
-/* База */
-.savings input[type=range]{
-  -webkit-appearance:none; appearance:none;
-  width:100%; height:14px; background:transparent;
+  <style>
+    /* База */
+    .savings input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 14px;
+      background: transparent;
+    }
+
+    /* Дорожка (WebKit/Chromium/Edge) */
+    .savings input[type=range]::-webkit-slider-runnable-track {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .18);
+    }
+
+    /* Бегунок (квадратный, крупный) */
+    .savings input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      /* квадрат + скругление */
+      background: linear-gradient(135deg, var(--mint, #3de0c5), var(--primary, #7b5bff));
+      border: 0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+      margin-top: -8px;
+      cursor: pointer;
+      /* центрируем по дорожке */
+    }
+
+    /* Firefox дорожка/прогресс */
+    .savings input[type=range]::-moz-range-track {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .18);
+    }
+
+    .savings input[type=range]::-moz-range-progress {
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--primary, #7b5bff), var(--mint, #3de0c5));
+    }
+
+    /* Бегунок Firefox */
+    .savings input[type=range]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, var(--mint, #3de0c5), var(--primary, #7b5bff));
+      border: 0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+      cursor: pointer;
+    }
+
+    /* Фокус/актив */
+    .savings input[type=range]:focus {
+      outline: none;
+    }
+
+    .savings input[type=range]:active::-webkit-slider-thumb {
+      transform: scale(1.04);
+    }
+
+    .savings input[type=range]:active::-moz-range-thumb {
+      transform: scale(1.04);
+    }
+  </style>
+
+  <style>
+    #consult .consult-card {
+      margin-top: 12px;
+    }
+
+    #consult .page-title {
+      margin-bottom: 12px;
+    }
+
+    #consult .h3 {
+      margin: 0 0 10px;
+      font-weight: 800;
+    }
+  </style>
+
+  <style>
+    /* базовый контейнер */
+    #cal.calendar {
+      position: relative;
+      min-height: 260px;
+      border-radius: 12px;
+      overflow: hidden;
+      --cal-spin: .9s;
+      /* ← скорость вращения (поменяй на 1.2s или .6s) */
+    }
+
+    /* мягкий шиммер, пока пусто */
+    #cal.calendar:empty::before {
+      content: "Загружаем календарь…";
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 18px;
+      color: #cfd3e6;
+      font: 600 12px/1.2 system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      background: linear-gradient(100deg, rgba(255, 255, 255, .04) 30%, rgba(255, 255, 255, .10) 45%, rgba(255, 255, 255, .04) 60%);
+      background-size: 200% 100%;
+      animation: cal-shimmer 1.4s ease-in-out infinite;
+    }
+
+    /* часовое кольцо + «стрелка» и РЕАЛЬНОЕ вращение через transform */
+    #cal.calendar:empty::after {
+      content: "";
+      position: absolute;
+      top: 42%;
+      left: 50%;
+      width: 60px;
+      height: 60px;
+      transform: translate(-50%, -50%) rotate(0deg);
+      border-radius: 50%;
+      /* слой 1: лёгкое кольцо; слой 2: «стрелка-комета» */
+      background:
+        radial-gradient(farthest-side, rgba(255, 255, 255, .10) 97%, transparent 98%) center/100% 100% no-repeat,
+        conic-gradient(from 0turn, rgba(123, 91, 255, 1) 14%, rgba(123, 91, 255, 0) 42%);
+      -webkit-mask: radial-gradient(farthest-side, transparent calc(50% - 10px), #000 calc(50% - 10px));
+      mask: radial-gradient(farthest-side, transparent calc(50% - 10px), #000 calc(50% - 10px));
+      filter: drop-shadow(0 2px 10px rgba(123, 91, 255, .35)) drop-shadow(0 0 18px rgba(61, 224, 197, .25));
+      animation: cal-rot var(--cal-spin) linear infinite;
+      /* ← скорость берётся отсюда */
+    }
+
+    @keyframes cal-shimmer {
+      from {
+        background-position: 200% 0;
+      }
+
+      to {
+        background-position: -200% 0;
+      }
+    }
+
+    @keyframes cal-rot {
+      to {
+        transform: translate(-50%, -50%) rotate(360deg);
+      }
+    }
+
+    /* если в системе включено "уменьшить анимацию", можно отключить (убери этот блок, если хочешь вращать всегда) */
+    @media (prefers-reduced-motion: reduce) {
+
+      #cal.calendar:empty::before,
+      #cal.calendar:empty::after {
+        animation: none;
+      }
+    }
+  </style>
+
+  <style>
+    /* === Confirm button UX, CSS-only === */
+    #confirmConsult {
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 1) Моментальный отклик при нажатии */
+    #confirmConsult:active {
+      transform: translateY(1px);
+      filter: brightness(.92);
+    }
+
+    /* 2) Состояние "отправляю" — работает при :disabled ИЛИ aria-busy="true" */
+    #confirmConsult:is(:disabled, [aria-busy="true"]) {
+      pointer-events: none;
+      opacity: .88;
+      color: transparent;
+      /* прячем оригинальный текст */
+    }
+
+    /* Спиннер слева внутри кнопки */
+    #confirmConsult:is(:disabled, [aria-busy="true"])::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 14px;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, .8);
+      border-right-color: transparent;
+      border-radius: 50%;
+      transform: translateY(-50%);
+      animation: btn-spin .8s linear infinite;
+    }
+
+    /* Текст вместо скрытого лейбла */
+    #confirmConsult:is(:disabled, [aria-busy="true"])::after {
+      content: "Отправляю…";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      white-space: nowrap;
+      color: #fff;
+      /* видимый текст */
+      font-weight: 700;
+    }
+
+    @keyframes btn-spin {
+      to {
+        transform: translateY(-50%) rotate(360deg);
+      }
+    }
+  </style>
+
+  <style>
+    /* ===== BONUSES (чистая версия) ===== */
+
+    /* Отступы между карточками в разделе */
+    #bonuses>.card {
+      margin-top: 14px;
+    }
+
+    #bonuses>.card:first-child {
+      margin-top: 0;
+    }
+
+    /* Заголовок карточки */
+    #bonuses .bonus-card {
+      padding: 14px;
+      overflow: hidden;
+    }
+
+    #bonuses .bonus-card .h2 {
+      margin: 0 0 8px;
+      font-weight: 800;
+    }
+
+    /* Хедер: слева плашка с выбранным бонусом */
+    .bonus-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 0 0 10px;
+    }
+
+    .picked-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 40px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border, rgba(255, 255, 255, .12));
+      background: rgba(255, 255, 255, .04);
+      font-weight: 700;
+    }
+
+    .picked-pill img {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .picked-pill.muted {
+      opacity: .7;
+      font-weight: 600;
+    }
+
+    /* Колесо — устойчивое, фиксированной высоты */
+    .bonus-wheel {
+      position: relative;
+      height: 180px;
+      /* фикс высота — не появится прокрутка */
+      overflow: hidden;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .02), rgba(255, 255, 255, 0) 60%);
+      margin-top: 6px;
+    }
+
+    .bonus-wheel .wheel-track {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      touch-action: pan-x;
+      user-select: none;
+      cursor: grab;
+    }
+
+    .bonus-card.dragging .wheel-track {
+      cursor: grabbing;
+    }
+
+    /* Карточка бонуса */
+    .bonus-wheel .bonus {
+      all: unset;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 96px;
+      height: 96px;
+      border-radius: 16px;
+      overflow: hidden;
+      transform: translate(-50%, -50%);
+      will-change: transform;
+      transition: transform .25s ease, filter .25s ease, opacity .25s ease, box-shadow .25s ease;
+    }
+
+    .bonus-wheel .bonus img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .bonus-wheel .bonus span {
+      position: absolute;
+      left: 50%;
+      bottom: -22px;
+      transform: translateX(-50%);
+      font-size: 12px;
+      opacity: .85;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .bonus-wheel .bonus:not(.active) {
+      filter: grayscale(.18) brightness(.95);
+      opacity: .9;
+    }
+
+    .bonus-wheel .bonus.active {
+      box-shadow:
+        0 0 0 2px rgba(123, 91, 255, .55) inset,
+        0 10px 28px rgba(123, 91, 255, .35),
+        0 0 22px rgba(61, 224, 197, .25);
+    }
+
+    /* Мягкая подсветка центра (опционально) */
+    .bonus-wheel .wheel-center {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(123, 91, 255, .10), transparent 55%);
+      mask: linear-gradient(#000 30%, transparent 80%);
+    }
+
+    /* Нижняя панель действий: Крутануть + Забрать + статус */
+    .bonus-card .actions {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    #spinBtn,
+    #claimBtn {
+      min-height: 40px;
+    }
+
+    #claimBtn[disabled] {
+      opacity: .6;
+      pointer-events: none;
+    }
+
+    #picked {
+      opacity: .8;
+    }
+
+    /* Хедер сверху — только плашка */
+    .bonus-head {
+      display: flex;
+      gap: 12px;
+      margin: 0 0 10px;
+    }
+
+    .picked-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border, rgba(255, 255, 255, .12));
+      background: rgba(255, 255, 255, .04);
+      font-weight: 700;
+    }
+
+    .picked-pill.muted {
+      opacity: .7;
+      font-weight: 600;
+    }
+
+    /* Низ: две кнопки рядом + статус */
+    .bonus-card .actions {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      /* [Крутануть] [Забрать] [—] */
+      gap: 8px;
+      align-items: center;
+    }
+
+    #spinBtn,
+    #claimBtn {
+      min-height: 40px;
+    }
+
+    #claimBtn[disabled] {
+      opacity: .6;
+      pointer-events: none;
+    }
+
+    #picked {
+      opacity: .8;
+    }
+  </style>
+  <style>
+    /* Низ: две кнопки в ряд */
+    #bonuses .bonus-card .actions {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      /* [Крутануть] [Забрать] */
+      gap: 8px;
+      align-items: center;
+    }
+
+    #bonuses #claimBtn[disabled] {
+      opacity: .6;
+      pointer-events: none;
+    }
+
+    /* когда нельзя жать */
+    #bonuses #claimBtn[disabled] {
+      opacity: .55;
+      cursor: not-allowed;
+      background: rgba(255, 255, 255, .06) !important;
+      border: 1px dashed rgba(255, 255, 255, .18) !important;
+      color: rgba(255, 255, 255, .60) !important;
+      box-shadow: none !important;
+      filter: grayscale(.35) saturate(.75) brightness(.95);
+    }
+
+    /* активная — нормальный вид, можно усилить hover */
+    #bonuses #claimBtn:not([disabled]):hover {
+      transform: translateY(-1px);
+    }
+
+    #bonuses #claimBtn:not([disabled]):active {
+      transform: translateY(0);
+      filter: brightness(.95);
+    }
+
+
+    /* Конфетти */
+    #confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9998;
+      overflow: hidden;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      width: 10px;
+      height: 14px;
+      border-radius: 2px;
+      animation: confetti-fall 900ms linear forwards;
+    }
+
+    @keyframes confetti-fall {
+      0% {
+        opacity: 1;
+        transform: translate(var(--x), var(--y)) rotate(0deg);
+      }
+
+      100% {
+        opacity: 0;
+        transform: translate(calc(var(--x) + var(--dx)), calc(var(--y) + var(--dy))) rotate(360deg);
+      }
+    }
+
+    #bonuses #claimBtn[disabled] {
+      opacity: .55;
+      cursor: not-allowed;
+      background: rgba(255, 255, 255, .06) !important;
+      border: 1px dashed rgba(255, 255, 255, .18) !important;
+      color: rgba(255, 255, 255, .75) !important;
+      box-shadow: none !important;
+    }
+  </style>
+
+  <style>
+    /* ===== Партнёрка — фикс вёрстки ===== */
+
+    /* Отдельные карточки внутри раздела — не слипаются */
+    #invite>.card {
+      margin-top: 14px;
+    }
+
+    #invite>.card:first-child {
+      margin-top: 0;
+    }
+
+    /* Сетка из двух карточек */
+    #invite .ref-grid {
+      display: grid;
+      gap: 14px;
+      position: relative;
+      isolation: isolate;
+      /* режем внешние эффекты */
+    }
+
+    @media (min-width:880px) {
+      #invite .ref-grid {
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+      }
+    }
+
+    /* Внутренние карточки: убираем «наследованные» отступы/оверлеи */
+    #invite .ref-grid .card {
+      margin: 0;
+      padding: 14px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Ряд со ссылкой и кнопками */
+    #invite .ref-row {
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
+      align-items: center;
+      grid-template-columns: 1fr auto auto;
+      /* input | copy | share */
+    }
+
+    @media (max-width:520px) {
+      #invite .ref-row {
+        grid-template-columns: 1fr;
+      }
+
+      /* всё в столбик на узких */
+    }
+
+    #invite .ref-input {
+      min-height: 40px;
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-weight: 700;
+      border: 1px solid var(--border, rgba(255, 255, 255, .14));
+      background: rgba(255, 255, 255, .04);
+      color: inherit;
+      width: 100%;
+    }
+
+    /* Баннер-пояснение */
+    #invite .ref-banner {
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 14px;
+      text-align: center;
+      font-weight: 800;
+      background: linear-gradient(135deg, rgba(61, 224, 197, .12), rgba(123, 91, 255, .16));
+      border: 1px solid rgba(255, 255, 255, .10);
+    }
+
+    /* Нижние действия */
+    #invite .ref-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Лидеры */
+    #invite .lead-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    #invite .lead-list li {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border, rgba(255, 255, 255, .10));
+      background: rgba(255, 255, 255, .04);
+      font-weight: 700;
+    }
+
+    #invite .lead-list .me {
+      box-shadow: inset 0 0 0 2px rgba(123, 91, 255, .35);
+    }
+
+    /* Мелкая косметика */
+    #invite #copyRef.copied {
+      filter: brightness(1.1);
+    }
+
+    /* Партнёрка: зазор между заголовком и сеткой карточек */
+    #invite .page-title+.ref-grid {
+      margin-top: 14px;
+    }
+
+    /* именно между ними */
+  </style>
+
+  <style>
+    /* ===== Тарифы / Услуги ===== */
+
+    /* зазор между карточками в разделе */
+    #services>.card {
+      margin-top: 14px;
+    }
+
+    #services>.card:first-child {
+      margin-top: 0;
+    }
+
+    /* карточка-заголовок + сетка — не слипаются */
+    #services .page-title+.service-grid {
+      margin-top: 14px;
+    }
+
+    /* переключатель плана */
+    #services .plan-toggle {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    #services .plan-toggle .plan-btn {
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-weight: 800;
+      border: 1px solid var(--border, rgba(255, 255, 255, .14));
+      background: rgba(187, 184, 184, 0.04);
+    }
+
+    #services .plan-toggle .plan-btn.active {
+      background: linear-gradient(135deg, var(--mint, #3de0c5), var(--primary, #7b5bff));
+      color: #f8fafb;
+      border-color: transparent;
+    }
+
+    /* сетка карточек */
+    #services .service-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    @media (min-width:900px) {
+      #services .service-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    #services .service-grid .card {
+      margin: 0;
+      padding: 14px;
+    }
+
+    /* цена внутри карточки */
+    #services .price-row {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      margin-top: 8px;
+    }
+
+    #services .price .num {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: .3px;
+    }
+
+    #services .price-note {
+      opacity: .8;
+    }
+
+    /* Цвет текста в переключателе тарифов */
+#services .plan-toggle .plan-btn{
+  color: rgba(142, 131, 131, 0.78);        /* НЕактивная по умолчанию */
 }
 
-/* Дорожка (WebKit/Chromium/Edge) */
-.savings input[type=range]::-webkit-slider-runnable-track{
-  height:8px; border-radius:999px;
-  background:rgba(255,255,255,.18);
-}
-/* Бегунок (квадратный, крупный) */
-.savings input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;
-  width:24px; height:24px; border-radius:6px;            /* квадрат + скругление */
-  background:linear-gradient(135deg, var(--mint,#3de0c5), var(--primary,#7b5bff));
-  border:0; box-shadow:0 2px 6px rgba(0,0,0,.35);
-  margin-top:-8px; cursor:pointer;                       /* центрируем по дорожке */
+#services .plan-toggle .plan-btn.active{
+  color: #f6f7f8;                      /* Активная (на градиенте) */
 }
 
-/* Firefox дорожка/прогресс */
-.savings input[type=range]::-moz-range-track{
-  height:8px; border-radius:999px;
-  background:rgba(255,255,255,.18);
-}
-.savings input[type=range]::-moz-range-progress{
-  height:8px; border-radius:999px;
-  background:linear-gradient(90deg, var(--primary,#7b5bff), var(--mint,#3de0c5));
-}
-/* Бегунок Firefox */
-.savings input[type=range]::-moz-range-thumb{
-  width:24px; height:24px; border-radius:6px;
-  background:linear-gradient(135deg, var(--mint,#3de0c5), var(--primary,#7b5bff));
-  border:0; box-shadow:0 2px 6px rgba(0,0,0,.35);
-  cursor:pointer;
+#services .plan-toggle .plan-btn:not(.active):hover{
+  color: #ffffff;                      /* Подсветка при ховере */
 }
 
-/* Фокус/актив */
-.savings input[type=range]:focus{ outline:none; }
-.savings input[type=range]:active::-webkit-slider-thumb{ transform:scale(1.04); }
-.savings input[type=range]:active::-moz-range-thumb{ transform:scale(1.04); }
-
-</style>
-
-<style>
-
-#consult .consult-card{ margin-top:12px; }
-#consult .page-title{ margin-bottom:12px; }
-#consult .h3{ margin:0 0 10px; font-weight:800; }
-
-</style>
-
-<style>
-
-/* базовый контейнер */
-#cal.calendar{
-  position: relative;
-  min-height: 260px;
-  border-radius: 12px;
-  overflow: hidden;
-  --cal-spin: .9s;                 /* ← скорость вращения (поменяй на 1.2s или .6s) */
-}
-
-/* мягкий шиммер, пока пусто */
-#cal.calendar:empty::before{
-  content:"Загружаем календарь…";
-  position:absolute; inset:0;
-  display:flex; align-items:flex-end; justify-content:center;
-  padding-bottom:18px;
-  color:#cfd3e6; font:600 12px/1.2 system-ui,Segoe UI,Roboto,Arial,sans-serif;
-  background: linear-gradient(100deg, rgba(255,255,255,.04) 30%, rgba(255,255,255,.10) 45%, rgba(255,255,255,.04) 60%);
-  background-size:200% 100%;
-  animation: cal-shimmer 1.4s ease-in-out infinite;
-}
-
-/* часовое кольцо + «стрелка» и РЕАЛЬНОЕ вращение через transform */
-#cal.calendar:empty::after{
-  content:"";
-  position:absolute; top:42%; left:50%;
-  width:60px; height:60px;
-  transform: translate(-50%,-50%) rotate(0deg);
-  border-radius:50%;
-  /* слой 1: лёгкое кольцо; слой 2: «стрелка-комета» */
-  background:
-    radial-gradient(farthest-side, rgba(255,255,255,.10) 97%, transparent 98%) center/100% 100% no-repeat,
-    conic-gradient(from 0turn, rgba(123,91,255,1) 14%, rgba(123,91,255,0) 42%);
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(50% - 10px), #000 calc(50% - 10px));
-          mask: radial-gradient(farthest-side, transparent calc(50% - 10px), #000 calc(50% - 10px));
-  filter: drop-shadow(0 2px 10px rgba(123,91,255,.35)) drop-shadow(0 0 18px rgba(61,224,197,.25));
-  animation: cal-rot var(--cal-spin) linear infinite;   /* ← скорость берётся отсюда */
-}
-
-@keyframes cal-shimmer {
-  from { background-position: 200% 0; }
-  to   { background-position: -200% 0; }
-}
-@keyframes cal-rot {
-  to { transform: translate(-50%,-50%) rotate(360deg); }
-}
-
-/* если в системе включено "уменьшить анимацию", можно отключить (убери этот блок, если хочешь вращать всегда) */
-@media (prefers-reduced-motion: reduce){
-  #cal.calendar:empty::before,
-  #cal.calendar:empty::after { animation: none; }
-}
-
-</style>
-
-<style>
-
-/* === Confirm button UX, CSS-only === */
-#confirmConsult{
-  position: relative;
-  overflow: hidden;
-}
-
-/* 1) Моментальный отклик при нажатии */
-#confirmConsult:active{
-  transform: translateY(1px);
-  filter: brightness(.92);
-}
-
-/* 2) Состояние "отправляю" — работает при :disabled ИЛИ aria-busy="true" */
-#confirmConsult:is(:disabled, [aria-busy="true"]){
-  pointer-events: none;
-  opacity: .88;
-  color: transparent;                 /* прячем оригинальный текст */
-}
-
-/* Спиннер слева внутри кнопки */
-#confirmConsult:is(:disabled, [aria-busy="true"])::before{
-  content: "";
-  position: absolute; top: 50%; left: 14px;
-  width: 16px; height: 16px;
-  border: 2px solid rgba(255,255,255,.8);
-  border-right-color: transparent;
-  border-radius: 50%;
-  transform: translateY(-50%);
-  animation: btn-spin .8s linear infinite;
-}
-
-/* Текст вместо скрытого лейбла */
-#confirmConsult:is(:disabled, [aria-busy="true"])::after{
-  content: "Отправляю…";
-  position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  white-space: nowrap;
-  color: #fff;                         /* видимый текст */
-  font-weight: 700;
-}
-
-@keyframes btn-spin { to { transform: translateY(-50%) rotate(360deg); } }
-
-</style>
-
-<style>
-
-/* ===== BONUSES (чистая версия) ===== */
-
-/* Отступы между карточками в разделе */
-#bonuses > .card { margin-top: 14px; }
-#bonuses > .card:first-child { margin-top: 0; }
-
-/* Заголовок карточки */
-#bonuses .bonus-card { padding: 14px; overflow: hidden; }
-#bonuses .bonus-card .h2 { margin: 0 0 8px; font-weight: 800; }
-
-/* Хедер: слева плашка с выбранным бонусом */
-.bonus-head{
-  display: flex; align-items: center; gap: 12px;
-  flex-wrap: wrap;
-  margin: 0 0 10px;
-}
-.picked-pill{
-  display: flex; align-items: center; gap: 10px;
-  min-height: 40px; padding: 8px 12px; border-radius: 999px;
-  border: 1px solid var(--border, rgba(255,255,255,.12));
-  background: rgba(255,255,255,.04);
-  font-weight: 700;
-}
-.picked-pill img{
-  width: 28px; height: 28px; border-radius: 8px; object-fit: cover; display: block;
-}
-.picked-pill.muted{ opacity: .7; font-weight: 600; }
-
-/* Колесо — устойчивое, фиксированной высоты */
-.bonus-wheel{
-  position: relative;
-  height: 180px;                      /* фикс высота — не появится прокрутка */
-  overflow: hidden; border-radius: 14px;
-  background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0) 60%);
-  margin-top: 6px;
-}
-.bonus-wheel .wheel-track{
-  position: relative; width: 100%; height: 100%;
-  touch-action: pan-x; user-select: none; cursor: grab;
-}
-.bonus-card.dragging .wheel-track{ cursor: grabbing; }
-
-/* Карточка бонуса */
-.bonus-wheel .bonus{
-  all: unset;
-  position: absolute; left: 50%; top: 50%;
-  width: 96px; height: 96px; border-radius: 16px; overflow: hidden;
-  transform: translate(-50%,-50%); will-change: transform;
-  transition: transform .25s ease, filter .25s ease, opacity .25s ease, box-shadow .25s ease;
-}
-.bonus-wheel .bonus img{ width: 100%; height: 100%; object-fit: cover; display: block; }
-.bonus-wheel .bonus span{
-  position: absolute; left: 50%; bottom: -22px; transform: translateX(-50%);
-  font-size: 12px; opacity: .85; white-space: nowrap; pointer-events: none;
-}
-.bonus-wheel .bonus:not(.active){ filter: grayscale(.18) brightness(.95); opacity: .9; }
-.bonus-wheel .bonus.active{
-  box-shadow:
-    0 0 0 2px rgba(123,91,255,.55) inset,
-    0 10px 28px rgba(123,91,255,.35),
-    0 0 22px rgba(61,224,197,.25);
-}
-
-/* Мягкая подсветка центра (опционально) */
-.bonus-wheel .wheel-center{
-  pointer-events: none; position: absolute; inset: 0;
-  background: radial-gradient(ellipse at center, rgba(123,91,255,.10), transparent 55%);
-  mask: linear-gradient(#000 30%, transparent 80%);
-}
-
-/* Нижняя панель действий: Крутануть + Забрать + статус */
-.bonus-card .actions{
-  margin-top: 10px;
-  display: grid; grid-template-columns: 1fr 1fr auto;
-  gap: 8px; align-items: center;
-}
-#spinBtn, #claimBtn{ min-height: 40px; }
-#claimBtn[disabled]{ opacity: .6; pointer-events: none; }
-#picked{ opacity: .8; }
-
-/* Хедер сверху — только плашка */
-.bonus-head{ display:flex; gap:12px; margin:0 0 10px; }
-.picked-pill{ display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:999px;
-  border:1px solid var(--border, rgba(255,255,255,.12)); background:rgba(255,255,255,.04); font-weight:700; }
-.picked-pill.muted{ opacity:.7; font-weight:600; }
-
-/* Низ: две кнопки рядом + статус */
-.bonus-card .actions{
-  margin-top:10px;
-  display:grid;
-  grid-template-columns: 1fr 1fr auto;  /* [Крутануть] [Забрать] [—] */
-  gap:8px; align-items:center;
-}
-#spinBtn, #claimBtn{ min-height:40px; }
-#claimBtn[disabled]{ opacity:.6; pointer-events:none; }
-#picked{ opacity:.8; }
-
-</style>
-<style>
-/* Низ: две кнопки в ряд */
-#bonuses .bonus-card .actions{
-  margin-top:10px;
-  display:grid;
-  grid-template-columns: 1fr 1fr;  /* [Крутануть] [Забрать] */
-  gap:8px; align-items:center;
-}
-#bonuses #claimBtn[disabled]{ opacity:.6; pointer-events:none; }
-
-/* когда нельзя жать */
-#bonuses #claimBtn[disabled]{
-  opacity: .55;
-  cursor: not-allowed;
-  background: rgba(255,255,255,.06) !important;
-  border: 1px dashed rgba(255,255,255,.18) !important;
-  color: rgba(255,255,255,.60) !important;
-  box-shadow: none !important;
-  filter: grayscale(.35) saturate(.75) brightness(.95);
-}
-
-/* активная — нормальный вид, можно усилить hover */
-#bonuses #claimBtn:not([disabled]):hover{
-  transform: translateY(-1px);
-}
-#bonuses #claimBtn:not([disabled]):active{
-  transform: translateY(0);
-  filter: brightness(.95);
-}
+  </style>
 
 
-/* Конфетти */
-#confetti{ position:fixed; inset:0; pointer-events:none; z-index:9998; overflow:hidden; }
-.confetti-piece{
-  position:absolute; width:10px; height:14px; border-radius:2px;
-  animation: confetti-fall 900ms linear forwards;
-}
-@keyframes confetti-fall{
-  0%{ opacity:1; transform:translate(var(--x),var(--y)) rotate(0deg); }
-  100%{ opacity:0; transform:translate(calc(var(--x) + var(--dx)), calc(var(--y) + var(--dy))) rotate(360deg); }
-}
 
-#bonuses #claimBtn[disabled]{
-  opacity:.55; cursor:not-allowed;
-  background: rgba(255,255,255,.06) !important;
-  border: 1px dashed rgba(255,255,255,.18) !important;
-  color: rgba(255,255,255,.75) !important;
-  box-shadow:none !important;
-}
-
-
-</style>
 </head>
 
 <body>
@@ -1068,10 +1468,94 @@
 
 
       <!-- SERVICES -->
-      <section class="card" id="services" style="margin-top:18px;display:none">
-        <h2>Услуги</h2>
-        <p class="muted-sm">Раздел-заглушка. Скажи, что подтянуть из твоего файла — вставлю контент блоками.</p>
+      <section class="page" id="services">
+        <!-- Заголовок + переключатель -->
+        <div class="card page-title">
+          <h2 class="h1">Тарифы</h2>
+
+          <div id="planRow" class="plan-toggle">
+            <button class="plan-btn active" data-plan="month">Месяц</button>
+            <button class="plan-btn" data-plan="year">Год −15%</button>
+          </div>
+        </div>
+
+        <!-- Карточки услуг -->
+        <div class="service-grid">
+          <div class="card service-card" data-month="30000">
+            <div class="h2">Продвижение на Авито</div>
+            <p class="muted-sm">Первые позиции объявлений при минимальном бюджете.</p>
+            <div class="price-row">
+              <div class="price"><span class="num"></span> ₽</div>
+              <div class="price-note"></div>
+            </div>
+          </div>
+
+          <div class="card service-card" data-month="60000">
+            <div class="h2">Контекстная реклама</div>
+            <p class="muted-sm">Яндекс.Директ и Google Ads под KPI, без слива бюджета.</p>
+            <div class="price-row">
+              <div class="price"><span class="num"></span> ₽</div>
+              <div class="price-note"></div>
+            </div>
+          </div>
+
+          <div class="card service-card" data-month="45000">
+            <div class="h2">SEO и сайты (Tilda/MODx)</div>
+            <p class="muted-sm">Сайт-магнит: структура, тексты, техничка, оптимизация.</p>
+            <div class="price-row">
+              <div class="price"><span class="num"></span> ₽</div>
+              <div class="price-note"></div>
+            </div>
+          </div>
+
+          <div class="card service-card" data-month="55000">
+            <div class="h2">CRM и чат-боты</div>
+            <p class="muted-sm">Amo/B24 + автоворонки, заявки 24/7, ничего не теряется.</p>
+            <div class="price-row">
+              <div class="price"><span class="num"></span> ₽</div>
+              <div class="price-note"></div>
+            </div>
+          </div>
+
+          <div class="card service-card" data-month="40000">
+            <div class="h2">Маркетплейсы</div>
+            <p class="muted-sm">Карточки, ключи, продвижение — полный цикл.</p>
+            <div class="price-row">
+              <div class="price"><span class="num"></span> ₽</div>
+              <div class="price-note"></div>
+            </div>
+          </div>
+
+          <div class="card service-card" data-month="50000">
+            <div class="h2">Аналитика и стратегия</div>
+            <p class="muted-sm">Сквозная аналитика + карта действий на 6–12 мес.</p>
+            <div class="price-row">
+              <div class="price"><span class="num"></span> ₽</div>
+              <div class="price-note"></div>
+            </div>
+          </div>
+
+          <div class="card service-card" data-month="35000">
+            <div class="h2">Репутация и SMM</div>
+            <p class="muted-sm">Образ бренда и работа с отзывами.</p>
+            <div class="price-row">
+              <div class="price"><span class="num"></span> ₽</div>
+              <div class="price-note"></div>
+            </div>
+          </div>
+
+          <div class="card service-card" data-month="38000">
+            <div class="h2">Telegram-маркетинг</div>
+            <p class="muted-sm">Каналы, рассылки, автоворонки, связка с CRM.</p>
+            <div class="price-row">
+              <div class="price"><span class="num"></span> ₽</div>
+              <div class="price-note"></div>
+            </div>
+          </div>
+        </div>
       </section>
+
+
 
 
 
@@ -1081,107 +1565,121 @@
         <p class="muted-sm">Короткий блок «О нас». Готов вставить твой текст/картинки.</p>
       </section>
 
-<!-- BONUSES -->
-<section class="page" id="bonuses">
-  <div class="card page-title">
-    <h2 class="h1">Бонусы</h2>
-    <p class="muted-sm">Крути колесо и забирай выпавший подарок.</p>
-  </div>
+      <!-- BONUSES -->
+      <section class="page" id="bonuses">
+        <div class="card page-title">
+          <h2 class="h1">Бонусы</h2>
+          <p class="muted-sm">Крути колесо и забирай выпавший подарок.</p>
+        </div>
 
-  <div class="card bonus-card">
-    <div class="h2"></div>
+        <div class="card bonus-card">
+          <div class="h2"></div>
 
-    <!-- ВЕРХ: только плашка-подсказка -->
-    <div class="bonus-head">
-      <div id="pickedPill" class="picked-pill muted">Нажми «Крутануть»</div>
-    </div>
+          <!-- ВЕРХ: только плашка-подсказка -->
+          <div class="bonus-head">
+            <div id="pickedPill" class="picked-pill muted">Нажми «Крутануть»</div>
+          </div>
 
-    <!-- КОЛЕСО -->
-    <div id="bonusWheel" class="bonus-wheel" aria-live="polite">
-      <div class="wheel-track" id="wheelTrack">
-        <button class="bonus" data-name="Гайд"><img src="bonus1.png" alt="Гайд"><span>Гайд</span></button>
-        <button class="bonus" data-name="Чек-лист"><img src="bonus2.png" alt="Чек-лист"><span>Чек-лист</span></button>
-        <button class="bonus" data-name="Шаблон"><img src="bonus3.png" alt="Шаблон"><span>Шаблон</span></button>
-        <button class="bonus" data-name="Аудит"><img src="bonus4.png" alt="Аудит"><span>Аудит</span></button>
-        <button class="bonus" data-name="Скидка"><img src="bonus5.png" alt="Скидка"><span>Скидка</span></button>
-        <button class="bonus" data-name="Консультация"><img src="bonus6.png" alt="Консультация"><span>Консультация</span></button>
-      </div>
-      <div class="wheel-center"></div>
-    </div>
+          <!-- КОЛЕСО -->
+          <div id="bonusWheel" class="bonus-wheel" aria-live="polite">
+            <div class="wheel-track" id="wheelTrack">
+              <button class="bonus" data-name="Гайд"><img src="bonus1.png" alt="Гайд"><span>Гайд</span></button>
+              <button class="bonus" data-name="Чек-лист"><img src="bonus2.png"
+                  alt="Чек-лист"><span>Чек-лист</span></button>
+              <button class="bonus" data-name="Шаблон"><img src="bonus3.png" alt="Шаблон"><span>Шаблон</span></button>
+              <button class="bonus" data-name="Аудит"><img src="bonus4.png" alt="Аудит"><span>Аудит</span></button>
+              <button class="bonus" data-name="Скидка"><img src="bonus5.png" alt="Скидка"><span>Скидка</span></button>
+              <button class="bonus" data-name="Консультация"><img src="bonus6.png"
+                  alt="Консультация"><span>Консультация</span></button>
+            </div>
+            <div class="wheel-center"></div>
+          </div>
 
-    <!-- НИЗ: две кнопки в ряд -->
-    <div class="actions">
-      <button class="btn btn-primary" id="spinBtn">Крутануть</button>
-      <button class="btn btn-primary" id="claimBtn" disabled>Забрать</button>
-    </div>
-  </div>
-</section>
+          <!-- НИЗ: две кнопки в ряд -->
+          <div class="actions">
+            <button class="btn btn-primary" id="spinBtn">Крутануть</button>
+            <button class="btn btn-primary" id="claimBtn" disabled>Забрать</button>
+          </div>
+        </div>
+      </section>
 
 
 
 
       <!-- INVITE / Партнёрка -->
-      <section class="card" id="invite" style="margin-top:18px;display:none">
-        <h2>Партнёрка</h2>
-        <div class="muted-sm" style="margin-bottom:8px">Делись ссылкой и получай бонусы. Список рефералов ниже.</div>
-        <div class="grid">
-          <div class="card" style="background:transparent;border-color:transparent;padding:0">
-            <div><b>Твоя ссылка:</b> <span id="refLink">—</span></div>
-            <div class="muted-sm">Код: <span id="refCode">—</span> · Приведено: <span id="refCount">0</span></div>
+      <section class="page" id="invite">
+        <!-- Заголовок раздела — отдельная карточка -->
+        <div class="card page-title">
+          <h2 class="h1">Партнёрка</h2>
+          <p class="muted-sm">Делись ссылкой — получай бонусы и приоритетные ответы.</p>
+        </div>
+
+        <!-- Сетка из двух самостоятельных карточек -->
+        <div class="ref-grid">
+          <!-- Левая карточка -->
+          <div class="card ref-card">
+            <div class="h2">Твоя реферальная ссылка</div>
+
+            <div class="ref-row">
+              <input id="refLink" class="ref-input" readonly value="">
+              <button id="copyRef" class="btn btn-primary">Скопировать</button>
+              <button id="shareRef" class="btn">Поделиться</button>
+            </div>
+
+            <div class="ref-banner">За каждого активного друга — бонусы и приоритетные ответы</div>
+
+            <div class="ref-actions">
+              <button id="demoAdd" class="btn">+1 приглашение (демо)</button>
+            </div>
           </div>
-          <div class="card" style="background:transparent;border-color:transparent;padding:0">
-            <h3>Рефералы</h3>
-            <table class="table" id="tblRefs">
-              <thead>
-                <tr>
-                  <th>Дата</th>
-                  <th>Пользователь</th>
-                  <th>Статус</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
+
+          <!-- Правая карточка -->
+          <div class="card ref-leader">
+            <div class="h2">Таблица лидеров</div>
+            <ol id="leadList" class="lead-list"></ol>
+            <button id="demoReset" class="btn" style="margin-top:10px">Сбросить демо-данные</button>
           </div>
         </div>
       </section>
 
+
       <!-- CONSULT (Calendar) -->
-<section class="page cal-wrap" id="consult" style="margin-top:18px">
-  <div class="card page-title">
-    <h2>Запись на консультацию</h2>
-  </div>
+      <section class="page cal-wrap" id="consult" style="margin-top:18px">
+        <div class="card page-title">
+          <h2>Запись на консультацию</h2>
+        </div>
 
-  <!-- Блок 1: Длительность -->
-  <div class="card consult-card" id="dur-card">
-    <div class="h3">Длительность</div>
-    <div class="dur-row">
-      <button class="btn dur btn-primary" data-min="30">30 мин</button>
-      <button class="btn dur" data-min="60">60 мин</button>
-      <button class="btn dur" data-min="90">90 мин</button>
-    </div>
-  </div>
+        <!-- Блок 1: Длительность -->
+        <div class="card consult-card" id="dur-card">
+          <div class="h3">Длительность</div>
+          <div class="dur-row">
+            <button class="btn dur btn-primary" data-min="30">30 мин</button>
+            <button class="btn dur" data-min="60">60 мин</button>
+            <button class="btn dur" data-min="90">90 мин</button>
+          </div>
+        </div>
 
-  <!-- Блок 2: Календарь -->
-  <div class="card consult-card" id="cal-card">
-    <div class="h3">Календарь</div>
-    <div id="cal" class="calendar" style="min-height:260px"></div>
-  </div>
+        <!-- Блок 2: Календарь -->
+        <div class="card consult-card" id="cal-card">
+          <div class="h3">Календарь</div>
+          <div id="cal" class="calendar" style="min-height:260px"></div>
+        </div>
 
-  <!-- Блок 3: Доступное время -->
-  <div class="card consult-card" id="slots-card">
-    <div class="h3">Доступное время</div>
-    <div id="slots" class="slots"></div>
-  </div>
+        <!-- Блок 3: Доступное время -->
+        <div class="card consult-card" id="slots-card">
+          <div class="h3">Доступное время</div>
+          <div id="slots" class="slots"></div>
+        </div>
 
-  <!-- Блок 4: Контакты -->
-  <div class="card consult-card" id="contact-card">
-    <div class="h3">Контакты</div>
-    <div class="contact-row">
-      <input id="contact" type="tel" inputmode="numeric" placeholder="@username или +79991234567" />
-      <button id="confirmConsult" class="btn btn-primary">Подтвердить</button>
-    </div>
-  </div>
-</section>
+        <!-- Блок 4: Контакты -->
+        <div class="card consult-card" id="contact-card">
+          <div class="h3">Контакты</div>
+          <div class="contact-row">
+            <input id="contact" type="tel" inputmode="numeric" placeholder="@username или +79991234567" />
+            <button id="confirmConsult" class="btn btn-primary">Подтвердить</button>
+          </div>
+        </div>
+      </section>
 
 
       <!-- PROFILE (light) -->
@@ -1221,84 +1719,84 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <script>
-// ==== normalize ?page=... -> #... ПЕРЕД первым showPage() ====
-(function(){
-  try{
-    const u = new URL(location.href);
-    const p = (u.searchParams.get('page') || '').trim();
+    // ==== normalize ?page=... -> #... ПЕРЕД первым showPage() ====
+    (function () {
+      try {
+        const u = new URL(location.href);
+        const p = (u.searchParams.get('page') || '').trim();
 
-    // если ?page задан и такая секция существует — переводим в #hash
-    if (p && document.getElementById(p)) {
-      u.searchParams.delete('page');   // убрать query
-      u.hash = '#' + p;                // поставить нужный #hash
-      history.replaceState(null, '', u.pathname + u.search + u.hash);
-    }
-    // если ни hash, ни валидного page — по умолчанию #home
-    else if (!location.hash) {
-      history.replaceState(null, '', '#home');
-    }
-  }catch(_){
-    // на всякий — простая запасная ветка
-    const p = (location.search.match(/[?&]page=([^&]+)/)||[])[1];
-    if (p && document.getElementById(p)) location.hash = p;
-    else if (!location.hash) location.hash = 'home';
-  }
-})();
-</script>
-
-<script>
-(function(){
-  const TG = window.Telegram && window.Telegram.WebApp;
-  try{ TG && TG.ready(); }catch(_){}
-
-  // Универсальный хелпер
-  function haptic(kind='light', notify){
-    try{
-      if (TG && TG.HapticFeedback){
-        if (notify){ TG.HapticFeedback.notificationOccurred(notify); return; } // 'success'|'warning'|'error'
-        if (kind === 'selection'){ TG.HapticFeedback.selectionChanged(); return; }
-        TG.HapticFeedback.impactOccurred(kind); // 'light'|'medium'|'heavy'|'rigid'|'soft'
-        return;
+        // если ?page задан и такая секция существует — переводим в #hash
+        if (p && document.getElementById(p)) {
+          u.searchParams.delete('page');   // убрать query
+          u.hash = '#' + p;                // поставить нужный #hash
+          history.replaceState(null, '', u.pathname + u.search + u.hash);
+        }
+        // если ни hash, ни валидного page — по умолчанию #home
+        else if (!location.hash) {
+          history.replaceState(null, '', '#home');
+        }
+      } catch (_) {
+        // на всякий — простая запасная ветка
+        const p = (location.search.match(/[?&]page=([^&]+)/) || [])[1];
+        if (p && document.getElementById(p)) location.hash = p;
+        else if (!location.hash) location.hash = 'home';
       }
-    }catch(_){}
-    // Фоллбек (Android)
-    try{
-      if (navigator.vibrate){
-        if (notify === 'success') return void navigator.vibrate([10,20,10]);
-        if (notify === 'warning') return void navigator.vibrate([20,30,20]);
-        if (notify === 'error')   return void navigator.vibrate([35,35,35]);
-        navigator.vibrate(kind === 'heavy' ? 35 : kind === 'medium' ? 25 : 15);
+    })();
+  </script>
+
+  <script>
+    (function () {
+      const TG = window.Telegram && window.Telegram.WebApp;
+      try { TG && TG.ready(); } catch (_) { }
+
+      // Универсальный хелпер
+      function haptic(kind = 'light', notify) {
+        try {
+          if (TG && TG.HapticFeedback) {
+            if (notify) { TG.HapticFeedback.notificationOccurred(notify); return; } // 'success'|'warning'|'error'
+            if (kind === 'selection') { TG.HapticFeedback.selectionChanged(); return; }
+            TG.HapticFeedback.impactOccurred(kind); // 'light'|'medium'|'heavy'|'rigid'|'soft'
+            return;
+          }
+        } catch (_) { }
+        // Фоллбек (Android)
+        try {
+          if (navigator.vibrate) {
+            if (notify === 'success') return void navigator.vibrate([10, 20, 10]);
+            if (notify === 'warning') return void navigator.vibrate([20, 30, 20]);
+            if (notify === 'error') return void navigator.vibrate([35, 35, 35]);
+            navigator.vibrate(kind === 'heavy' ? 35 : kind === 'medium' ? 25 : 15);
+          }
+        } catch (_) { }
       }
-    }catch(_){}
-  }
 
-  // 👉 Рекомендуется срабатывать на pointerdown — так отклик мгновеннее
-  const onTap = (sel, fn) => {
-    const root = document.querySelector(sel);
-    if (!root) return;
-    root.addEventListener('pointerdown', e => {
-      if (fn(e) !== false) haptic('selection');
-    }, {passive:true});
-  };
+      // 👉 Рекомендуется срабатывать на pointerdown — так отклик мгновеннее
+      const onTap = (sel, fn) => {
+        const root = document.querySelector(sel);
+        if (!root) return;
+        root.addEventListener('pointerdown', e => {
+          if (fn(e) !== false) haptic('selection');
+        }, { passive: true });
+      };
 
-  // Табы в навигации
-  onTap('#spa-nav', e => e.target.closest('[data-page]'));
+      // Табы в навигации
+      onTap('#spa-nav', e => e.target.closest('[data-page]'));
 
-  // Кнопки длительности (30/60/90)
-  onTap('.dur-row', e => e.target.closest('.dur'));
+      // Кнопки длительности (30/60/90)
+      onTap('.dur-row', e => e.target.closest('.dur'));
 
-  // Слоты времени
-  onTap('#slots', e => e.target.closest('button,.btn,.slot,.slot-btn'));
+      // Слоты времени
+      onTap('#slots', e => e.target.closest('button,.btn,.slot,.slot-btn'));
 
-  // Кнопка «Подтвердить» — заметнее
-  const confirmBtn = document.getElementById('confirmConsult');
-  confirmBtn && confirmBtn.addEventListener('pointerdown', () => haptic('medium'), {passive:true});
+      // Кнопка «Подтвердить» — заметнее
+      const confirmBtn = document.getElementById('confirmConsult');
+      confirmBtn && confirmBtn.addEventListener('pointerdown', () => haptic('medium'), { passive: true });
 
-  // если где-то в коде у тебя есть успешное подтверждение — дерни:
-  // haptic('heavy', 'success');  // на успех
-  // haptic('medium', 'error');   // на ошибку
-})();
-</script>
+      // если где-то в коде у тебя есть успешное подтверждение — дерни:
+      // haptic('heavy', 'success');  // на успех
+      // haptic('medium', 'error');   // на ошибку
+    })();
+  </script>
 
 
   <script>
@@ -1667,283 +2165,453 @@
     })();
   </script>
 
-<script>
-(function(){
-  const wheel  = document.getElementById('bonusWheel');
-  const track  = document.getElementById('wheelTrack');
-  if (!wheel || !track) return;
+  <script>
+    (function () {
+      const wheel = document.getElementById('bonusWheel');
+      const track = document.getElementById('wheelTrack');
+      if (!wheel || !track) return;
 
-  const items  = Array.from(track.children);
-  const N      = items.length;
+      const items = Array.from(track.children);
+      const N = items.length;
 
-  const pill   = document.getElementById('pickedPill');
-  const claim  = document.getElementById('claimBtn');
-  const spin   = document.getElementById('spinBtn');
+      const pill = document.getElementById('pickedPill');
+      const claim = document.getElementById('claimBtn');
+      const spin = document.getElementById('spinBtn');
 
-  /* Название -> ссылка (поменяй под себя) */
-  const bonusLinks = {
-    "Гайд": "/files/guide.pdf",
-    "Чек-лист": "/files/checklist.pdf",
-    "Шаблон": "https://t.me/yourbot?start=template",
-    "Аудит": "#consult",
-    "Скидка": "/promo?code=BONUS10",
-    "Консультация": "#consult"
-  };
+      /* Название -> ссылка (поменяй под себя) */
+      const bonusLinks = {
+        "Гайд": "/files/guide.pdf",
+        "Чек-лист": "/files/checklist.pdf",
+        "Шаблон": "https://t.me/yourbot?start=template",
+        "Аудит": "#consult",
+        "Скидка": "/promo?code=BONUS10",
+        "Консультация": "#consult"
+      };
 
-  /* ================== общие утилиты ================== */
-  let STEP = 114; // уточняем по факту
-  requestAnimationFrame(()=>{
-    const a = items[0]?.getBoundingClientRect();
-    const b = items[1]?.getBoundingClientRect();
-    if (a && b){
-      const dx = Math.round(b.left - a.left);
-      if (dx > 40 && dx < 300) STEP = dx;
-    }
-  });
-
-  let curr = 0; // «плавающее» положение
-  let startX = 0, startCurr = 0, dragging = false, lastX = 0, lastT = 0, vel = 0;
-  let interacted = false; // станет true после первого выбора
-
-  const mod     = (a,n)=>((a % n)+n)%n;
-  const easeOut = t => 1 - Math.pow(1 - t, 3);
-  function nearest(curr, idx, n){
-    let t = idx;
-    while (t - curr >  n/2) t -= n;
-    while (curr - t >  n/2) t += n;
-    return t;
-  }
-
-  /* ===== Хаптики (Telegram + фоллбек) ===== */
-  const TG = window.Telegram && window.Telegram.WebApp;
-  function hapticPulse(level='light'){
-    try{
-      if (TG?.HapticFeedback){
-        if (level === 'selection') return TG.HapticFeedback.selectionChanged();
-        TG.HapticFeedback.impactOccurred(level); // 'soft' | 'light' | 'medium' | 'heavy' | 'rigid'
-        return;
-      }
-    }catch(_){}
-    try{ if (navigator.vibrate){ navigator.vibrate(level==='heavy'?30 : level==='medium'?20 : 12); } }catch(_){}
-  }
-
-  /* ====== Кулдаун 24ч для «Забрать бонус» + таймер ====== */
-  const COOLDOWN_MS = 1 * 60 * 60 * 1000; // 1 час
-  const UID = (TG?.initDataUnsafe?.user?.id) || 'anon';
-  const CLAIM_KEY = 'bonusClaim_ts_' + UID;
-
-  function getLastClaim(){ return +(localStorage.getItem(CLAIM_KEY) || 0); }
-  function setLastClaim(ts = Date.now()){ localStorage.setItem(CLAIM_KEY, String(ts)); }
-  function remainingMs(){ return Math.max(0, getLastClaim() + COOLDOWN_MS - Date.now()); }
-  function fmtClock(ms){
-    const s = Math.floor(ms/1000);
-    const h = Math.floor(s/3600);
-    const m = Math.floor((s%3600)/60);
-    const ss = s%60;
-    return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
-  }
-
-  let claimTimerId = null;
-  function refreshClaimState(){
-    if (!claim) return;
-
-    const rem = remainingMs();
-    const canClaim = interacted && rem <= 0;
-
-    if (canClaim){
-      claim.disabled = false;
-      claim.textContent = 'Забрать бонус';
-      if (claimTimerId){ clearInterval(claimTimerId); claimTimerId = null; }
-    } else {
-      claim.disabled = true;
-      if (interacted && rem > 0){
-        claim.textContent = 'Доступно через ' + fmtClock(rem);
-        if (!claimTimerId){
-          claimTimerId = setInterval(() => {
-            const r = remainingMs();
-            if (r > 0) claim.textContent = 'Доступно через ' + fmtClock(r);
-            else {
-              clearInterval(claimTimerId); claimTimerId = null;
-              claim.textContent = 'Забрать бонус';
-              claim.disabled = !interacted;
-            }
-          }, 1000);
+      /* ================== общие утилиты ================== */
+      let STEP = 114; // уточняем по факту
+      requestAnimationFrame(() => {
+        const a = items[0]?.getBoundingClientRect();
+        const b = items[1]?.getBoundingClientRect();
+        if (a && b) {
+          const dx = Math.round(b.left - a.left);
+          if (dx > 40 && dx < 300) STEP = dx;
         }
-      } else {
-        claim.textContent = 'Забрать бонус';
-        if (claimTimerId){ clearInterval(claimTimerId); claimTimerId = null; }
+      });
+
+      let curr = 0; // «плавающее» положение
+      let startX = 0, startCurr = 0, dragging = false, lastX = 0, lastT = 0, vel = 0;
+      let interacted = false; // станет true после первого выбора
+
+      const mod = (a, n) => ((a % n) + n) % n;
+      const easeOut = t => 1 - Math.pow(1 - t, 3);
+      function nearest(curr, idx, n) {
+        let t = idx;
+        while (t - curr > n / 2) t -= n;
+        while (curr - t > n / 2) t += n;
+        return t;
       }
-    }
-  }
 
-  /* ================== UI ================== */
-  function updatePillByIndex(idx){
-    const it   = items[idx];
-    const name = it?.dataset?.name || '—';
-    const img  = it?.querySelector('img')?.src || '';
-    if (!pill) return;
-    pill.classList.remove('muted');
-    pill.innerHTML = img ? `<img src="${img}" alt=""><span>${name}</span>` : name;
-    if (claim){
-      claim.disabled = false;
-      claim.dataset.bonus = name;
-    }
-  }
+      /* ===== Хаптики (Telegram + фоллбек) ===== */
+      const TG = window.Telegram && window.Telegram.WebApp;
+      function hapticPulse(level = 'light') {
+        try {
+          if (TG?.HapticFeedback) {
+            if (level === 'selection') return TG.HapticFeedback.selectionChanged();
+            TG.HapticFeedback.impactOccurred(level); // 'soft' | 'light' | 'medium' | 'heavy' | 'rigid'
+            return;
+          }
+        } catch (_) { }
+        try { if (navigator.vibrate) { navigator.vibrate(level === 'heavy' ? 30 : level === 'medium' ? 20 : 12); } } catch (_) { }
+      }
 
-  function updateUI(){
-    // позиционирование как «кольцо»
-    items.forEach((el, i) => {
-      let dx = i - curr;
-      dx = mod(dx + N/2, N) - N/2; // (-N/2; N/2]
-      const x = dx * STEP;
-      const s = 1 - Math.min(Math.abs(dx)*0.16, 0.48);
-      el.style.transform = `translate(-50%,-50%) translateX(${x}px) scale(${s})`;
-      el.style.zIndex = String(1000 - Math.abs(dx)*10);
-      el.classList.toggle('active', Math.round(Math.abs(dx)) === 0);
-    });
+      /* ====== Кулдаун 24ч для «Забрать бонус» + таймер ====== */
+      const COOLDOWN_MS = 1 * 60 * 60 * 1000; // 1 час
+      const UID = (TG?.initDataUnsafe?.user?.id) || 'anon';
+      const CLAIM_KEY = 'bonusClaim_ts_' + UID;
 
-    if (interacted){
-      updatePillByIndex(mod(Math.round(curr), N));
-    } else {
-      if (pill){ pill.classList.add('muted'); pill.textContent = 'Нажми «Крутануть»'; }
-      if (claim){ claim.disabled = true; delete claim.dataset.bonus; }
-    }
+      function getLastClaim() { return +(localStorage.getItem(CLAIM_KEY) || 0); }
+      function setLastClaim(ts = Date.now()) { localStorage.setItem(CLAIM_KEY, String(ts)); }
+      function remainingMs() { return Math.max(0, getLastClaim() + COOLDOWN_MS - Date.now()); }
+      function fmtClock(ms) {
+        const s = Math.floor(ms / 1000);
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const ss = s % 60;
+        return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+      }
 
-    // важное: синхронизация состояния кнопки с кулдауном
-    refreshClaimState();
-  }
+      let claimTimerId = null;
+      function refreshClaimState() {
+        if (!claim) return;
 
-  /* ====== Вращение со слабой вибрацией ====== */
-  function spinTo(targetIdx, laps = 1, dur = 1600){
-    const base = nearest(curr, targetIdx, N);
-    const dir  = (base >= curr ? 1 : -1) || 1;
-    const to   = base + dir * (laps * N);
+        const rem = remainingMs();
+        const canClaim = interacted && rem <= 0;
 
-    const from = curr, t0 = performance.now();
-    let lastPulse = 0;
+        if (canClaim) {
+          claim.disabled = false;
+          claim.textContent = 'Забрать бонус';
+          if (claimTimerId) { clearInterval(claimTimerId); claimTimerId = null; }
+        } else {
+          claim.disabled = true;
+          if (interacted && rem > 0) {
+            claim.textContent = 'Доступно через ' + fmtClock(rem);
+            if (!claimTimerId) {
+              claimTimerId = setInterval(() => {
+                const r = remainingMs();
+                if (r > 0) claim.textContent = 'Доступно через ' + fmtClock(r);
+                else {
+                  clearInterval(claimTimerId); claimTimerId = null;
+                  claim.textContent = 'Забрать бонус';
+                  claim.disabled = !interacted;
+                }
+              }, 1000);
+            }
+          } else {
+            claim.textContent = 'Забрать бонус';
+            if (claimTimerId) { clearInterval(claimTimerId); claimTimerId = null; }
+          }
+        }
+      }
 
-    function tick(t){
-      const k = Math.min((t - t0) / dur, 1);
-      curr = from + (to - from) * (1 - Math.pow(1 - k, 3)); // easeOut
-      updateUI();
+      /* ================== UI ================== */
+      function updatePillByIndex(idx) {
+        const it = items[idx];
+        const name = it?.dataset?.name || '—';
+        const img = it?.querySelector('img')?.src || '';
+        if (!pill) return;
+        pill.classList.remove('muted');
+        pill.innerHTML = img ? `<img src="${img}" alt=""><span>${name}</span>` : name;
+        if (claim) {
+          claim.disabled = false;
+          claim.dataset.bonus = name;
+        }
+      }
 
-      // лёгкие пульсы во время вращения (в начале чаще)
-      const period = 80 + 180 * k; // 80ms → 260ms
-      if (t - lastPulse >= period){ hapticPulse('light'); lastPulse = t; }
+      function updateUI() {
+        // позиционирование как «кольцо»
+        items.forEach((el, i) => {
+          let dx = i - curr;
+          dx = mod(dx + N / 2, N) - N / 2; // (-N/2; N/2]
+          const x = dx * STEP;
+          const s = 1 - Math.min(Math.abs(dx) * 0.16, 0.48);
+          el.style.transform = `translate(-50%,-50%) translateX(${x}px) scale(${s})`;
+          el.style.zIndex = String(1000 - Math.abs(dx) * 10);
+          el.classList.toggle('active', Math.round(Math.abs(dx)) === 0);
+        });
 
-      if (k < 1){
+        if (interacted) {
+          updatePillByIndex(mod(Math.round(curr), N));
+        } else {
+          if (pill) { pill.classList.add('muted'); pill.textContent = 'Нажми «Крутануть»'; }
+          if (claim) { claim.disabled = true; delete claim.dataset.bonus; }
+        }
+
+        // важное: синхронизация состояния кнопки с кулдауном
+        refreshClaimState();
+      }
+
+      /* ====== Вращение со слабой вибрацией ====== */
+      function spinTo(targetIdx, laps = 1, dur = 1600) {
+        const base = nearest(curr, targetIdx, N);
+        const dir = (base >= curr ? 1 : -1) || 1;
+        const to = base + dir * (laps * N);
+
+        const from = curr, t0 = performance.now();
+        let lastPulse = 0;
+
+        function tick(t) {
+          const k = Math.min((t - t0) / dur, 1);
+          curr = from + (to - from) * (1 - Math.pow(1 - k, 3)); // easeOut
+          updateUI();
+
+          // лёгкие пульсы во время вращения (в начале чаще)
+          const period = 80 + 180 * k; // 80ms → 260ms
+          if (t - lastPulse >= period) { hapticPulse('light'); lastPulse = t; }
+
+          if (k < 1) {
+            requestAnimationFrame(tick);
+          } else {
+            curr = to;
+            interacted = true;
+            updateUI();
+          }
+        }
         requestAnimationFrame(tick);
-      } else {
-        curr = to;
-        interacted = true;
-        updateUI();
       }
-    }
-    requestAnimationFrame(tick);
-  }
 
-  function snapTo(targetIdx, dur=420){
-    const to   = nearest(curr, targetIdx, N);
-    const from = curr;
-    const t0   = performance.now();
-    function tick(t){
-      const k = Math.min((t - t0)/dur, 1);
-      curr = from + (to - from) * easeOut(k);
-      updateUI();
-      if (k < 1) requestAnimationFrame(tick);
-      else { curr = to; interacted = true; updateUI(); }
-    }
-    requestAnimationFrame(tick);
-  }
+      function snapTo(targetIdx, dur = 420) {
+        const to = nearest(curr, targetIdx, N);
+        const from = curr;
+        const t0 = performance.now();
+        function tick(t) {
+          const k = Math.min((t - t0) / dur, 1);
+          curr = from + (to - from) * easeOut(k);
+          updateUI();
+          if (k < 1) requestAnimationFrame(tick);
+          else { curr = to; interacted = true; updateUI(); }
+        }
+        requestAnimationFrame(tick);
+      }
 
-  /* ================== события ================== */
-  // клик по карточке — центрируем её
-  track.addEventListener('click', (e) => {
-    const b = e.target.closest('.bonus'); if (!b) return;
-    const idx = items.indexOf(b);
-    if (idx >= 0) snapTo(idx, 320);
-  });
+      /* ================== события ================== */
+      // клик по карточке — центрируем её
+      track.addEventListener('click', (e) => {
+        const b = e.target.closest('.bonus'); if (!b) return;
+        const idx = items.indexOf(b);
+        if (idx >= 0) snapTo(idx, 320);
+      });
 
-  // свайп / drag
-  track.addEventListener('pointerdown', (e) => {
-    dragging = true; wheel.classList.add('dragging');
-    startX = lastX = e.clientX; lastT = e.timeStamp; startCurr = curr;
-    track.setPointerCapture(e.pointerId);
-  });
-  track.addEventListener('pointermove', (e) => {
-    if (!dragging) return;
-    const dx = e.clientX - startX;
-    curr = startCurr - dx / STEP;               // бесконечная карусель
-    const dt = e.timeStamp - lastT;
-    if (dt > 0){ vel = (e.clientX - lastX)/dt; lastX = e.clientX; lastT = e.timeStamp; }
-    updateUI();
-  }, {passive:true});
-  function endDrag(){
-    if (!dragging) return;
-    dragging = false; wheel.classList.remove('dragging');
-    interacted = true;
-    snapTo(mod(Math.round(curr - vel*6), N), 480);
-  }
-  track.addEventListener('pointerup', endDrag);
-  track.addEventListener('pointercancel', endDrag);
+      // свайп / drag
+      track.addEventListener('pointerdown', (e) => {
+        dragging = true; wheel.classList.add('dragging');
+        startX = lastX = e.clientX; lastT = e.timeStamp; startCurr = curr;
+        track.setPointerCapture(e.pointerId);
+      });
+      track.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const dx = e.clientX - startX;
+        curr = startCurr - dx / STEP;               // бесконечная карусель
+        const dt = e.timeStamp - lastT;
+        if (dt > 0) { vel = (e.clientX - lastX) / dt; lastX = e.clientX; lastT = e.timeStamp; }
+        updateUI();
+      }, { passive: true });
+      function endDrag() {
+        if (!dragging) return;
+        dragging = false; wheel.classList.remove('dragging');
+        interacted = true;
+        snapTo(mod(Math.round(curr - vel * 6), N), 480);
+      }
+      track.addEventListener('pointerup', endDrag);
+      track.addEventListener('pointercancel', endDrag);
 
-  // «Крутануть» — вращаем и сразу кидаем конфетти из кнопки
-  spin?.addEventListener('click', () => {
-    const idx = Math.floor(Math.random() * N);
-    spinTo(idx, 1, 1600);
+      // «Крутануть» — вращаем и сразу кидаем конфетти из кнопки
+      spin?.addEventListener('click', () => {
+        const idx = Math.floor(Math.random() * N);
+        spinTo(idx, 1, 1600);
 
-    const r = spin.getBoundingClientRect();
-    confettiBurst(r.left + r.width / 2, r.top + r.height / 2);
-  });
+        const r = spin.getBoundingClientRect();
+        confettiBurst(r.left + r.width / 2, r.top + r.height / 2);
+      });
 
-  // «Забрать бонус» — учёт кулдауна + переход по ссылке
-  claim?.addEventListener('click', () => {
-    if (claim.disabled) return; // на всякий
+      // «Забрать бонус» — учёт кулдауна + переход по ссылке
+      claim?.addEventListener('click', () => {
+        if (claim.disabled) return; // на всякий
 
-    const idx  = mod(Math.round(curr), N);
-    const name = items[idx]?.dataset?.name || '';
-    const url  = bonusLinks[name];
+        const idx = mod(Math.round(curr), N);
+        const name = items[idx]?.dataset?.name || '';
+        const url = bonusLinks[name];
 
-    // фиксируем время клика и обновляем кнопку/таймер
-    setLastClaim();
-    refreshClaimState();
+        // фиксируем время клика и обновляем кнопку/таймер
+        setLastClaim();
+        refreshClaimState();
 
-    if (!url) return;
-    if (url.startsWith('#'))            location.hash = url;
-    else if (/^https?:\/\//.test(url))  window.open(url, '_blank');
-    else                                window.location.href = url;
-  });
+        if (!url) return;
+        if (url.startsWith('#')) location.hash = url;
+        else if (/^https?:\/\//.test(url)) window.open(url, '_blank');
+        else window.location.href = url;
+      });
 
-  /* ================== конфетти ================== */
-  function confettiBurst(x, y){
-    let layer = document.getElementById('confetti');
-    if(!layer){ layer = document.createElement('div'); layer.id='confetti'; document.body.appendChild(layer); }
-    const colors = ['#7b5bff','#3de0c5','#ffd166','#ef476f','#06d6a0','#118ab2'];
-    const rect = document.body.getBoundingClientRect();
-    const ox = (x ?? rect.width / 2), oy = (y ?? rect.height / 3);
-    for (let i=0; i<36; i++){
-      const el = document.createElement('div');
-      el.className = 'confetti-piece';
-      el.style.background = colors[i % colors.length];
-      const angle = (i / 36) * Math.PI * 2;
-      const speed = 140 + Math.random()*120;
-      const dx = Math.cos(angle) * speed, dy = Math.sin(angle) * speed + 220;
-      el.style.setProperty('--x',  ox + 'px');
-      el.style.setProperty('--y',  oy + 'px');
-      el.style.setProperty('--dx', dx + 'px');
-      el.style.setProperty('--dy', dy + 'px');
-      layer.appendChild(el);
-      setTimeout(()=> el.remove(), 950);
-    }
-  }
+      /* ================== конфетти ================== */
+      function confettiBurst(x, y) {
+        let layer = document.getElementById('confetti');
+        if (!layer) { layer = document.createElement('div'); layer.id = 'confetti'; document.body.appendChild(layer); }
+        const colors = ['#7b5bff', '#3de0c5', '#ffd166', '#ef476f', '#06d6a0', '#118ab2'];
+        const rect = document.body.getBoundingClientRect();
+        const ox = (x ?? rect.width / 2), oy = (y ?? rect.height / 3);
+        for (let i = 0; i < 36; i++) {
+          const el = document.createElement('div');
+          el.className = 'confetti-piece';
+          el.style.background = colors[i % colors.length];
+          const angle = (i / 36) * Math.PI * 2;
+          const speed = 140 + Math.random() * 120;
+          const dx = Math.cos(angle) * speed, dy = Math.sin(angle) * speed + 220;
+          el.style.setProperty('--x', ox + 'px');
+          el.style.setProperty('--y', oy + 'px');
+          el.style.setProperty('--dx', dx + 'px');
+          el.style.setProperty('--dy', dy + 'px');
+          layer.appendChild(el);
+          setTimeout(() => el.remove(), 950);
+        }
+      }
 
-  /* старт */
-  updateUI();            // отрисовать колесо + плашку
-  refreshClaimState();   // сразу проверить кулдаун на кнопке
-})();
-</script>
+      /* старт */
+      updateUI();            // отрисовать колесо + плашку
+      refreshClaimState();   // сразу проверить кулдаун на кнопке
+    })();
+  </script>
 
 
+  <script>
+    (function () {
+      const TG = window.Telegram && window.Telegram.WebApp;
+      try { TG && TG.ready(); } catch (_) { }
+
+      /* ===== элементы ===== */
+      const refInput = document.getElementById('refLink');
+      const copyBtn = document.getElementById('copyRef');
+      const shareBtn = document.getElementById('shareRef');
+      const addBtn = document.getElementById('demoAdd');
+      const resetBtn = document.getElementById('demoReset');
+      const listEl = document.getElementById('leadList');
+
+      if (!refInput || !listEl) return;
+
+      /* ===== реферальная ссылка ===== */
+      const BOT = 'serge_kamensky_bot'; // ← твой бот
+      const uidTG = TG?.initDataUnsafe?.user?.id;
+      const uname = TG?.initDataUnsafe?.user?.username;
+      const YOU = uname ? '@' + uname : 'Ты';
+
+      // Фоллбек-ID для браузера вне Telegram
+      let anon = localStorage.getItem('anonRefId');
+      if (!anon) { anon = Math.random().toString(36).slice(2, 10); localStorage.setItem('anonRefId', anon); }
+
+      const uid = uidTG || anon;
+      const refUrl = `https://t.me/${BOT}?start=ref_${uid}`;
+      refInput.value = refUrl;
+
+      /* ===== копирование/шеринг ===== */
+      copyBtn?.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(refUrl);
+          copyBtn.classList.add('copied');
+          copyBtn.textContent = 'Скопировано';
+          setTimeout(() => { copyBtn.classList.remove('copied'); copyBtn.textContent = 'Скопировать'; }, 1200);
+        } catch (_) {
+          prompt('Скопируй ссылку вручную:', refUrl);
+        }
+      });
+
+      shareBtn?.addEventListener('click', async () => {
+        const text = 'Заходи по моей ссылке — будут бонусы 👇';
+        if (TG?.openTelegramLink) {
+          TG.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(refUrl)}&text=${encodeURIComponent(text)}`);
+          return;
+        }
+        if (navigator.share) {
+          try { await navigator.share({ title: 'Партнёрка', text, url: refUrl }); return; } catch (_) { }
+        }
+        copyBtn?.click();
+      });
+
+      /* ===== демо-лидерборд (localStorage) ===== */
+      const STORE_KEY = 'aff_lead_' + uid;
+      function loadData() {
+        const raw = localStorage.getItem(STORE_KEY);
+        if (raw) { try { return JSON.parse(raw); } catch (_) { } }
+        const init = [
+          { label: 'Ты', handle: YOU, count: 0, self: true },
+          { label: '@alice', handle: '@alice', count: 7 },
+          { label: '@bob', handle: '@bob', count: 5 },
+          { label: '@mike', handle: '@mike', count: 3 },
+        ];
+        localStorage.setItem(STORE_KEY, JSON.stringify(init));
+        return init;
+      }
+      function saveData(data) { localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
+      let data = loadData();
+
+      function renderList() {
+        const sorted = [...data].sort((a, b) => b.count - a.count);
+        listEl.innerHTML = '';
+        sorted.forEach(row => {
+          const li = document.createElement('li');
+          if (row.self) li.classList.add('me');
+          li.innerHTML = `<span>${row.handle || row.label}</span><span>${row.count}</span>`;
+          listEl.appendChild(li);
+        });
+      }
+      renderList();
+
+      // +1 приглашение (демо)
+      addBtn?.addEventListener('click', () => {
+        const me = data.find(d => d.self) || data[0];
+        me.count++;
+        saveData(data);
+        renderList();
+        // лёгкий конфетти/хаптик
+        const r = addBtn.getBoundingClientRect();
+        (window.confettiBurst || miniConfetti)(r.left + r.width / 2, r.top + r.height / 2);
+        try { TG?.HapticFeedback?.impactOccurred('light'); } catch (_) { }
+      });
+
+      // Сброс демо-данных
+      resetBtn?.addEventListener('click', () => {
+        localStorage.removeItem(STORE_KEY);
+        data = loadData();
+        renderList();
+      });
+
+      /* ===== мини-конфетти, если у тебя нет глобальной confettiBurst ===== */
+      function miniConfetti(x, y) {
+        let layer = document.getElementById('confetti');
+        if (!layer) { layer = document.createElement('div'); layer.id = 'confetti'; Object.assign(layer.style, { position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9998 }); document.body.appendChild(layer); }
+        const colors = ['#7b5bff', '#3de0c5', '#ffd166', '#ef476f', '#06d6a0', '#118ab2'];
+        for (let i = 0; i < 24; i++) {
+          const el = document.createElement('div');
+          Object.assign(el.style, { position: 'absolute', width: '10px', height: '14px', borderRadius: '2px', background: colors[i % colors.length], left: (x) + 'px', top: (y) + 'px', transform: `translate(-50%,-50%)` });
+          layer.appendChild(el);
+          const dx = (Math.random() * 2 - 1) * 180, dy = (Math.random() * -1 - 0.3) * 220;
+          el.animate([
+            { transform: `translate(-50%,-50%) translate(0,0) rotate(0)`, opacity: 1 },
+            { transform: `translate(-50%,-50%) translate(${dx}px, ${dy}px) rotate(360deg)`, opacity: 0 }
+          ], { duration: 900, easing: 'linear' }).onfinish = () => el.remove();
+        }
+      }
+    })();
+  </script>
+
+  <script>
+    (function () {
+      const planRow = document.getElementById('planRow');
+      if (!planRow) return;
+
+      // при открытии всегда активен "Месяц"
+      let plan = 'month';
+
+      const cards = Array.from(document.querySelectorAll('#services .service-card'));
+      const fmt = n => Math.round(n).toLocaleString('ru-RU');
+
+      // годовая — 12 месяцев со скидкой 15%
+      const computeYear = monthRub => monthRub * 12 * 0.85;
+
+      function applyPlan() {
+        // подсветка кнопок
+        planRow.querySelectorAll('.plan-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.plan === plan);
+        });
+
+        // пересчёт цен
+        cards.forEach(card => {
+          const month = +card.dataset.month;
+          const priceEl = card.querySelector('.price .num');
+          const noteEl = card.querySelector('.price-note');
+          if (!priceEl || !month) return;
+
+          if (plan === 'month') {
+            priceEl.textContent = fmt(month);
+            noteEl.textContent = '/ мес';
+          } else {
+            const m = month * 0.85;
+            priceEl.textContent = fmt(m);
+            noteEl.textContent = '/ мес (годовой план, −15%)';
+
+          }
+        });
+      }
+
+      // клики по переключателю
+      planRow.addEventListener('click', e => {
+        const btn = e.target.closest('.plan-btn'); if (!btn) return;
+        const p = btn.dataset.plan;
+        if (p && p !== plan) { plan = p; applyPlan(); }
+      });
+
+      // старт
+      applyPlan();
+    })();
+  </script>
 
 
 
