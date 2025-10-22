@@ -1417,6 +1417,20 @@
 }
 #about .chip:disabled{ opacity:.55; pointer-events:none; }
 
+/* === About: аватарки из корня, без сюрпризов === */
+#about .avatar{
+  /* весь background задаём одной переменной, чтобы ничто выше не «сбило» картинку */
+  background: var(--ava-bg, #222) center/cover no-repeat !important;
+  width:34px; height:34px; border-radius:50%;
+  flex:0 0 34px; border:1px solid rgba(255,255,255,.18);
+}
+
+/* Кто отвечает (я) — слева */
+#about .msg.me   .avatar{ --ava-bg: var(--ava-me,   url('me.png')); }
+/* Пользователь — справа */
+#about .msg.user .avatar{ --ava-bg: var(--ava-user, url('user.png')); }
+
+
 
 </style>
 
