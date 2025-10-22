@@ -2788,9 +2788,46 @@ claim?.addEventListener('click', () => {
   const resetBtn = document.getElementById('chatReset');
   if(!box || !controls) return;
 
-  /* пути к аватаркам — ОДНО место для настройки */
-  const AVA_ME   = 'me.png';    // или '/me.png' если 100% с доменного корня
-  const AVA_USER = 'user.png';  // или '/user.png'
+// === Telegram user avatar for "Обо мне" чат ===
+// (вставь ЭТО вместо старых const AVA_ME / AVA_USER)
+
+const TG_ABOUT = window.Telegram && window.Telegram.WebApp;
+const TG_USER  = TG_ABOUT?.initDataUnsafe?.user || null;
+
+// твоя аватарка (меняй путь при желании)
+const AVA_ME = 'me.png';
+
+// аватар пользователя: по умолчанию картинка из корня,
+// но дальше пытаемся подтянуть реальную из Telegram
+let AVA_USER = 'user.png';
+
+// утилита проверки, что картинка грузится
+function imgOk(src){
+  return new Promise(res=>{
+    const i = new Image();
+    i.onload = ()=> res(true);
+    i.onerror= ()=> res(false);
+    i.src = src;
+  });
+}
+
+// пытаемся взять фото из Telegram -> user.png -> /user.png
+(async function resolveAboutUserAvatar(){
+  const cand = [];
+  if (TG_USER?.photo_url) cand.push(TG_USER.photo_url);
+  cand.push('user.png','/user.png');
+
+  for (const src of cand){
+    if (await imgOk(src)){
+      AVA_USER = src;
+      // если сообщения уже отрисованы — обновим их аватар
+      document.querySelectorAll('#about .msg.user .avatar')
+        .forEach(img => { img.src = AVA_USER; img.style.display = 'block'; });
+      break;
+    }
+  }
+})();
+
 
   // Telegram haptics (мягко)
   const TG = window.Telegram && window.Telegram.WebApp;
