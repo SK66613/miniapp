@@ -1576,81 +1576,60 @@
   </style>
 
   <style>
-    /* ==== Вертикальная карусель тарифов ==== */
-    .tariff-wheel {
-      --gap: 12px;
-      /* расстояние между карточками */
-      --centerH: 132px;
-      /* «зона центра» для подсветки */
-      height: 420px;
-      /* высота окна прокрутки */
-      position: relative;
-      overflow-y: auto;
-      scroll-snap-type: y mandatory;
-      -webkit-overflow-scrolling: touch;
-      padding-block: calc((var(--centerH))/2);
-    }
 
-    /* затенение краёв, чтобы было ощущение глубины */
-    .tariff-wheel::before,
-    .tariff-wheel::after {
-      content: "";
-      position: sticky;
-      left: 0;
-      right: 0;
-      height: 56px;
-      pointer-events: none;
-      z-index: 3;
-    }
+/* Вертикальная карусель */
+.tariff-wheel{
+  --gap:12px;
+  --centerH:132px;          /* высота зоны подсветки центра */
+  height:420px;
+  position:relative;
+  overflow-y:auto;
+  scroll-snap-type: y proximity;     /* помогаем нативному снэпу */
+  -webkit-overflow-scrolling: touch;
+  padding-block: calc(var(--centerH)/2);
+  touch-action: pan-y;               /* блокируем горизонтальную дрожь */
+  overscroll-behavior: contain;      /* без «резинки» в iOS/Telegram */
+}
+.tariff-wheel::before,
+.tariff-wheel::after{
+  content:""; position:sticky; left:0; right:0; height:56px; pointer-events:none; z-index:3;
+}
+.tariff-wheel::before{ top:0;    background: linear-gradient(#0b0f12, transparent); }
+.tariff-wheel::after{  bottom:0; background: linear-gradient(transparent, #0b0f12); }
 
-    .tariff-wheel::before {
-      top: 0;
-      background: linear-gradient(#0b0f12, transparent);
-    }
+.wheel-list{ display:flex; flex-direction:column; gap:var(--gap); }
+.wheel-list .tariff{ scroll-snap-align:center; transition: transform .22s, box-shadow .22s, border-color .22s, background .22s; }
+.wheel-list .tariff.active{
+  transform: scale(1.015);
+  background: inherit;
+  border-color: rgba(255,255,255,.22);
+  box-shadow: 0 16px 32px rgba(0,0,0,.28), 0 0 0 2px rgba(123,91,255,.30) inset;
+}
 
-    .tariff-wheel::after {
-      bottom: 0;
-      background: linear-gradient(transparent, #0b0f12);
-    }
+.wheel-center-mask{
+  position:absolute; left:8px; right:8px; top:50%;
+  height: var(--centerH); transform: translateY(-50%);
+  pointer-events:none; z-index:2; border-radius:16px;
+  background: transparent !important; mix-blend-mode: normal !important;
+  box-shadow:
+    0 0 0 1px rgba(123,91,255,.24) inset,
+    0 12px 28px rgba(0,0,0,.28),
+    0 0 60px rgba(123,91,255,.16),
+    0 0 100px rgba(61,224,197,.12);
+}
 
-    .wheel-list {
-      display: flex;
-      flex-direction: column;
-      gap: var(--gap);
-    }
+/* Внутри карточки — цены */
+#services .price-row{ display:flex; gap:10px; align-items:baseline; margin-top:8px; }
+#services .price .num{ font-size:26px; font-weight:900; letter-spacing:.3px; }
+#services .price-note{ opacity:.8; }
 
-    .wheel-list .tariff {
-      scroll-snap-align: center;
-      transition: transform .25s ease, box-shadow .25s ease, background .25s ease, border-color .25s ease;
-    }
+/* разлипание */
+#services .page-title + .tariff-wheel{ margin-top:14px; }
 
-    /* активная (центральная) карточка — слегка больше и подсвечена */
-    .wheel-list .tariff.active {
-      transform: scale(1.02);
-      background: rgba(255, 255, 255, .06);
-      border-color: rgba(255, 255, 255, .28);
-      box-shadow:
-        0 12px 24px rgba(0, 0, 0, .24),
-        0 0 0 8px rgba(123, 91, 255, .10) inset;
-    }
 
-    /* рамка-подсветка «центра» */
-    .wheel-center-mask {
-      position: absolute;
-      left: 8px;
-      right: 8px;
-      top: 50%;
-      height: var(--centerH);
-      transform: translateY(-50%);
-      pointer-events: none;
-      z-index: 2;
-      border-radius: 16px;
-      box-shadow:
-        0 0 0 1px rgba(255, 255, 255, .16) inset,
-        0 0 48px rgba(123, 91, 255, .25),
-        0 0 80px rgba(61, 224, 197, .15);
-      mix-blend-mode: screen;
-    }
+/* жесткий запрет горизонтального «дрейфа» на iOS */
+#services .tcard, #services .vwheel { overscroll-behavior: contain; }
+
   </style>
 
 
@@ -1757,12 +1736,12 @@
       </section>
 
 
- <!-- SERVICES -->
+
+<!-- SERVICES -->
 <section class="page" id="services">
   <!-- Заголовок + переключатель -->
   <div class="card page-title">
     <h2 class="h1">Тарифы</h2>
-
     <div id="planRow" class="plan-toggle">
       <button class="plan-btn active" data-plan="month">Месяц</button>
       <button class="plan-btn" data-plan="year">Год −15%</button>
@@ -1772,84 +1751,61 @@
   <!-- ВЕРТИКАЛЬНАЯ КАРУСЕЛЬ ТАРИФОВ -->
   <div class="tariff-wheel" id="tariffWheel">
     <div class="wheel-list" id="tariffList">
-      <!-- КАЖДЫЙ тариф — ОДНА карточка (article), без вложенной .card -->
-      <article class="card tariff service-card" data-id="avito" data-month="30000">
+      <!-- КАЖДЫЙ тариф — ОДНА карточка (без вложенных .card) -->
+      <article class="card tariff service-card" data-id="avito"     data-month="30000">
         <div class="h2">Продвижение на Авито</div>
         <p class="muted-sm">Первые позиции объявлений при минимальном бюджете.</p>
-        <div class="price-row">
-          <div class="price"><span class="num"></span> ₽</div>
-          <div class="price-note"></div>
-        </div>
+        <div class="price-row"><div class="price"><span class="num"></span> ₽</div><div class="price-note"></div></div>
       </article>
 
-      <article class="card tariff service-card" data-id="ads" data-month="60000">
+      <article class="card tariff service-card" data-id="ads"       data-month="60000">
         <div class="h2">Контекстная реклама</div>
         <p class="muted-sm">Яндекс.Директ и Google Ads под KPI, без слива бюджета.</p>
-        <div class="price-row">
-          <div class="price"><span class="num"></span> ₽</div>
-          <div class="price-note"></div>
-        </div>
+        <div class="price-row"><div class="price"><span class="num"></span> ₽</div><div class="price-note"></div></div>
       </article>
 
-      <article class="card tariff service-card" data-id="seo" data-month="45000">
+      <article class="card tariff service-card" data-id="seo"       data-month="45000">
         <div class="h2">SEO и сайты</div>
         <p class="muted-sm">Сайт-магнит: структура, тексты, техничка, оптимизация.</p>
-        <div class="price-row">
-          <div class="price"><span class="num"></span> ₽</div>
-          <div class="price-note"></div>
-        </div>
+        <div class="price-row"><div class="price"><span class="num"></span> ₽</div><div class="price-note"></div></div>
       </article>
 
-      <article class="card tariff service-card" data-id="crm" data-month="55000">
+      <article class="card tariff service-card" data-id="crm"       data-month="55000">
         <div class="h2">CRM и чат-боты</div>
         <p class="muted-sm">Amo/B24 + автоворонки, заявки 24/7, ничего не теряется.</p>
-        <div class="price-row">
-          <div class="price"><span class="num"></span> ₽</div>
-          <div class="price-note"></div>
-        </div>
+        <div class="price-row"><div class="price"><span class="num"></span> ₽</div><div class="price-note"></div></div>
       </article>
 
-      <article class="card tariff service-card" data-id="mp" data-month="40000">
+      <article class="card tariff service-card" data-id="mp"        data-month="40000">
         <div class="h2">Маркетплейсы</div>
         <p class="muted-sm">Карточки, ключи, продвижение — полный цикл.</p>
-        <div class="price-row">
-          <div class="price"><span class="num"></span> ₽</div>
-          <div class="price-note"></div>
-        </div>
+        <div class="price-row"><div class="price"><span class="num"></span> ₽</div><div class="price-note"></div></div>
       </article>
 
       <article class="card tariff service-card" data-id="analytics" data-month="50000">
         <div class="h2">Аналитика и стратегия</div>
         <p class="muted-sm">Сквозная аналитика + карта действий на 6–12 мес.</p>
-        <div class="price-row">
-          <div class="price"><span class="num"></span> ₽</div>
-          <div class="price-note"></div>
-        </div>
+        <div class="price-row"><div class="price"><span class="num"></span> ₽</div><div class="price-note"></div></div>
       </article>
 
-      <article class="card tariff service-card" data-id="smm" data-month="35000">
+      <article class="card tariff service-card" data-id="smm"       data-month="35000">
         <div class="h2">Репутация и SMM</div>
         <p class="muted-sm">Образ бренда и работа с отзывами.</p>
-        <div class="price-row">
-          <div class="price"><span class="num"></span> ₽</div>
-          <div class="price-note"></div>
-        </div>
+        <div class="price-row"><div class="price"><span class="num"></span> ₽</div><div class="price-note"></div></div>
       </article>
 
-      <article class="card tariff service-card" data-id="tg" data-month="38000">
+      <article class="card tariff service-card" data-id="tg"        data-month="38000">
         <div class="h2">Telegram-маркетинг</div>
         <p class="muted-sm">Каналы, рассылки, автоворонки, связка с CRM.</p>
-        <div class="price-row">
-          <div class="price"><span class="num"></span> ₽</div>
-          <div class="price-note"></div>
-        </div>
+        <div class="price-row"><div class="price"><span class="num"></span> ₽</div><div class="price-note"></div></div>
       </article>
     </div>
 
-    <!-- мягкая подсветка центра — ДОЛЖНА быть внутри .tariff-wheel -->
+    <!-- мягкая подсветка центра -->
     <div class="wheel-center-mask" aria-hidden="true"></div>
   </div>
 </section>
+
 
 
   <!-- ABOUT -->
@@ -3294,94 +3250,107 @@
     })();
   </script>
 
-  <script>
-    (function setupTariffCarousel() {
-      const wheel = document.getElementById('tariffWheel');
-      const list = document.getElementById('tariffList');
-      if (!wheel || !list) return;
+<script>
+(function setupTariffCarousel(){
+  const wheel = document.getElementById('tariffWheel');
+  const list  = document.getElementById('tariffList');
+  if (!wheel || !list) return;
 
-      // берём исходные карточки
-      const orig = Array.from(list.children).filter(el => el.classList.contains('tariff'));
-      if (orig.length < 2) return;
+  // Чёткая ось: не даём уезжать вбок и гасим «резинку»
+  wheel.style.touchAction = 'pan-y';
+  wheel.style.overscrollBehavior = 'contain';
 
-      // размеры шага (высота карточки + gap)
-      const gap = parseFloat(getComputedStyle(list).rowGap || getComputedStyle(list).gap || 12) || 12;
-      const itemH = Math.round(orig[0].getBoundingClientRect().height);
-      const STEP = itemH + gap;
-      const N = orig.length;
+  // исходные карточки
+  const orig = Array.from(list.querySelectorAll('.tariff'));
+  if (orig.length < 2) return;
 
-      // делаем бесконечную ленту: копия вверх и вниз
-      const pre = orig.map(n => n.cloneNode(true));
-      const post = orig.map(n => n.cloneNode(true));
-      list.prepend(...pre);
-      list.append(...post);
+  // размеры
+  const cs   = getComputedStyle(list);
+  const gap  = parseFloat(cs.rowGap || cs.gap || 12) || 12;
+  let   cardH= Math.round(orig[0].getBoundingClientRect().height);
+  let   STEP = cardH + gap;
+  const N    = orig.length;
 
-      // функция — центрировать элемент
-      function centerOn(el, behavior = 'auto') {
-        const vH = wheel.clientHeight;
-        const h = el.getBoundingClientRect().height || itemH;
-        const target = el.offsetTop - (vH - h) / 2;
-        wheel.scrollTo({ top: target, behavior });
+  // бесконечная лента: копии вверх/вниз
+  const pre  = orig.map(n => n.cloneNode(true));
+  const post = orig.map(n => n.cloneNode(true));
+  list.prepend(...pre);
+  list.append(...post);
+
+  const all = () => Array.from(list.querySelectorAll('.tariff'));
+
+  // центрирование карточки
+  function centerOn(el, behavior='smooth'){
+    const vH = wheel.clientHeight;
+    const h  = el.getBoundingClientRect().height || cardH;
+    const target = el.offsetTop - (vH - h)/2;
+    wheel.scrollTo({ top: target, behavior });
+  }
+
+  // старт: показать «среднюю» первую
+  const midFirst = all()[pre.length];
+  requestAnimationFrame(()=> centerOn(midFirst,'auto'));
+
+  // активная карточка в центре
+  let raf = 0;
+  function updateActive(){
+    raf = 0;
+    const centerY = wheel.scrollTop + wheel.clientHeight/2;
+    let best=null, bestDist=1e9;
+    for (const el of all()){
+      const r = el.getBoundingClientRect();
+      const c = el.offsetTop + r.height/2;
+      const d = Math.abs(c - centerY);
+      if (d < bestDist){ bestDist = d; best = el; }
+    }
+    all().forEach(el => el.classList.toggle('active', el === best));
+  }
+
+  // плавный доснэп после остановки
+  let stopTimer = 0;
+  function snapAfterStop(delay=90){
+    clearTimeout(stopTimer);
+    stopTimer = setTimeout(()=>{
+      const centerY = wheel.scrollTop + wheel.clientHeight/2;
+      let best=null, bestDist=1e9;
+      for (const el of all()){
+        const r = el.getBoundingClientRect();
+        const c = el.offsetTop + r.height/2;
+        const d = Math.abs(c - centerY);
+        if (d < bestDist){ bestDist = d; best = el; }
       }
+      if (best) centerOn(best,'smooth');
+    }, delay);
+  }
 
-      // старт: показать среднюю копию первой карточки
-      const middleFirst = list.children[pre.length];
-      requestAnimationFrame(() => centerOn(middleFirst, 'auto'));
+  // «бесконечность» и подсветка при скролле
+  wheel.addEventListener('scroll', ()=>{
+    if (!raf) raf = requestAnimationFrame(updateActive);
 
-      // актуализация активной карточки
-      let raf = 0, stopTimer = 0;
-      function updateActive() {
-        raf = 0;
-        const centerY = wheel.scrollTop + wheel.clientHeight / 2;
-        let best = null, bestDist = 1e9;
-        const nodes = Array.from(list.children);
-        for (const el of nodes) {
-          const h = el.getBoundingClientRect().height || itemH;
-          const c = el.offsetTop + h / 2;
-          const d = Math.abs(c - centerY);
-          if (d < bestDist) { bestDist = d; best = el; }
-        }
-        nodes.forEach(el => el.classList.toggle('active', el === best));
-      }
+    const min = STEP * (N * 0.5);
+    const max = STEP * (N * 2.5);
+    if (wheel.scrollTop < min)           wheel.scrollTop += STEP * N;
+    else if (wheel.scrollTop > max)      wheel.scrollTop -= STEP * N;
 
-      function onScroll() {
-        if (!raf) raf = requestAnimationFrame(updateActive);
+    snapAfterStop(110);
+  }, { passive:true });
 
-        // бесконечная прокрутка — прыгнуть обратно в среднюю секцию
-        const min = STEP * (N * 0.5);
-        const max = STEP * (N * 2.5);
-        if (wheel.scrollTop < min) {
-          wheel.scrollTop += STEP * N;
-        } else if (wheel.scrollTop > max) {
-          wheel.scrollTop -= STEP * N;
-        }
+  // тап по карточке — центрируем её
+  list.addEventListener('click', (e)=>{
+    const card = e.target.closest('.tariff'); if (!card) return;
+    centerOn(card,'smooth');
+  });
 
-        // через 90 мс без скролла — плавно доснэпить к ближайшей карточке
-        clearTimeout(stopTimer);
-        stopTimer = setTimeout(() => {
-          const centerY = wheel.scrollTop + wheel.clientHeight / 2;
-          let best = null, bestDist = 1e9;
-          const nodes = Array.from(list.children);
-          for (const el of nodes) {
-            const h = el.getBoundingClientRect().height || itemH;
-            const c = el.offsetTop + h / 2;
-            const d = Math.abs(c - centerY);
-            if (d < bestDist) { bestDist = d; best = el; }
-          }
-          if (best) centerOn(best, 'smooth');
-        }, 90);
-      }
+  // перерасчёт при изменении размеров/шрифтов
+  window.addEventListener('resize', ()=>{
+    cardH = Math.round(all()[pre.length].getBoundingClientRect().height);
+    STEP  = cardH + gap;
+    updateActive();
+    snapAfterStop(0);
+  });
+})();
+</script>
 
-      wheel.addEventListener('scroll', onScroll, { passive: true });
-      updateActive();
-
-      // по нажатию на карточку — центрируем её
-      list.addEventListener('click', (e) => {
-        const card = e.target.closest('.tariff'); if (!card) return;
-        centerOn(card, 'smooth');
-      });
-    })();
-  </script>
 
 
 
