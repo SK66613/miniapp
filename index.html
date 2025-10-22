@@ -1364,60 +1364,56 @@
 
 <style>
 /* === About: разлипание карточек === */
-#about > .card { margin-top: 14px; }
-#about > .card:first-child { margin-top: 0; }
-#about .page-title + .about-chat { margin-top: 14px; }
+#about > .card { margin-top:14px; }
+#about > .card:first-child { margin-top:0; }
+#about .page-title + .about-chat { margin-top:14px; }
 
 /* === Мини-чат === */
 #about .about-chat{ padding:14px; display:grid; gap:10px; }
 #about .chat-window{
-  height: 280px; overflow:auto; padding:10px; border-radius:14px;
+  height:380px; overflow:auto; padding:10px; border-radius:14px;
   border:1px solid var(--border, rgba(255,255,255,.12));
   background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));
-  scroll-behavior: smooth;
+  scroll-behavior:smooth;
 }
 
-/* === Сообщения и аватарки === */
+/* Сообщения */
 #about .msg{ display:flex; gap:10px; margin:10px 0; align-items:flex-end; }
 #about .msg.user{ flex-direction: row-reverse; } /* пользователь справа */
 
-/* ВАЖНО: один-единственный способ задавать картинку — через переменную */
+/* Аватары через IMG (никаких background) */
 #about .avatar{
-  background: var(--ava-bg, #222) center/cover no-repeat !important;
-  width:34px; height:34px; border-radius:50%;
-  flex:0 0 34px; border:1px solid rgba(255,255,255,.18);
+  width:34px; height:34px; border-radius:50%; flex:0 0 34px;
+  border:1px solid rgba(255,255,255,.18); object-fit:cover; background:#222;
 }
-/* Кто отвечает (я) — слева */
-#about .msg.me   .avatar{ --ava-bg: var(--ava-me,   url('me.png')); }
-/* Пользователь — справа */
-#about .msg.user .avatar{ --ava-bg: var(--ava-user, url('user.png')); }
 
 /* Пузыри */
 #about .bubble{
-  max-width: 75%; padding:10px 12px; border-radius:14px; line-height:1.25;
+  max-width:75%; padding:10px 12px; border-radius:14px; line-height:1.25;
   border:1px solid var(--border, rgba(255,255,255,.12));
-  background: rgba(255,255,255,.05); font-weight:600;
+  background: rgba(255,255,255,.05); font-weight:10;
 }
 #about .msg.me .bubble{
   background: linear-gradient(135deg, var(--mint,#3de0c5), var(--primary,#7b5bff));
-  color:#fafbfb; border-color: transparent; font-weight:800;
+  color:#fafafa; border-color:transparent; font-weight:10;
 }
 
-/* "Печатает…" */
+/* Тайпинг */
 #about .typing{ width:60px; display:flex; justify-content:space-between; }
 #about .dot{ width:6px; height:6px; border-radius:50%; background: currentColor; opacity:.7; animation: typing 1s infinite ease-in-out; }
 #about .dot:nth-child(2){ animation-delay:.15s } 
 #about .dot:nth-child(3){ animation-delay:.3s }
-@keyframes typing{ 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-3px) } }
+@keyframes typing{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-3px) } }
 
 /* Быстрые кнопки */
 #about .chat-quick{ display:flex; gap:8px; flex-wrap:wrap; }
 #about .chip{
   padding:8px 10px; border-radius:999px; font-weight:700;
   border:1px solid var(--border, rgba(255,255,255,.14));
-  background: rgba(240,235,235,.97);
+  background: rgba(253, 252, 252, 0.993);
 }
 #about .chip:disabled{ opacity:.55; pointer-events:none; }
+
 
 </style>
 
@@ -1618,14 +1614,14 @@
 
       <!-- ABOUT -->
 <section class="page" id="about">
+  <!-- Карточка-заголовок -->
   <div class="card page-title">
     <h2 class="h1">Обо мне</h2>
     <p class="muted-sm">Коротко и интерактивно — спроси в мини-чате 👇</p>
   </div>
 
-  <!-- ВАЖНО: задали аватарки через переменные -->
-  <div class="card about-chat" id="aboutChat"
-       style="--ava-me:url('/me.png'); --ava-user:url('/user.png');">
+  <!-- Самостоятельная карточка чата (не вложенная в другую) -->
+  <div class="card about-chat" id="aboutChat">
     <div class="chat-window" id="chatBox" aria-live="polite"></div>
 
     <div class="chat-quick" id="chatControls">
@@ -1637,6 +1633,7 @@
     </div>
   </div>
 </section>
+
 
 
 
@@ -2693,10 +2690,13 @@
   const box = document.getElementById('chatBox');
   const controls = document.getElementById('chatControls');
   const resetBtn = document.getElementById('chatReset');
-
   if(!box || !controls) return;
 
-  // Telegram хаптик (мягкий отклик)
+  /* пути к аватаркам — ОДНО место для настройки */
+  const AVA_ME   = 'me.png';    // или '/me.png' если 100% с доменного корня
+  const AVA_USER = 'user.png';  // или '/user.png'
+
+  // Telegram haptics (мягко)
   const TG = window.Telegram && window.Telegram.WebApp;
   function haptic(kind='light'){
     try{
@@ -2707,56 +2707,62 @@
     }catch(_){}
   }
 
-  // Реплики (под себя поправь текст)
+  // Q&A (под себя)
   const QA = {
-    what: {
-      q: 'Чем вы занимаетесь?',
-      a: 'Помогаю бизнесу расти: маркетинг, автоворонки, Telegram-инструменты и mini-apps. Настраиваю аналитику и считаю экономику, чтобы реклама окупалась.'
-    },
-    price: {
-      q: 'Сколько стоит консультация?',
-      a: 'Первая встреча — бесплатно: разбор задачи и план. Дальше консультация по записи в разделе «Консультация» — выбери удобное время в календаре.'
-    },
-    start: {
-      q: 'Как быстро начнём?',
-      a: 'Обычно стартуем за 24–48 часов после согласования. Первые понятные результаты — в течение 1–2 недель.'
-    },
-    cases: {
-      q: 'А кейсы есть?',
-      a: 'Да, примеры работ и результаты могу показать на созвоне. Короткий обзор — в разделе «История» и «Бонусы».'
-    }
+    what:  { q:'Чем вы занимаетесь?', a:'Помогаю бизнесу расти: маркетинг, автоворонки, Telegram-продукты и аналитика. Настраиваю экономику, чтобы реклама окупалась.' },
+    price: { q:'Сколько стоит консультация?', a:'Первая встреча бесплатно. Дальше — по записи в разделе «Консультация»: выбери удобное время в календаре.' },
+    start: { q:'Как быстро начнём?', a:'Обычно стартуем за 24–48 часов. Первые понятные результаты — в течение 1–2 недель.' },
+    cases: { q:'А кейсы есть?', a:'Да. Короткий обзор есть в разделах, подробности покажу на созвоне.' }
   };
 
-  // Рендер сообщения
+  // Сообщение
   function addMsg(role, html){
     const row = document.createElement('div');
     row.className = 'msg ' + role;
-    const avatar = document.createElement('div');
+
+    const avatar = document.createElement('img');
     avatar.className = 'avatar';
+    avatar.alt = '';
+    avatar.src = (role === 'me') ? AVA_ME : AVA_USER;
+
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
     bubble.innerHTML = html;
+
     row.appendChild(avatar);
     row.appendChild(bubble);
+
+    // если пользовательское сообщение — аватар справа (через CSS row-reverse)
+    if (role === 'user') row.classList.add('user');
+
     box.appendChild(row);
     box.scrollTop = box.scrollHeight;
     return bubble;
   }
 
-  // Индикатор «печатает…»
+  // «Печатает…»
   function showTyping(role='me'){
     const row = document.createElement('div');
-    row.className = 'msg ' + role;
-    row.innerHTML = `<div class="avatar"></div>
-                     <div class="bubble"><div class="typing">
-                       <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-                     </div></div>`;
+    row.className = 'msg ' + role + (role==='user' ? ' user' : '');
+
+    const avatar = document.createElement('img');
+    avatar.className = 'avatar';
+    avatar.alt = '';
+    avatar.src = (role === 'me') ? AVA_ME : AVA_USER;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.innerHTML = `<div class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>`;
+
+    row.appendChild(avatar);
+    row.appendChild(bubble);
     box.appendChild(row);
     box.scrollTop = box.scrollHeight;
-    return () => { row.remove(); };
+
+    return () => row.remove();
   }
 
-  // Имитация набора текста
+  // Имитация набора
   function typeText(role, text, speed=18){
     return new Promise(resolve=>{
       const stopTyping = showTyping(role);
@@ -2788,7 +2794,7 @@
     disableQuick(false);
   });
 
-  // Сброс чата
+  // Сброс
   resetBtn?.addEventListener('click', ()=>{
     box.innerHTML = '';
     greet();
@@ -2803,6 +2809,7 @@
   greet();
 })();
 </script>
+
 
 
 </body>
