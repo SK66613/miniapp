@@ -1965,7 +1965,57 @@
 
       async function syncMonth(keepSel = false) { const first = `${y}-${dd2(m + 1)}-01`; const last = `${y}-${dd2(m + 1)}-${dd2(new Date(y, m + 1, 0).getDate())}`; const data = await apiGet('/api/slots/free', { from: first, to: last, tz, lead_min: 60, duration_min: selDur }); if (data?.ok) { FREE = data.days || {}; GRAN = data.gran || 30; SERVER_FILTERED = !!data.filtered_by_duration; drawCalendar(); if (keepSel && selDate && FREE[selDate]?.length) { const cell = calWrap.querySelector(`.cal-cell[data-iso="${selDate}"]`); if (cell) { cell.classList.add('sel'); renderSlots(selDate); } } else { const days = Object.keys(FREE).filter(d => (FREE[d] || []).length).sort(); selDate = days[0] || null; if (selDate) { const cell = calWrap.querySelector(`.cal-cell[data-iso="${selDate}"]`); if (cell) cell.classList.add('sel'); renderSlots(selDate); } else { slotsBox.innerHTML = '<div class="muted">Нет свободных дат</div>'; } } } else { showToast('Ошибка загрузки', 'Не удалось получить слоты', 'slots_err'); } }
 
-      confirmBtn.addEventListener('click', async () => { if (!selDate || !selTime) { showToast('Выберите слот', 'Дата и время обязательны', 'pick_warn'); return; } const contact = (contactEl?.value || '').trim(); if (!contact) { showToast('Нужен контакт', 'Телеграм @username или телефон', 'contact_warn'); return; } confirmBtn.disabled = true; try { const hold = await apiPost('/api/slots/hold', { date: selDate, time: selTime, duration_min: selDur }); if (!hold?.ok) { await syncMonth(true); showToast('Слот занят', 'Обновил слоты', 'taken'); return; } const res = await apiPost('/api/consult/book', { date: selDate, time: selTime, duration_min: selDur, format: 'call', contact }); if (res?.ok) { blastConfetti(confirmBtn, 36); showToast('Заявка отправлена', 'Мы свяжемся для подтверждения', 'booked', 3200); await syncMonth(true); } else { showToast('Не удалось записать', 'Попробуйте другой слот', 'book_err'); await syncMonth(true); } } finally { confirmBtn.disabled = false; } });
+confirmBtn.addEventListener('click', async () => {
+  if (!selDate || !selTime) {
+    showToast('Выберите слот', 'Дата и время обязательны', 'pick_warn');
+    return;
+  }
+
+  const contact = (contactEl?.value || '').trim();
+  if (!contact) {
+    showToast('Нужен контакт', 'Телеграм @username или телефон', 'contact_warn');
+    return;
+  }
+
+  confirmBtn.disabled = true;
+  try {
+    const hold = await apiPost('/api/slots/hold', {
+      date: selDate, time: selTime, duration_min: selDur
+    });
+
+    if (!hold?.ok) {
+      await syncMonth(true);
+      showToast('Слот занят', 'Обновил слоты', 'taken');
+      return;
+    }
+
+    const res = await apiPost('/api/consult/book', {
+      date: selDate, time: selTime, duration_min: selDur,
+      format: 'call', contact
+    });
+
+    if (res?.ok) {
+      // ⬇️ ДОБАВЛЕНО: фиксируем запись в профиле
+      try {
+        // собираем ISO из выбранной даты/времени
+        const iso = new Date(`${selDate}T${selTime}:00`).toISOString();
+        window.Profile?.setBooking(iso);
+      } catch (_) {
+        // на всякий случай — мягкий фолбэк
+        window.Profile?.setBooking('yes');
+      }
+
+      blastConfetti(confirmBtn, 36);
+      showToast('Заявка отправлена', 'Мы свяжемся для подтверждения', 'booked', 3200);
+      await syncMonth(true);
+    } else {
+      showToast('Не удалось записать', 'Попробуйте другой слот', 'book_err');
+      await syncMonth(true);
+    }
+  } finally {
+    confirmBtn.disabled = false;
+  }
+});
 
       // init
       syncMonth();
