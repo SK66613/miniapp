@@ -1613,7 +1613,7 @@
 /* внутренняя неоновая подсветка активной */
 :root{ --acc1:#7b5bff; --acc2:#3de0c5; }
 #services .wheel-list .tariff.active{
-  transform:scale(1.005);
+  transform:scale(1.1);
   border-color:rgba(255,255,255,.20);
   box-shadow:
     0 0 0 1px color-mix(in srgb,var(--acc1) 70%,transparent) inset,
@@ -3435,52 +3435,6 @@
 })();
 </script>
 
-<script>
-/* Высота окна = ROWS * (cardHeight + gap) */
-(function tuneTariffWheelHeight(){
-  const wheel = document.getElementById('tariffWheel');
-  const list  = document.getElementById('tariffList');
-  if (!wheel || !list) return;
-
-  const ROWS = 3;                 // сколько карточек в окне
-  const TOP_OFFSET_PX = 3;        // зазор сверху (как в твоей карусели)
-
-  const nodes = () => Array.from(list.querySelectorAll('.tariff'));
-  const getGap = () => parseFloat(getComputedStyle(list).rowGap || getComputedStyle(list).gap || 12) || 12;
-
-  function measureStep(){
-    const mid = nodes()[Math.floor(nodes().length/2)] || nodes()[0];
-    if (!mid) return 200;
-    const h = Math.round(mid.getBoundingClientRect().height);
-    return h + getGap();
-  }
-  function applyHeight(){
-    const step = measureStep();
-    const pTop = parseFloat(getComputedStyle(wheel).paddingTop) || 0;
-    const pBot = parseFloat(getComputedStyle(wheel).paddingBottom) || 0;
-    const H = Math.round(step * ROWS + pTop + pBot + TOP_OFFSET_PX);
-    wheel.style.height = H + 'px';
-  }
-
-  function reflow(){
-    // ждём стабильной геометрии (шрифты/изображения)
-    let last = 0, tries = 0;
-    (function probe(){
-      const cur = measureStep();
-      if (Math.abs(cur - last) < 1 || tries > 12){ applyHeight(); }
-      else { last = cur; tries++; requestAnimationFrame(probe); }
-    })();
-  }
-
-  reflow();
-  window.addEventListener('resize', reflow);
-  window.addEventListener('pageshow', e => { if (e.persisted) reflow(); });
-  document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) reflow(); });
-  document.addEventListener('tariff:ready',  reflow);   // когда карусель склонировалась
-  document.addEventListener('tariff:reflow', reflow);   // когда переключили Месяц/Год
-  if (document.fonts?.ready) document.fonts.ready.then(reflow).catch(()=>{});
-})();
-</script>
 
 <script>
 (function tariffPricing(){
