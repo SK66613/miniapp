@@ -1726,6 +1726,11 @@
   #services .wheel-list .tariff{ cursor: grab; }
   #services .wheel-list .tariff:active{ cursor: grabbing; }
 }
+</style>
+
+<style>
+/* меню липнет — без магии */
+#spa-nav{ position: sticky; top: 6px; z-index: 1000; }
 
 </style>
 
@@ -3835,45 +3840,6 @@
   });
 })();
 </script>
-
-<script>
-/* однократный «пинок» подсветки после показа услуг */
-function forceTariffHighlight(){
-  const wheel = document.getElementById('tariffWheel');
-  const list  = document.getElementById('tariffList');
-  if (!wheel || !list) return;
-
-  const padTop = (parseFloat(getComputedStyle(wheel).paddingTop) || 0) + 3;
-  const anchor = wheel.scrollTop + padTop;
-
-  let best=null, bestDist=1e9;
-  list.querySelectorAll('.tariff').forEach(el=>{
-    const d = Math.abs(el.offsetTop - anchor);
-    if (d < bestDist){ best = el; bestDist = d; }
-  });
-
-  if (best){
-    list.querySelectorAll('.tariff.active').forEach(e=>e.classList.remove('active'));
-    best.classList.add('active');
-  }
-}
-
-/* подцепим вызов к показу услуг */
-(function hookServicesHighlight(){
-  const _orig = window.showPage;
-  window.showPage = function(hash){
-    _orig?.(hash);
-    const id = (hash||location.hash||'').replace(/^#/, '') || 'home';
-    if (id === 'services'){
-      // сразу и через один кадр — чтобы iOS точно поймала геометрию
-      forceTariffHighlight();
-      requestAnimationFrame(forceTariffHighlight);
-    }
-  };
-})();
-</script>
-
-
 
 
 
