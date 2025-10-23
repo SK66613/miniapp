@@ -4,7 +4,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Маркетолог — мини‑приложение</title>
+  <title>Sales Genius | App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="format-detection" content="telephone=no" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -1836,7 +1836,7 @@
       <div class="brand-wrap">
         <div class="logo" aria-label="logo"></div>
         <div>
-          <div class="brand">Маркетолог</div>
+          <div class="brand">Sales Genius</div>
           <div class="slogan" style="color:var(--muted);font-size:13px">Считаем прибыль, а не клики</div>
         </div>
       </div>
@@ -2071,7 +2071,7 @@
 
   <!-- Пример карточек. Картинка берётся из КОРНЯ: /bonus1.png и т.п. -->
   <div class="bonuses-grid">
-    <article class="bonus-item" data-img="miniapp/bonus1.png">
+    <article class="bonus-item" data-img="bonus1.png">
       <div class="pic"></div>
       <div class="txt">
         <h3 class="h2">Подарок №1</h3>
@@ -2080,7 +2080,7 @@
     </article>
 
       <div class="bonuses-grid">
-    <article class="bonus-item" data-img="miniapp/bonus2.png">
+    <article class="bonus-item" data-img="bonus2.png">
       <div class="pic"></div>
       <div class="txt">
         <h3 class="h2">Подарок №1</h3>
@@ -2089,7 +2089,7 @@
     </article>
 
       <div class="bonuses-grid">
-    <article class="bonus-item" data-img="miniapp/bonus3.png">
+    <article class="bonus-item" data-img="bonus3.png">
       <div class="pic"></div>
       <div class="txt">
         <h3 class="h2">Подарок №1</h3>
@@ -2098,7 +2098,7 @@
     </article>
 
       <div class="bonuses-grid">
-    <article class="bonus-item" data-img="miniapp/bonus4.png">
+    <article class="bonus-item" data-img="bonus4.png">
       <div class="pic"></div>
       <div class="txt">
         <h3 class="h2">Подарок №1</h3>
@@ -2107,7 +2107,7 @@
     </article>
 
       <div class="bonuses-grid">
-    <article class="bonus-item" data-img="miniapp/bonus5.png">
+    <article class="bonus-item" data-img="bonus5.png">
       <div class="pic"></div>
       <div class="txt">
         <h3 class="h2">Подарок №1</h3>
@@ -2116,7 +2116,7 @@
     </article>
 
       <div class="bonuses-grid">
-    <article class="bonus-item" data-img="miniapp/bonus6.png">
+    <article class="bonus-item" data-img="bonus6.png">
       <div class="pic"></div>
       <div class="txt">
         <h3 class="h2">Подарок №1</h3>
@@ -3837,6 +3837,85 @@
 </script>
 
 
+<script>
+/* === Swipe-навигация по секциям (влево/вправо) ========================= */
+(function pageSwipeNav(){
+  const root  = document.querySelector('main') || document.body;
+  const track = document.querySelector('#spa-nav .track');
+  const navLinks = track ? Array.from(track.querySelectorAll('.btn[data-page]')) : [];
+  const order = navLinks.map(a => a.dataset.page).filter(Boolean);
+  if (!order.length) {
+    // fallback — читаем из секций
+    order.push(...Array.from(document.querySelectorAll('main > section[id], section.page[id]')).map(s => s.id));
+  }
+
+  const ANGLE_MAX = 28;     // макс. угол отклонения (град.) чтобы считать жест горизонтальным
+  const THRESH    = 40;     // порог смещения по X (px)
+  const FLICK_V   = 0.35;   // «флик» — скорость, px/мс, чтобы сработать даже при коротком свайпе
+
+  function curId(){
+    const id = (location.hash || '').replace(/^#/, '') || order[0];
+    return order.includes(id) ? id : order[0];
+  }
+  function curIndex(){ const i = order.indexOf(curId()); return i < 0 ? 0 : i; }
+  function goIndex(i){
+    i = Math.max(0, Math.min(order.length-1, i));
+    const id = order[i]; if (!id) return;
+    history.replaceState(null, '', '#'+id);
+    if (typeof showPage === 'function') showPage('#'+id);
+    else {
+      document.querySelectorAll('main > section, section.page').forEach(s => s.style.display = (s.id===id?'block':'none'));
+      navLinks.forEach(a => a.classList.toggle('active', a.dataset.page===id));
+    }
+    // мягкий отклик, если есть хаптик
+    try { window.haptic && window.haptic('light','selection'); } catch(_){}
+  }
+
+  // где запрещаем свайп (интерактивные зоны)
+  const NO_SWIPE_SELECTOR = [
+    'input','textarea','select','button','label','a',
+    '.tariff-wheel','.bonus-wheel','#cal','.calendar','.wheel-track',
+    '[data-noswipe]'
+  ].join(',');
+
+  let sx=0, sy=0, st=0, active=false, lockedVertical=false;
+
+  root.addEventListener('pointerdown', (e)=>{
+    if (e.button !== 0) return; // только основная кнопка/палец
+    if (e.target.closest(NO_SWIPE_SELECTOR)) return; // уважаем интерактив
+    active = true; lockedVertical = false;
+    sx = e.clientX; sy = e.clientY; st = e.timeStamp;
+  }, {passive:true});
+
+  root.addEventListener('pointermove', (e)=>{
+    if (!active || lockedVertical) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    // если жест скорее вертикальный — выходим, не мешаем странице скроллиться
+    if (Math.abs(dy) > Math.abs(dx) * Math.tan(ANGLE_MAX * Math.PI/180)){
+      lockedVertical = true;
+      return;
+    }
+    // горизонтальный намёк — блокируем горизонтальные «дрожания» страницы
+    if (Math.abs(dx) > 8) e.preventDefault();
+  }, {passive:false});
+
+  function end(e){
+    if (!active || lockedVertical){ active=false; return; }
+    const dx = e.clientX - sx, adx = Math.abs(dx);
+    const dt = Math.max(1, e.timeStamp - st), v = adx/dt;
+    active=false;
+
+    if (adx > THRESH || v > FLICK_V){
+      // dx<0 — свайп влево → следующая страница
+      const delta = dx < 0 ? +1 : -1;
+      goIndex(curIndex() + delta);
+    }
+  }
+
+  root.addEventListener('pointerup', end, {passive:true});
+  root.addEventListener('pointercancel', ()=>{ active=false; }, {passive:true});
+})();
+</script>
 
 
 
