@@ -1613,7 +1613,7 @@
 /* внутренняя неоновая подсветка активной */
 :root{ --acc1:#7b5bff; --acc2:#3de0c5; }
 #services .wheel-list .tariff.active{
-  transform:scale(1.05);
+  transform:scale(1.07);
   border-color:rgba(255,255,255,.20);
   box-shadow:
     0 0 0 1px color-mix(in srgb,var(--acc1) 70%,transparent) inset,
@@ -3218,8 +3218,8 @@
   if (!wheel || !list) return;
 
   /* тюнинг */
-  const TOP_OFFSET_PX = 3;   // зазор от верха, 2–4px
-  const SCROLL_GAIN   = 0.55;// скорость перетаскивания (<1 медленнее)
+  const TOP_OFFSET_PX = 5;   // зазор от верха, 2–4px
+  const SCROLL_GAIN   = 0.75;// скорость перетаскивания (<1 медленнее)
   const MOMENTUM_GAIN = 16;  // старт инерции (было 22 быстрее)
   const FRICTION      = 0.60;// трение инерции
   const FRAME_STEP    = 12;  // шаг в px за кадр
@@ -3358,7 +3358,7 @@
   row.querySelectorAll('.plan-btn').forEach(b => b.classList.toggle('active', b.dataset.plan === plan));
 
   const fmt  = n => n.toLocaleString('ru-RU');
-  const note = p => p==='year' ? ' / мес (годовой план, −15%)' : ' / мес';
+  const note = p => p==='year' ? ' / мес /−15%' : ' / мес';
 
   function apply(){
     list.querySelectorAll('.service-card').forEach(card=>{
