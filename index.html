@@ -3370,6 +3370,86 @@
 })();
 </script>
 
+<script>
+/* Anti-stick reflow for #services tariffs */
+(function antiStickTariffs(){
+  const wheel = document.getElementById('tariffWheel');
+  const list  = document.getElementById('tariffList');
+  if (!wheel || !list) return;
+
+  const ROWS = 3;          // сколько карточек хотим видеть по высоте окна
+  const TOP_OFFSET_PX = 3; // зазор от верха (как в карусели)
+
+  // утилиты, не трогаем твою логику карусели
+  const nodes = () => Array.from(list.querySelectorAll('.tariff'));
+  const getGap = () => parseFloat(getComputedStyle(list).rowGap || getComputedStyle(list).gap || 12) || 12;
+  const padTop = () => (parseFloat(getComputedStyle(wheel).paddingTop) || 0) + TOP_OFFSET_PX;
+
+  function measureStep(){
+    const mid = nodes()[Math.floor(nodes().length/2)] || nodes()[0];
+    if (!mid) return 200;
+    const h = Math.round(mid.getBoundingClientRect().height);
+    return h + getGap();
+  }
+
+  function tuneHeight(){
+    const step = measureStep();
+    const pTop = parseFloat(getComputedStyle(wheel).paddingTop) || 0;
+    const pBot = parseFloat(getComputedStyle(wheel).paddingBottom) || 0;
+    const H = Math.round(step * ROWS + pTop + pBot + (TOP_OFFSET_PX || 0));
+    wheel.style.height = H + 'px';
+  }
+
+  function alignTop(el){
+    if (!el) return;
+    const target = el.offsetTop - padTop();
+    wheel.scrollTop = target;
+  }
+
+  function findNearestTop(){
+    const anchor = wheel.scrollTop + padTop();
+    let best=null, bestDist=1e9;
+    for (const el of nodes()){
+      const d = Math.abs(el.offsetTop - anchor);
+      if (d < bestDist){ bestDist = d; best = el; }
+    }
+    return best || nodes()[0];
+  }
+
+  // ждём стабильной геометрии: 2 одинаковых измерения подряд
+  function reflowAndSnap(){
+    let last = 0, tries = 0;
+    function probe(){
+      const cur = measureStep();
+      if (Math.abs(cur - last) < 1 || tries > 12){
+        tuneHeight();
+        alignTop(findNearestTop());
+      } else {
+        last = cur; tries++;
+        requestAnimationFrame(probe);
+      }
+    }
+    probe();
+  }
+
+  // первичная стабилизация
+  reflowAndSnap();
+
+  // шрифты догрузились → стабилизируем
+  if ('fonts' in document) document.fonts.ready.then(reflowAndSnap).catch(()=>{});
+  // картинки догрузились
+  window.addEventListener('load', reflowAndSnap);
+  // пересчёт цен/переключение плана
+  document.addEventListener('tariff:ready',  reflowAndSnap);
+  document.addEventListener('tariff:reflow', reflowAndSnap);
+  // возвращение из BFCache (Safari/iOS)
+  window.addEventListener('pageshow', e => { if (e.persisted) reflowAndSnap(); });
+  // страница снова видима
+  document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) reflowAndSnap(); });
+  // изменение размеров/ориентации
+  window.addEventListener('resize', reflowAndSnap);
+})();
+</script>
 
 
 <script>
@@ -3405,6 +3485,9 @@
     apply();
   });
   
+  // в конце функции apply() для тарифов:
+document.dispatchEvent(new Event('tariff:reflow'));
+
 
   // когда карусель закончила клонировать — ещё раз пересчитать
   document.addEventListener('tariff:ready', apply);
