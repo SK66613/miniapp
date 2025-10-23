@@ -1727,9 +1727,59 @@
   #services .wheel-list .tariff:active{ cursor: grabbing; }
 }
 
-
-
 </style>
+
+ <style>
+  /* ===== Бонусы: карточки с картинкой слева ===== */
+#bonuses .bonuses-list{ display:grid; gap:12px; }
+
+#bonuses .bonus-item{
+  display:flex; gap:12px; align-items:center;
+  padding:12px; border-radius:16px;
+  border:1px solid var(--border, rgba(255,255,255,.12));
+  background: rgba(255,255,255,.03);
+}
+
+#bonuses .bonus-item .pic{
+  flex:0 0 92px; height:92px; border-radius:14px; overflow:hidden;
+  background: rgba(255,255,255,.06);
+  display:grid; place-items:center;
+}
+#bonuses .bonus-item .pic img{
+  width:100%; height:100%; object-fit:cover; display:block;
+}
+
+#bonuses .bonus-item .txt{ flex:1 1 auto; min-width:0; }
+#bonuses .bonus-item .txt .h2{ margin:0 0 6px; font-size:18px; font-weight:900; }
+#bonuses .bonus-item .txt .muted-sm{ margin:0 0 10px; opacity:.85; }
+
+/* Кнопки внутри бонусов */
+#bonuses .bonus-item .btn{
+  padding:8px 12px; border-radius:12px; font-weight:800;
+  border:1px solid var(--border, rgba(255,255,255,.12));
+  background: rgba(255,255,255,.05);
+}
+#bonuses .bonus-item .btn.btn-primary{
+  background:linear-gradient(135deg, var(--mint,#3de0c5), var(--primary,#7b5bff));
+  color:#0b0f12; border-color:transparent;
+}
+
+/* Адаптив: планшет и шире — картинка крупнее */
+@media (min-width:768px){
+  #bonuses .bonus-item{ gap:14px; padding:14px; }
+  #bonuses .bonus-item .pic{ flex-basis:120px; height:120px; border-radius:16px; }
+  #bonuses .bonus-item .txt .h2{ font-size:20px; }
+}
+
+/* Если хочешь компакт по очень узким экранам (<360px) — стэк в колонку: */
+/*
+@media (max-width:360px){
+  #bonuses .bonus-item{ flex-direction:column; align-items:stretch; }
+  #bonuses .bonus-item .pic{ width:100%; height:160px; }
+}
+*/
+
+ </style>
 
 
 </head>
@@ -1967,6 +2017,38 @@
         <button class="btn btn-primary" id="claimBtn" disabled>Забрать</button>
       </div>
     </div>
+
+
+    <div class="card bonuses-list" id="bonusesList">
+  <!-- Пример карточек. Картинка берётся из КОРНЯ: /bonus1.png и т.п. -->
+  <article class="bonus-item" data-img="bonus1.png">
+    <div class="pic"></div>
+    <div class="txt">
+      <h3 class="h2">Гайд по прогреву</h3>
+      <p class="muted-sm">Короткий план из 7 шагов, как запустить продажи без лишнего бюджета.</p>
+      <a class="btn btn-primary" href="/files/guide.pdf">Забрать</a>
+    </div>
+  </article>
+
+  <article class="bonus-item" data-img="bonus2.webp">
+    <div class="pic"></div>
+    <div class="txt">
+      <h3 class="h2">Чек-лист запуска</h3>
+      <p class="muted-sm">Собрал must-do задачи: аккаунты, пиксели, цели, UTM.</p>
+      <a class="btn" href="/files/checklist.pdf">Скачать</a>
+    </div>
+  </article>
+
+  <article class="bonus-item" data-img="bonus3.jpg">
+    <div class="pic"></div>
+    <div class="txt">
+      <h3 class="h2">Шаблон оффера</h3>
+      <p class="muted-sm">Готовая структура оффера для лендинга и объявлений.</p>
+      <a class="btn" href="https://t.me/yourbot?start=template" target="_blank">Получить</a>
+    </div>
+  </article>
+</div>
+
   </section>
 
 
@@ -3633,6 +3715,29 @@
   });
 })();
 </script>
+
+<script>
+/* Бонусы: подставляем картинки из КОРНЯ и даём запасной плейсхолдер */
+(function mountBonusPics(){
+  const items = document.querySelectorAll('#bonuses .bonus-item');
+  items.forEach(it=>{
+    const box  = it.querySelector('.pic');
+    const name = (it.dataset.img || '').trim();
+    if (!box || !name) return;
+
+    const img = new Image();
+    // если не начинается с '/', добавим — берём из корня
+    img.src = name.startsWith('/') ? name : ('/' + name);
+    img.alt = it.querySelector('.h2')?.textContent?.trim() || 'bonus';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+    img.onerror = ()=>{ img.src = '/placeholder.png'; }; // положи файл, если нужен плейсхолдер
+    box.innerHTML = '';
+    box.appendChild(img);
+  });
+})();
+</script>
+
 
 
 
