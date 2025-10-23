@@ -1512,7 +1512,7 @@
     }
 
     #about .msg.me .bubble {
-      background: linear-gradient(135deg, var(--mint, #3de0c5), var(--primary, #7b5bff));
+      background: linear-gradient();
       color: #fafafa;
       border-color: transparent;
       font-weight: 10;
@@ -1562,11 +1562,14 @@
     }
 
     #about .chip {
-      padding: 8px 10px;
-      border-radius: 999px;
-      font-weight: 700;
-      border: 1px solid var(--border, rgba(255, 255, 255, .14));
-      background: rgba(253, 252, 252, 0.993);
+      appearance: none;
+      border: 1px solid var(--border);
+      background: #141a21;
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: .18s
     }
 
     #about .chip:disabled {
