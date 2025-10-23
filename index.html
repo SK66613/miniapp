@@ -2021,7 +2021,7 @@
 
     <div class="card bonuses-list" id="bonusesList">
   <!-- Пример карточек. Картинка берётся из КОРНЯ: /bonus1.png и т.п. -->
-  <article class="bonus-item" data-img="bonus1.png">
+  <article class="bonus-item" data-img="miniapp/bonus1.png">
     <div class="pic"></div>
     <div class="txt">
       <h3 class="h2">Гайд по прогреву</h3>
@@ -2030,7 +2030,7 @@
     </div>
   </article>
 
-  <article class="bonus-item" data-img="bonus2.png">
+  <article class="bonus-item" data-img="miniapp/bonus2.png">
     <div class="pic"></div>
     <div class="txt">
       <h3 class="h2">Чек-лист запуска</h3>
@@ -2039,7 +2039,7 @@
     </div>
   </article>
 
-  <article class="bonus-item" data-img="bonus3.png">
+  <article class="bonus-item" data-img="miniapp/bonus3.png">
     <div class="pic"></div>
     <div class="txt">
       <h3 class="h2">Шаблон оффера</h3>
@@ -3731,7 +3731,7 @@
     img.alt = it.querySelector('.h2')?.textContent?.trim() || 'bonus';
     img.loading = 'lazy';
     img.decoding = 'async';
-    img.onerror = ()=>{ img.src = '/placeholder.png'; }; // положи файл, если нужен плейсхолдер
+    img.onerror = ()=>{ img.src = 'miniapp/placeholder.png'; }; // положи файл, если нужен плейсхолдер
     box.innerHTML = '';
     box.appendChild(img);
   });
