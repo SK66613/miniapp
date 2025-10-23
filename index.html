@@ -3540,6 +3540,66 @@
 })();
 </script>
 
+<script>
+/* === Haptics (Telegram + fallback vibrate) =============================== */
+(function hapticsInit(){
+  const TG = window.Telegram && window.Telegram.WebApp;
+  window.haptic = function(level='light', kind='impact'){
+    try{
+      if (TG?.HapticFeedback){
+        if (kind === 'selection') return TG.HapticFeedback.selectionChanged();
+        TG.HapticFeedback.impactOccurred(level); // 'soft'|'light'|'medium'|'heavy'|'rigid'
+        return;
+      }
+    }catch(_){}
+    try{
+      if (navigator.vibrate){
+        navigator.vibrate(level==='heavy'?28 : level==='medium'?18 : 12);
+      }
+    }catch(_){}
+  };
+})();
+
+/* === Подключаем вибро к тарифной карусели без правок её кода ============ */
+(function hapticsForTariffs(){
+  const list = document.getElementById('tariffList');
+  const plan = document.getElementById('planRow');
+  if (!list) return;
+
+  // Лёгкий «щёлк» при смене активной карточки (через observer)
+  let lastAt = 0;
+  const obs = new MutationObserver(muts=>{
+    const now = performance.now();
+    if (now - lastAt < 120) return;           // анти-спам
+    for (const m of muts){
+      if (m.type==='attributes' && m.attributeName==='class'
+          && m.target.classList?.contains('tariff')
+          && m.target.classList.contains('active')){
+        window.haptic?.('light','selection');
+        lastAt = now;
+        break;
+      }
+    }
+  });
+  obs.observe(list, { attributes:true, subtree:true, attributeFilter:['class'] });
+
+  // Вибро на тап по карточке (перед прилипанием)
+  list.addEventListener('click', (e)=>{
+    if (e.target.closest('.tariff')) window.haptic?.('light');
+  });
+
+  // Вибро на переключателе «Месяц/Год»
+  plan?.addEventListener('click', (e)=>{
+    if (e.target.closest('.plan-btn')) window.haptic?.('light');
+  });
+
+  // Чуть ощутимее — в момент «докрутки» после рефлоу
+  document.addEventListener('tariff:reflow', ()=>{
+    // даём лёгкий «selection» при любой автоподстройке/прилипании
+    window.haptic?.('light','selection');
+  });
+})();
+</script>
 
 
 
