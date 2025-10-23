@@ -1611,10 +1611,10 @@
 }
 
 /* внутренняя неоновая подсветка активной */
-:root{ --acc1:#7b5bff; --acc2:#3de0c5; }
+:root{ --acc1:#7c5bff83; --acc2:#050505; }
 #services .wheel-list .tariff.active{
   transform:scale(1.07);
-  border-color:rgba(255,255,255,.20);
+  border-color:rgba(10, 10, 10, 0.2);
   box-shadow:
     0 0 0 1px color-mix(in srgb,var(--acc1) 70%,transparent) inset,
     0 0 22px color-mix(in srgb,var(--acc1) 50%,transparent) inset,
@@ -3358,7 +3358,7 @@
   row.querySelectorAll('.plan-btn').forEach(b => b.classList.toggle('active', b.dataset.plan === plan));
 
   const fmt  = n => n.toLocaleString('ru-RU');
-  const note = p => p==='year' ? ' / мес /−15%' : ' / мес';
+  const note = p => p==='year' ? ' / год' : ' / мес';
 
   function apply(){
     list.querySelectorAll('.service-card').forEach(card=>{
