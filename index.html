@@ -1613,7 +1613,7 @@
 /* внутренняя неоновая подсветка активной */
 :root{ --acc1:#7b5bff; --acc2:#3de0c5; }
 #services .wheel-list .tariff.active{
-  transform:scale(1.1);
+  transform:scale(1.08);
   border-color:rgba(255,255,255,.20);
   box-shadow:
     0 0 0 1px color-mix(in srgb,var(--acc1) 70%,transparent) inset,
@@ -3211,10 +3211,18 @@
   </script>
 
 <script>
+/* ===== 1) Карусель тарифов (якорь сверху, инерция, бесконечная лента) ===== */
 (function setupTariffCarousel(){
   const wheel = document.getElementById('tariffWheel');
   const list  = document.getElementById('tariffList');
   if (!wheel || !list) return;
+
+  /* тюнинг */
+  const TOP_OFFSET_PX = 3;   // зазор от верха, 2–4px
+  const SCROLL_GAIN   = 0.75;// скорость перетаскивания (<1 медленнее)
+  const MOMENTUM_GAIN = 16;  // старт инерции (было 22 быстрее)
+  const FRICTION      = 0.90;// трение инерции
+  const FRAME_STEP    = 12;  // шаг в px за кадр
 
   wheel.style.touchAction = 'none';
   wheel.style.userSelect = 'none';
@@ -3223,173 +3231,27 @@
   const orig = Array.from(list.querySelectorAll('.tariff'));
   if (orig.length < 2) return;
 
-  const cs    = getComputedStyle(list);
-  const gap   = parseFloat(cs.rowGap || cs.gap || 12) || 12;
-  let   cardH = Math.round(orig[0].getBoundingClientRect().height);
-  let   STEP  = cardH + gap;
-  const N     = orig.length;
+  const cs  = getComputedStyle(list);
+  const gap = parseFloat(cs.rowGap || cs.gap || 12) || 12;
+  let cardH = Math.round(orig[0].getBoundingClientRect().height);
+  let STEP  = cardH + gap;
+  const N   = orig.length;
 
-  // 👇 якорный зазор сверху (поставь 2–4 по вкусу)
-  const TOP_OFFSET_PX = 0;
-
-  // бесконечная лента
+  /* клоны для бесконечной ленты */
   const pre  = orig.map(n => n.cloneNode(true));
   const post = orig.map(n => n.cloneNode(true));
-  list.prepend(...pre);
-  list.append(...post);
+  list.prepend(...pre); list.append(...post);
 
-  const nodes = () => Array.from(list.querySelectorAll('.tariff'));
+  const nodes  = () => Array.from(list.querySelectorAll('.tariff'));
   const padTop = () => (parseFloat(getComputedStyle(wheel).paddingTop) || 0) + TOP_OFFSET_PX;
 
   function infiniteLoopFix(){
-    const min = STEP * (N * 0.5);
-    const max = STEP * (N * 2.5);
+    const min = STEP * (N * 0.5), max = STEP * (N * 2.5);
     if (wheel.scrollTop < min)      wheel.scrollTop += STEP * N;
     else if (wheel.scrollTop > max) wheel.scrollTop -= STEP * N;
   }
 
-  function findNearestTop(){
-    const anchor = wheel.scrollTop + padTop();
-    let best = null, bestDist = 1e9;
-    for (const el of nodes()){
-      const d = Math.abs(el.offsetTop - anchor);
-      if (d < bestDist){ bestDist = d; best = el; }
-    }
-    return best || nodes()[0];
-  }
-
-  function markActiveTop(){
-    const best = findNearestTop();
-    nodes().forEach(el => el.classList.toggle('active', el === best));
-  }
-
-  // анимация прокрутки (easeOut)
-  let animId = 0, fromTop=0, toTop=0, t0=0, DUR=420;
-  function animateTo(dest){
-    cancelAnimationFrame(animId);
-    fromTop = wheel.scrollTop; toTop = dest; t0 = performance.now();
-    DUR = Math.min(620, 240 + Math.abs(dest - fromTop)*0.25);
-    const tick = (t)=>{
-      const k = Math.min((t - t0)/DUR, 1);
-      const e = 1 - Math.pow(1 - k, 3);
-      wheel.scrollTop = fromTop + (toTop - fromTop)*e;
-      infiniteLoopFix();
-      requestAnimationFrame(markActiveTop);
-      if (k < 1) animId = requestAnimationFrame(tick);
-      else animId = 0;
-    };
-    animId = requestAnimationFrame(tick);
-  }
-
-  function alignTop(el, behavior='smooth'){
-    const target = el.offsetTop - padTop();
-    if (behavior === 'auto'){ wheel.scrollTop = target; infiniteLoopFix(); markActiveTop(); }
-    else animateTo(target);
-  }
-
-  // инерция
-  let dragging=false, lastY=0, lastT=0, v=0, pid=0;
-  function stopAnim(){ cancelAnimationFrame(animId); animId = 0; }
-  function startMomentum(v0){
-    stopAnim();
-    const friction = 0.62, minV = 0.08;
-    let vy = v0;
-    const spin = ()=>{
-      vy *= friction;
-      wheel.scrollTop -= vy * 16;
-      infiniteLoopFix();
-      requestAnimationFrame(markActiveTop);
-      if (Math.abs(vy) > minV) animId = requestAnimationFrame(spin);
-      else alignTop(findNearestTop(),'smooth'); // доснэп к верху
-    };
-    animId = requestAnimationFrame(spin);
-  }
-
-  wheel.addEventListener('pointerdown', (e)=>{
-    dragging = true; wheel.setPointerCapture(e.pointerId); pid = e.pointerId;
-    stopAnim(); lastY = e.clientY; lastT = e.timeStamp; v = 0;
-  });
-  wheel.addEventListener('pointermove', (e)=>{
-    if (!dragging || e.pointerId !== pid) return;
-    const dy = e.clientY - lastY;
-    const dt = Math.max(1, e.timeStamp - lastT);
-    wheel.scrollTop -= dy;
-    infiniteLoopFix();
-    v = (dy / dt);
-    lastY = e.clientY; lastT = e.timeStamp;
-    e.preventDefault();
-    markActiveTop();
-  }, {passive:false});
-  function endDrag(e){
-    if (!dragging || (e && e.pointerId !== pid)) return;
-    dragging=false; startMomentum(v * 22);
-  }
-  wheel.addEventListener('pointerup', endDrag);
-  wheel.addEventListener('pointercancel', endDrag);
-  wheel.addEventListener('pointerleave', endDrag);
-
-  // клик по карточке — к верху
-  list.addEventListener('click', (e)=>{
-    const card = e.target.closest('.tariff'); if (!card) return;
-    alignTop(card,'smooth');
-  });
-
-  // стартовая позиция
-  const firstMid = nodes()[pre.length];
-  requestAnimationFrame(()=> { alignTop(firstMid,'auto'); });
-
-  window.addEventListener('resize', ()=>{
-    cardH = Math.round(nodes()[pre.length].getBoundingClientRect().height);
-    STEP  = cardH + gap;
-    markActiveTop();
-  });
-
-  document.addEventListener('visibilitychange', ()=>{
-    if (document.hidden) return;
-    const mid = nodes()[pre.length];
-    requestAnimationFrame(()=> { alignTop(mid,'auto'); });
-  });
-
-  document.dispatchEvent(new CustomEvent('tariff:ready'));
-})();
-</script>
-
-<script>
-/* Anti-stick reflow for #services tariffs */
-(function antiStickTariffs(){
-  const wheel = document.getElementById('tariffWheel');
-  const list  = document.getElementById('tariffList');
-  if (!wheel || !list) return;
-
-  const ROWS = 3;          // сколько карточек хотим видеть по высоте окна
-  const TOP_OFFSET_PX = 3; // зазор от верха (как в карусели)
-
-  // утилиты, не трогаем твою логику карусели
-  const nodes = () => Array.from(list.querySelectorAll('.tariff'));
-  const getGap = () => parseFloat(getComputedStyle(list).rowGap || getComputedStyle(list).gap || 12) || 12;
-  const padTop = () => (parseFloat(getComputedStyle(wheel).paddingTop) || 0) + TOP_OFFSET_PX;
-
-  function measureStep(){
-    const mid = nodes()[Math.floor(nodes().length/2)] || nodes()[0];
-    if (!mid) return 200;
-    const h = Math.round(mid.getBoundingClientRect().height);
-    return h + getGap();
-  }
-
-  function tuneHeight(){
-    const step = measureStep();
-    const pTop = parseFloat(getComputedStyle(wheel).paddingTop) || 0;
-    const pBot = parseFloat(getComputedStyle(wheel).paddingBottom) || 0;
-    const H = Math.round(step * ROWS + pTop + pBot + (TOP_OFFSET_PX || 0));
-    wheel.style.height = H + 'px';
-  }
-
-  function alignTop(el){
-    if (!el) return;
-    const target = el.offsetTop - padTop();
-    wheel.scrollTop = target;
-  }
-
+  /* выбор активной – верхняя ближайшая к верху */
   function findNearestTop(){
     const anchor = wheel.scrollTop + padTop();
     let best=null, bestDist=1e9;
@@ -3399,84 +3261,172 @@
     }
     return best || nodes()[0];
   }
-
-  // ждём стабильной геометрии: 2 одинаковых измерения подряд
-  function reflowAndSnap(){
-    let last = 0, tries = 0;
-    function probe(){
-      const cur = measureStep();
-      if (Math.abs(cur - last) < 1 || tries > 12){
-        tuneHeight();
-        alignTop(findNearestTop());
-      } else {
-        last = cur; tries++;
-        requestAnimationFrame(probe);
-      }
-    }
-    probe();
+  function markActiveTop(){
+    const best = findNearestTop();
+    nodes().forEach(el => el.classList.toggle('active', el === best));
   }
 
-  // первичная стабилизация
-  reflowAndSnap();
+  /* плавная прокрутка к цели */
+  let animId=0, fromTop=0, toTop=0, t0=0, DUR=420;
+  function animateTo(dest){
+    cancelAnimationFrame(animId);
+    fromTop = wheel.scrollTop; toTop = dest; t0 = performance.now();
+    DUR = Math.min(620, 240 + Math.abs(dest - fromTop)*0.25);
+    const tick = (t)=>{
+      const k = Math.min((t - t0)/DUR, 1);
+      const e = 1 - Math.pow(1 - k, 3);
+      wheel.scrollTop = fromTop + (toTop - fromTop)*e;
+      infiniteLoopFix(); requestAnimationFrame(markActiveTop);
+      if (k < 1) animId = requestAnimationFrame(tick); else animId = 0;
+    };
+    animId = requestAnimationFrame(tick);
+  }
+  function alignTop(el, behavior='smooth'){
+    const target = el.offsetTop - padTop();
+    if (behavior==='auto'){ wheel.scrollTop = target; infiniteLoopFix(); markActiveTop(); }
+    else animateTo(target);
+  }
 
-  // шрифты догрузились → стабилизируем
-  if ('fonts' in document) document.fonts.ready.then(reflowAndSnap).catch(()=>{});
-  // картинки догрузились
-  window.addEventListener('load', reflowAndSnap);
-  // пересчёт цен/переключение плана
-  document.addEventListener('tariff:ready',  reflowAndSnap);
-  document.addEventListener('tariff:reflow', reflowAndSnap);
-  // возвращение из BFCache (Safari/iOS)
-  window.addEventListener('pageshow', e => { if (e.persisted) reflowAndSnap(); });
-  // страница снова видима
-  document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) reflowAndSnap(); });
-  // изменение размеров/ориентации
-  window.addEventListener('resize', reflowAndSnap);
+  /* инерция */
+  let dragging=false, lastY=0, lastT=0, v=0, pid=0;
+  function stopAnim(){ cancelAnimationFrame(animId); animId=0; }
+  function startMomentum(v0){
+    stopAnim();
+    let vy = v0 * MOMENTUM_GAIN;
+    const spin = ()=>{
+      vy *= FRICTION;
+      wheel.scrollTop -= vy * FRAME_STEP;
+      infiniteLoopFix(); requestAnimationFrame(markActiveTop);
+      if (Math.abs(vy) > 0.08) animId = requestAnimationFrame(spin);
+      else alignTop(findNearestTop(),'smooth');
+    };
+    animId = requestAnimationFrame(spin);
+  }
+
+  /* жесты */
+  wheel.addEventListener('pointerdown', (e)=>{
+    dragging=true; wheel.setPointerCapture(e.pointerId); pid=e.pointerId;
+    stopAnim(); lastY=e.clientY; lastT=e.timeStamp; v=0;
+  });
+  wheel.addEventListener('pointermove', (e)=>{
+    if (!dragging || e.pointerId!==pid) return;
+    const dy=e.clientY-lastY, dt=Math.max(1, e.timeStamp-lastT);
+    wheel.scrollTop -= dy * SCROLL_GAIN;
+    infiniteLoopFix(); v=(dy/dt); lastY=e.clientY; lastT=e.timeStamp;
+    e.preventDefault(); markActiveTop();
+  }, {passive:false});
+  function endDrag(e){ if(!dragging || (e && e.pointerId!==pid)) return; dragging=false; startMomentum(v); }
+  wheel.addEventListener('pointerup', endDrag);
+  wheel.addEventListener('pointercancel', endDrag);
+  wheel.addEventListener('pointerleave', endDrag);
+  wheel.addEventListener('scroll', ()=>{ requestAnimationFrame(markActiveTop); infiniteLoopFix(); }, {passive:true});
+  list.addEventListener('click', (e)=>{ const card=e.target.closest('.tariff'); if(card) alignTop(card,'smooth'); });
+
+  /* стартовое выравнивание */
+  const firstMid = nodes()[pre.length];
+  requestAnimationFrame(()=> { alignTop(firstMid,'auto'); });
+
+  /* ресайз + возврат из BFCache */
+  window.addEventListener('resize', ()=>document.dispatchEvent(new Event('tariff:reflow')));
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) document.dispatchEvent(new Event('tariff:reflow')); });
+
+  /* сообщим, что лента готова (пересчёт цен под клонами) */
+  document.dispatchEvent(new CustomEvent('tariff:ready'));
+
+  /* пересчёт геометрии по событию -> мягко приклеим */
+  document.addEventListener('tariff:reflow', ()=>{
+    const mid = nodes()[pre.length];
+    if (!mid) return;
+    const hNew = Math.round(mid.getBoundingClientRect().height);
+    const cs   = getComputedStyle(list);
+    const gap  = parseFloat(cs.rowGap || cs.gap || 12) || 12;
+    if (hNew){
+      cardH = hNew; STEP = cardH + gap;
+      alignTop(findNearestTop(), 'auto');
+    }
+  });
 })();
-</script>
 
-
-<script>
+/* ===== 2) Переключатель Месяц/Год + пересчёт цен (для всей ленты, включая клоны) ===== */
 (function tariffPricing(){
   const row  = document.getElementById('planRow');
   const list = document.getElementById('tariffList');
   if (!row || !list) return;
 
-  let plan = 'month';                           // старт — Месяц
+  // активируем «Месяц» на старте
+  let plan = 'month';
+  row.querySelectorAll('.plan-btn').forEach(b => b.classList.toggle('active', b.dataset.plan === plan));
+
   const fmt  = n => n.toLocaleString('ru-RU');
-  const note = p => p==='year' ? ' / мес / 15%' : ' / мес';
+  const note = p => p==='year' ? ' / мес (годовой план, −15%)' : ' / мес';
 
   function apply(){
-    // считаем ВСЕ карточки, включая клоны
     list.querySelectorAll('.service-card').forEach(card=>{
       const base  = +card.dataset.month || 0;
       const price = (plan==='year') ? Math.round(base*0.85) : base;
-      const num  = card.querySelector('.price .num');
-      const nte  = card.querySelector('.price-note');
+      const num = card.querySelector('.price .num');
+      const nte = card.querySelector('.price-note');
       if (num) num.textContent = fmt(price);
       if (nte) nte.textContent = note(plan);
     });
+    // дёргаем перерисовку высоты/шага
+    document.dispatchEvent(new Event('tariff:reflow'));
   }
 
-  // старт
-  apply();
-
-  // пересчёт при переключении
-  row.addEventListener('click', e=>{
+  row.addEventListener('click', (e)=>{
     const b = e.target.closest('.plan-btn'); if (!b) return;
     row.querySelectorAll('.plan-btn').forEach(x=>x.classList.toggle('active', x===b));
     plan = b.dataset.plan || 'month';
     apply();
   });
-  
-  // в конце функции apply() для тарифов:
-document.dispatchEvent(new Event('tariff:reflow'));
 
-
-  // когда карусель закончила клонировать — ещё раз пересчитать
+  // после готовности карусели — первый рассчёт (учтёт клоны)
   document.addEventListener('tariff:ready', apply);
 })();
+
+/* ===== 3) Анти-залип: выставить высоту окна кратно шагу, повторять при любых изменениях ===== */
+(function tuneTariffWheelHeight(){
+  const wheel = document.getElementById('tariffWheel');
+  const list  = document.getElementById('tariffList');
+  if (!wheel || !list) return;
+
+  const ROWS = 3;                 // сколько карточек видно в окне
+  const TOP_OFFSET_PX = 3;
+
+  const nodes = () => Array.from(list.querySelectorAll('.tariff'));
+  const getGap = () => parseFloat(getComputedStyle(list).rowGap || getComputedStyle(list).gap || 12) || 12;
+
+  function measureStep(){
+    const mid = nodes()[Math.floor(nodes().length/2)] || nodes()[0];
+    if (!mid) return 200;
+    const h = Math.round(mid.getBoundingClientRect().height);
+    return h + getGap();
+  }
+  function applyHeight(){
+    const step = measureStep();
+    const pTop = parseFloat(getComputedStyle(wheel).paddingTop) || 0;
+    const pBot = parseFloat(getComputedStyle(wheel).paddingBottom) || 0;
+    wheel.style.height = Math.round(step*ROWS + pTop + pBot + TOP_OFFSET_PX) + 'px';
+  }
+  function reflowAndSnap(){
+    let last=0, tries=0;
+    (function probe(){
+      const cur = measureStep();
+      if (Math.abs(cur-last) < 1 || tries>12){ applyHeight(); document.dispatchEvent(new Event('tariff:reflow')); }
+      else { last=cur; tries++; requestAnimationFrame(probe); }
+    })();
+  }
+
+  reflowAndSnap();
+  window.addEventListener('resize', reflowAndSnap);
+  window.addEventListener('pageshow', e => { if (e.persisted) reflowAndSnap(); });
+  document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) reflowAndSnap(); });
+  document.addEventListener('tariff:ready',  reflowAndSnap);
+  document.addEventListener('tariff:reflow', reflowAndSnap);
+  if (document.fonts?.ready) document.fonts.ready.then(reflowAndSnap).catch(()=>{});
+})();
 </script>
+
 
 
 </body>
