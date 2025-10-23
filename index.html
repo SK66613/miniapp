@@ -1638,6 +1638,86 @@
 /* опционально: ширина карточек */
 #services .wheel-list .tariff{ width:100%; }
 
+/* === BASE (мобильный) — у тебя уже есть, оставляю для контекста === */
+#services .tariff-wheel{
+  --gap:12px;
+  position:relative; overflow:hidden;
+  padding:0 12px; border-radius:16px;
+  touch-action:none; overscroll-behavior:contain;
+  height:auto; /* высоту ставит JS */
+}
+#services .wheel-center-mask,
+#services .tariff-wheel::before,
+#services .tariff-wheel::after{ display:none !important; }
+
+#services .wheel-list{ display:flex; flex-direction:column; gap:var(--gap); }
+#services .wheel-list .tariff{
+  width:100%; border-radius:16px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.12);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+#services .service-card{ padding:16px; }
+#services .service-card .h2{ font-size:18px; font-weight:900; margin:0 0 8px; }
+#services .service-card .muted-sm{ opacity:.8; margin:0 0 10px; }
+#services .price-row{ display:flex; gap:10px; align-items:baseline; margin-top:6px; }
+#services .price .num{ font-size:26px; font-weight:900; letter-spacing:.3px; }
+
+/* === ≥600px — большие телефоны / компактные планшеты === */
+@media (min-width:600px){
+  #services .tariff-wheel{ padding:0 16px; }
+  #services .wheel-list{ gap:14px; }
+  #services .wheel-list .tariff{ border-radius:18px; }
+  #services .service-card{ padding:18px; }
+  #services .service-card .h2{ font-size:19px; }
+  #services .price .num{ font-size:28px; }
+}
+
+/* === ≥768px — планшет (портрет/альбом) === */
+@media (min-width:768px){
+  #services .tariff-wheel{ padding:0 18px; }
+  #services .wheel-list .tariff{ max-width:640px; margin-inline:auto; }
+  #services .service-card{ padding:20px; }
+  #services .service-card .h2{ font-size:20px; }
+  #services .price .num{ font-size:32px; }
+  /* чуть выразительнее активная */
+  #services .wheel-list .tariff.active{ transform:scale(1.01); }
+}
+
+/* === ≥1024px — ноутбуки / десктоп === */
+@media (min-width:1024px){
+  #services .page-title{ margin-bottom:16px; }
+  #services .plan-toggle{ justify-content:center; }
+  #services .tariff-wheel{ padding:0 24px; }
+  #services .wheel-list .tariff{ max-width:880px; }
+  #services .service-card{ padding:22px; }
+  #services .service-card .h2{ font-size:22px; }
+  #services .price .num{ font-size:36px; }
+}
+
+/* === ≥1280px — широкие экраны === */
+@media (min-width:1280px){
+  #services .tariff-wheel{ padding:0 28px; }
+  #services .wheel-list .tariff{ max-width:980px; }
+  #services .service-card{ padding:24px; }
+  #services .service-card .h2{ font-size:24px; }
+  #services .price .num{ font-size:40px; }
+}
+
+/* === (опционально) сетка вместо карусели на десктопе
+   Добавь JS-класс .is-desktop на .tariff-wheel — и включится эта сетка */
+#services .tariff-wheel.is-desktop{
+  height:auto; overflow:visible; padding:0 24px;
+}
+#services .tariff-wheel.is-desktop .wheel-list{
+  display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:16px;
+}
+#services .tariff-wheel.is-desktop .tariff{
+  max-width:none; transform:none; box-shadow:none;
+}
+#services .tariff-wheel.is-desktop .tariff.active::after{ content:none; }
+
+
 
 </style>
 
