@@ -1577,18 +1577,20 @@
 
   <style>
 
-/* окно карусели — даём боковые поля, фикс оси Y */
+/* окно карусели — ось Y, без центральной маски и без вертикальных паддингов */
 .tariff-wheel{
-  --gap:12px;
-  --centerH:132px;
-  height:420px;
-  position:relative;
-  overflow:hidden;
-  padding-block: calc(var(--centerH)/2);
-  padding-inline: 12px;            /* ← добавили «воздух» слева/справа */
-  border-radius:16px;
-  touch-action: none;              /* управляем жестом сами */
-  overscroll-behavior: contain;
+  --gap: 12px;
+
+  /* можешь оставить фикс, но лучше пусть JS ставит кратную STEP высоту */
+  height: 620px;                  /* при желании убери — JS выставит сам */
+
+  position: relative;
+  overflow: hidden;               /* скролл скрыт, управляем вручную */
+  padding: 0 12px;                /* ВАЖНО: без padding-block, якорь даём в JS */
+  border-radius: 16px;
+
+  touch-action: none;             /* жесты только мы обрабатываем */
+  overscroll-behavior: contain;   /* без «резинки» */
 }
 
 /* список и карточки */
@@ -1628,8 +1630,6 @@
 #services .price-note{ opacity:.8; }
 
 
-#services .tariff-wheel{ padding-bottom: 0; }  /* убираем нижний запас */
-#services .wheel-center-mask{ top:50%; transform: translateY(-50%); } /* так же, как было */
 
 #services .tariff-wheel{ padding-inline: 0; }            /* убираем боковые поля контейнера */
 #services .wheel-list .tariff{ width: 100%; }            /* карточка растягивается */
@@ -2967,56 +2967,7 @@
     })();
   </script>
 
-  <script>
-    (function () {
-      const planRow = document.getElementById('planRow');
-      if (!planRow) return;
 
-      // при открытии всегда активен "Месяц"
-      let plan = 'month';
-
-      const cards = Array.from(document.querySelectorAll('#services .service-card'));
-      const fmt = n => Math.round(n).toLocaleString('ru-RU');
-
-      // годовая — 12 месяцев со скидкой 15%
-      const computeYear = monthRub => monthRub * 12 * 0.85;
-
-      function applyPlan() {
-        // подсветка кнопок
-        planRow.querySelectorAll('.plan-btn').forEach(b => {
-          b.classList.toggle('active', b.dataset.plan === plan);
-        });
-
-        // пересчёт цен
-        cards.forEach(card => {
-          const month = +card.dataset.month;
-          const priceEl = card.querySelector('.price .num');
-          const noteEl = card.querySelector('.price-note');
-          if (!priceEl || !month) return;
-
-          if (plan === 'month') {
-            priceEl.textContent = fmt(month);
-            noteEl.textContent = '/ мес';
-          } else {
-            const m = month * 0.85;
-            priceEl.textContent = fmt(m);
-            noteEl.textContent = '/ мес (годовой план, −15%)';
-
-          }
-        });
-      }
-
-      // клики по переключателю
-      planRow.addEventListener('click', e => {
-        const btn = e.target.closest('.plan-btn'); if (!btn) return;
-        const p = btn.dataset.plan;
-        if (p && p !== plan) { plan = p; applyPlan(); }
-      });
-
-      // старт
-      applyPlan();
-    })();
-  </script>
 
   <script>
     (function () {
