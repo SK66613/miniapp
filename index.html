@@ -1730,54 +1730,100 @@
 </style>
 
  <style>
-  /* ===== Бонусы: карточки с картинкой слева ===== */
-#bonuses .bonuses-list{ display:grid; gap:12px; }
+/* ===== БОНУСЫ: полный стиль (mobile-first) ===== */
 
-#bonuses .bonus-item{
+/* Настраиваемые переменные отступов и размеров */
+:root{
+  --bon-space-m: 16px;   /* внешний отступ секции сверху/снизу на мобиле */
+  --bon-space-d: 24px;   /* внешний отступ секции сверху/снизу на десктопе */
+  --bon-gap-m:   12px;   /* расстояние между карточками на мобиле */
+  --bon-gap-d:   16px;   /* расстояние между карточками на десктопе */
+  --bon-thumb:   clamp(84px, 26vw, 120px); /* размер превью на мобиле */
+}
+
+/* ВНЕШНИЕ отступы секции от соседних блоков */
+#bonuses{
+  margin-block: var(--bon-space-m);
+}
+
+/* Заголовок внутри секции (если используешь .page-title) */
+#bonuses > .page-title,
+#bonuses > .card.page-title{
+  margin-bottom: var(--bon-gap-m);
+}
+
+/* Список карточек: мобильная колонка */
+#bonuses .bonuses-grid{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--bon-gap-m);             /* расстояние между карточками */
+}
+
+/* Карточка бонуса */
+#bonuses .bonuses-grid .bonus-item{
   display:flex; gap:12px; align-items:center;
-  padding:12px; border-radius:16px;
+  padding:12px;
+  border-radius:16px;
   border:1px solid var(--border, rgba(255,255,255,.12));
   background: rgba(255,255,255,.03);
+  margin:0;                          /* важн.: отступы управляет grid gap */
+  position:relative;
 }
 
-#bonuses .bonus-item .pic{
-  flex:0 0 92px; height:92px; border-radius:14px; overflow:hidden;
+/* Превью слева — стабильное: квадрат */
+#bonuses .bonuses-grid .bonus-item .pic{
+  width: var(--bon-thumb);
+  aspect-ratio: 1 / 1;               /* фиксированная форма — без прыжков верстки */
+  border-radius:14px;
+  overflow:hidden;
   background: rgba(255,255,255,.06);
+  flex:0 0 auto;
   display:grid; place-items:center;
+  position:relative;
 }
-#bonuses .bonus-item .pic img{
-  width:100%; height:100%; object-fit:cover; display:block;
+#bonuses .bonuses-grid .bonus-item .pic img{
+  width:100%; height:100%;
+  object-fit:cover; display:block;
 }
 
-#bonuses .bonus-item .txt{ flex:1 1 auto; min-width:0; }
-#bonuses .bonus-item .txt .h2{ margin:0 0 6px; font-size:18px; font-weight:900; }
-#bonuses .bonus-item .txt .muted-sm{ margin:0 0 10px; opacity:.85; }
+/* Контент справа */
+#bonuses .bonuses-grid .bonus-item .txt{
+  flex:1 1 auto; min-width:0;
+}
+#bonuses .bonuses-grid .bonus-item .txt .h2,
+#bonuses .bonuses-grid .bonus-item .txt h3{
+  margin:0 0 6px; font-size:18px; font-weight:900;
+}
+#bonuses .bonuses-grid .bonus-item .txt .muted-sm{
+  margin:0 0 10px; opacity:.85;
+}
 
-/* Кнопки внутри бонусов */
-#bonuses .bonus-item .btn{
+/* Кнопки */
+#bonuses .bonuses-grid .bonus-item .btn{
   padding:8px 12px; border-radius:12px; font-weight:800;
   border:1px solid var(--border, rgba(255,255,255,.12));
   background: rgba(255,255,255,.05);
 }
-#bonuses .bonus-item .btn.btn-primary{
-  background:linear-gradient(135deg, var(--mint,#3de0c5), var(--primary,#7b5bff));
-  color:#0b0f12; border-color:transparent;
+#bonuses .bonuses-grid .bonus-item .btn.btn-primary{
+  background: linear-gradient(135deg, var(--mint,#3de0c5), var(--primary,#7b5bff));
+  color:#0b0f12; border-color: transparent;
 }
 
-/* Адаптив: планшет и шире — картинка крупнее */
-@media (min-width:768px){
-  #bonuses .bonus-item{ gap:14px; padding:14px; }
-  #bonuses .bonus-item .pic{ flex-basis:120px; height:120px; border-radius:16px; }
-  #bonuses .bonus-item .txt .h2{ font-size:20px; }
+/* Скелетон-плейсхолдер до загрузки изображения (если используешь JS-скелетон) */
+#bonuses .bonuses-grid .bonus-item .pic.loading::after{
+  content:""; position:absolute; inset:0;
+  background:
+    linear-gradient(90deg,
+      rgba(255,255,255,.06) 0%,
+      rgba(255,255,255,.12) 38%,
+      rgba(255,255,255,.06) 72%);
+  animation: bon-shimmer 1.1s linear infinite;
+}
+@keyframes bon-shimmer{
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
-/* Если хочешь компакт по очень узким экранам (<360px) — стэк в колонку: */
-/*
-@media (max-width:360px){
-  #bonuses .bonus-item{ flex-direction:column; align-items:stretch; }
-  #bonuses .bonus-item .pic{ width:100%; height:160px; }
-}
-*/
 
  </style>
 
@@ -2018,36 +2064,66 @@
       </div>
     </div>
 
+    <div class="card page-title">
+      <h2 class="h1">Что можно выйграть</h2>
+      <p class="muted-sm"></p>
+    </div>
 
-    <div class="card bonuses-list" id="bonusesList">
   <!-- Пример карточек. Картинка берётся из КОРНЯ: /bonus1.png и т.п. -->
-  <article class="bonus-item" data-img="miniapp/bonus1.png">
-    <div class="pic"></div>
-    <div class="txt">
-      <h3 class="h2">Гайд по прогреву</h3>
-      <p class="muted-sm">Короткий план из 7 шагов, как запустить продажи без лишнего бюджета.</p>
-      <a class="btn btn-primary" href="/files/guide.pdf">Забрать</a>
-    </div>
-  </article>
+  <div class="bonuses-grid">
+    <article class="bonus-item" data-img="miniapp/bonus1.png">
+      <div class="pic"></div>
+      <div class="txt">
+        <h3 class="h2">Подарок №1</h3>
+        <p class="muted-sm">Короткое описание…</p>
+      </div>
+    </article>
 
-  <article class="bonus-item" data-img="miniapp/bonus2.png">
-    <div class="pic"></div>
-    <div class="txt">
-      <h3 class="h2">Чек-лист запуска</h3>
-      <p class="muted-sm">Собрал must-do задачи: аккаунты, пиксели, цели, UTM.</p>
-      <a class="btn" href="/files/checklist.pdf">Скачать</a>
-    </div>
-  </article>
+      <div class="bonuses-grid">
+    <article class="bonus-item" data-img="miniapp/bonus2.png">
+      <div class="pic"></div>
+      <div class="txt">
+        <h3 class="h2">Подарок №1</h3>
+        <p class="muted-sm">Короткое описание…</p>
+      </div>
+    </article>
 
-  <article class="bonus-item" data-img="miniapp/bonus3.png">
-    <div class="pic"></div>
-    <div class="txt">
-      <h3 class="h2">Шаблон оффера</h3>
-      <p class="muted-sm">Готовая структура оффера для лендинга и объявлений.</p>
-      <a class="btn" href="https://t.me/yourbot?start=template" target="_blank">Получить</a>
-    </div>
-  </article>
-</div>
+      <div class="bonuses-grid">
+    <article class="bonus-item" data-img="miniapp/bonus3.png">
+      <div class="pic"></div>
+      <div class="txt">
+        <h3 class="h2">Подарок №1</h3>
+        <p class="muted-sm">Короткое описание…</p>
+      </div>
+    </article>
+
+      <div class="bonuses-grid">
+    <article class="bonus-item" data-img="miniapp/bonus4.png">
+      <div class="pic"></div>
+      <div class="txt">
+        <h3 class="h2">Подарок №1</h3>
+        <p class="muted-sm">Короткое описание…</p>
+      </div>
+    </article>
+
+      <div class="bonuses-grid">
+    <article class="bonus-item" data-img="miniapp/bonus5.png">
+      <div class="pic"></div>
+      <div class="txt">
+        <h3 class="h2">Подарок №1</h3>
+        <p class="muted-sm">Короткое описание…</p>
+      </div>
+    </article>
+
+      <div class="bonuses-grid">
+    <article class="bonus-item" data-img="miniapp/bonus6.png">
+      <div class="pic"></div>
+      <div class="txt">
+        <h3 class="h2">Подарок №1</h3>
+        <p class="muted-sm">Короткое описание…</p>
+      </div>
+    </article>
+
 
   </section>
 
@@ -2092,9 +2168,10 @@
 
 
   <!-- CONSULT (Calendar) -->
-  <section class="page cal-wrap" id="consult" style="margin-top:18px">
+  <section class="page" id="consult">
     <div class="card page-title">
-      <h2>Запись на консультацию</h2>
+      <h2 class="h1">Запись на консультацию</h2>
+      <p class="muted-sm">Выберите дату и время нажмите подтвердить.</p>
     </div>
 
     <!-- Блок 1: Длительность -->
@@ -3717,26 +3794,48 @@
 </script>
 
 <script>
-/* Бонусы: подставляем картинки из КОРНЯ и даём запасной плейсхолдер */
-(function mountBonusPics(){
+/* Бонусы: подставляем изображения из мини-приложения (miniapp/...), со скелетоном и фолбэком */
+(function mountBonusPicsFromMiniapp(){
   const items = document.querySelectorAll('#bonuses .bonus-item');
   items.forEach(it=>{
-    const box  = it.querySelector('.pic');
-    const name = (it.dataset.img || '').trim();
-    if (!box || !name) return;
+    const pic = it.querySelector('.pic'); if (!pic) return;
 
+    // Откуда брать изображение:
+    // 1) data-img="promo1.png" → возьмём /miniapp/promo1.png
+    // 2) data-img="/miniapp/promo1.png" → используем как есть
+    // 3) data-img="https://..." → внешняя ссылка
+    let src = (it.dataset.img || '').trim();
+    if (!src) return;
+
+    if (/^https?:\/\//i.test(src)){
+      // абсолютный URL — не трогаем
+    } else if (src.startsWith('/miniapp/')) {
+      // уже с префиксом — оставляем
+    } else {
+      // имя файла → подставляем префикс каталога мини-приложения
+      src = '/miniapp/' + src.replace(/^\/+/, '');
+    }
+
+    pic.classList.add('loading');
     const img = new Image();
-    // если не начинается с '/', добавим — берём из корня
-    img.src = name.startsWith('/') ? name : ('/' + name);
-    img.alt = it.querySelector('.h2')?.textContent?.trim() || 'bonus';
+    img.alt = it.querySelector('.h2, h3')?.textContent?.trim() || 'bonus';
     img.loading = 'lazy';
     img.decoding = 'async';
-    img.onerror = ()=>{ img.src = 'miniapp/placeholder.png'; }; // положи файл, если нужен плейсхолдер
-    box.innerHTML = '';
-    box.appendChild(img);
+    img.src = src;
+
+    img.onload = ()=> pic.classList.remove('loading');
+    img.onerror = ()=>{ 
+      // Фолбэк — положи свой плейсхолдер в miniapp/placeholder.png
+      img.src = '/miniapp/placeholder.png';
+      pic.classList.remove('loading');
+    };
+
+    pic.innerHTML = '';
+    pic.appendChild(img);
   });
 })();
 </script>
+
 
 
 
