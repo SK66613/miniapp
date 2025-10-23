@@ -3563,6 +3563,28 @@
 </script>
 
 <script>
+/* === Haptics (Telegram + fallback) — безопасная версия =================== */
+(function hapticsInit(){
+  const TG = window.Telegram && window.Telegram.WebApp;
+  window.haptic = function(level='light', kind='impact'){
+    if (document.hidden) return;
+    try{
+      if (TG?.HapticFeedback){
+        if (kind === 'selection') return TG.HapticFeedback.selectionChanged();
+        TG.HapticFeedback.impactOccurred(level); // 'soft'|'light'|'medium'|'heavy'|'rigid'
+        return;
+      }
+    }catch(_){}
+    try{
+      if (navigator.vibrate){
+        navigator.vibrate(level==='heavy'?28 : level==='medium'?18 : 10);
+      }
+    }catch(_){}
+  };
+})();
+</script>
+
+<script>
 /* === Подключаем вибро к тарифной карусели безопасно ====================== */
 (function hapticsForTariffsSafe(){
   const wheel = document.getElementById('tariffWheel');
@@ -3627,6 +3649,7 @@
   document.addEventListener('tariff:reflow', mute);
 })();
 </script>
+
 
 
 
