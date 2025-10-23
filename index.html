@@ -3308,7 +3308,7 @@
   if (!wheelEl || !list) return;
 
   // Тюнинг под устройство
-  const TOP_OFFSET_PX = 3;
+  const TOP_OFFSET_PX = 6;
   const IS_DESK       = window.matchMedia('(pointer:fine)').matches; // мышь/тачпад
   const SCROLL_GAIN   = IS_DESK ? 1.10 : 0.75; // перетаскивание
   const MOMENTUM_GAIN = IS_DESK ? 22   : 16;   // инерция
@@ -3541,10 +3541,11 @@
 </script>
 
 <script>
-/* === Haptics (Telegram + fallback vibrate) =============================== */
+/* === Haptics (Telegram + fallback) — безопасная версия =================== */
 (function hapticsInit(){
   const TG = window.Telegram && window.Telegram.WebApp;
   window.haptic = function(level='light', kind='impact'){
+    if (document.hidden) return;
     try{
       if (TG?.HapticFeedback){
         if (kind === 'selection') return TG.HapticFeedback.selectionChanged();
@@ -3554,52 +3555,79 @@
     }catch(_){}
     try{
       if (navigator.vibrate){
-        navigator.vibrate(level==='heavy'?28 : level==='medium'?18 : 12);
+        navigator.vibrate(level==='heavy'?28 : level==='medium'?18 : 10);
       }
     }catch(_){}
   };
 })();
+</script>
 
-/* === Подключаем вибро к тарифной карусели без правок её кода ============ */
-(function hapticsForTariffs(){
-  const list = document.getElementById('tariffList');
-  const plan = document.getElementById('planRow');
+<script>
+/* === Подключаем вибро к тарифной карусели безопасно ====================== */
+(function hapticsForTariffsSafe(){
+  const wheel = document.getElementById('tariffWheel');
+  const list  = document.getElementById('tariffList');
+  const plan  = document.getElementById('planRow');
   if (!list) return;
 
-  // Лёгкий «щёлк» при смене активной карточки (через observer)
-  let lastAt = 0;
+  let armed = false;            // включаем вибро только после жеста пользователя
+  let lastActive = null;        // последняя активная карточка
+  let checkScheduled = false;
+  let lastPulseAt = 0;
+  const MIN_GAP = 280;          // минимальный интервал между вибро (мс)
+
+  function arm(){ armed = true; }
+  // «вооружаем» вибро только после взаимодействия
+  wheel?.addEventListener('pointerdown', arm, {once:true, passive:true});
+  wheel?.addEventListener('wheel',       arm, {once:true, passive:true});
+  list.addEventListener('click',         arm, {once:true, passive:true});
+
+  function scheduleCheck(){
+    if (checkScheduled) return;
+    checkScheduled = true;
+    requestAnimationFrame(()=>{
+      checkScheduled = false;
+      const now = performance.now();
+      const active = list.querySelector('.tariff.active');
+      if (!armed || !active || active === lastActive) return;
+      if (now - lastPulseAt < MIN_GAP) return;
+      lastActive = active;
+      lastPulseAt = now;
+      window.haptic?.('light','selection');
+    });
+  }
+
+  // наблюдаем только смену класса на карточках, чтобы дергать проверку не чаще чем нужно
   const obs = new MutationObserver(muts=>{
-    const now = performance.now();
-    if (now - lastAt < 120) return;           // анти-спам
     for (const m of muts){
-      if (m.type==='attributes' && m.attributeName==='class'
-          && m.target.classList?.contains('tariff')
-          && m.target.classList.contains('active')){
-        window.haptic?.('light','selection');
-        lastAt = now;
+      if (m.type==='attributes' && m.attributeName==='class' &&
+          m.target.classList?.contains('tariff')){
+        scheduleCheck();
         break;
       }
     }
   });
-  obs.observe(list, { attributes:true, subtree:true, attributeFilter:['class'] });
+  obs.observe(list, {subtree:true, attributes:true, attributeFilter:['class']});
 
-  // Вибро на тап по карточке (перед прилипанием)
+  // лёгкий отклик на «тап» по карточке и на переключатель Месяц/Год (только после arm)
   list.addEventListener('click', (e)=>{
-    if (e.target.closest('.tariff')) window.haptic?.('light');
+    if (armed && e.target.closest('.tariff')) window.haptic?.('light');
   });
-
-  // Вибро на переключателе «Месяц/Год»
   plan?.addEventListener('click', (e)=>{
-    if (e.target.closest('.plan-btn')) window.haptic?.('light');
+    if (armed && e.target.closest('.plan-btn')) window.haptic?.('light');
   });
 
-  // Чуть ощутимее — в момент «докрутки» после рефлоу
-  document.addEventListener('tariff:reflow', ()=>{
-    // даём лёгкий «selection» при любой автоподстройке/прилипании
-    window.haptic?.('light','selection');
-  });
+  // во время массовых перерисовок — кратко «глушим» вибро, чтобы не жужжало
+  const mute = ()=>{
+    const wasArmed = armed;
+    armed = false;
+    setTimeout(()=>{ armed = wasArmed || true; }, 350);
+  };
+  document.addEventListener('tariff:ready',  mute);
+  document.addEventListener('tariff:reflow', mute);
 })();
 </script>
+
 
 
 
