@@ -1577,82 +1577,66 @@
 
   <style>
 
-/* окно карусели — ось Y, без центральной маски и без вертикальных паддингов */
-.tariff-wheel{
-  --gap: 12px;
-
-  /* можешь оставить фикс, но лучше пусть JS ставит кратную STEP высоту */
-  height: 620px;                  /* при желании убери — JS выставит сам */
-
-  position: relative;
-  overflow: hidden;               /* скролл скрыт, управляем вручную */
-  padding: 0 12px;                /* ВАЖНО: без padding-block, якорь даём в JS */
-  border-radius: 16px;
-
-  touch-action: none;             /* жесты только мы обрабатываем */
-  overscroll-behavior: contain;   /* без «резинки» */
+/* ===== УСЛУГИ: переключатель плана ===== */
+#services .plan-toggle{ display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+#services .plan-btn{
+  padding:8px 14px; border-radius:14px; font-weight:800;
+  border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.05);
+}
+#services .plan-btn.active{
+  background:linear-gradient(135deg,#3de0c5,#7b5bff); color:#0b0f12; border-color:transparent;
 }
 
-/* список и карточки */
-.wheel-list{ display:flex; flex-direction:column; gap:var(--gap); }
-.wheel-list .tariff{
-  transform-origin: center;        /* чтобы не «терло» края при scale */
-  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+/* ===== УСЛУГИ: окно карусели (без маски и «подвала») ===== */
+#services .tariff-wheel{
+  position:relative; overflow:hidden;
+  padding:0 12px;              /* боковые поля; вертикальных нет */
+  border-radius:16px;
+  touch-action:none; overscroll-behavior:contain;
 }
-.wheel-list .tariff.active{
-  transform: scale(0.99);          /* было 1.015 — меньше «выпирает» */
-  border-color: rgba(255,255,255,.22);
-  box-shadow:
-    0 12px 28px rgba(0,0,0,.26),
-    0 0 0 2px rgba(123,91,255,.28) inset;
-}
-
-/* маска центра — без белой вуали и подальше от краёв */
-.wheel-center-mask{
-  position:absolute; left:16px; right:16px; top:50%;
-  height: var(--centerH); transform: translateY(-50%);
-  pointer-events:none; z-index:2; border-radius:16px;
-  background: transparent !important;
-  mix-blend-mode: normal !important;
-  box-shadow:
-    0 0 0 1px rgba(123,91,255,.22) inset,
-    0 10px 24px rgba(0,0,0,.26),
-    0 0 54px rgba(123,91,255,.14),
-    0 0 90px rgba(61,224,197,.10);
-}
-
-/* служебное: отступ между заголовком и колесом */
-#services .page-title + .tariff-wheel{ margin-top:14px; }
-
-/* цена/подпись */
-#services .price-row{ display:flex; gap:10px; align-items:baseline; margin-top:8px; }
-#services .price .num{ font-size:26px; font-weight:900; letter-spacing:.3px; }
-#services .price-note{ opacity:.8; }
-
-
-
-#services .tariff-wheel{ padding-inline: 0; }            /* убираем боковые поля контейнера */
-#services .wheel-list .tariff{ width: 100%; }            /* карточка растягивается */
-#services .wheel-center-mask{ left:8px; right:8px; }     /* тонкая рамка не упирается в край */
-
-/* отключаем центральную маску, чтобы ничего не перекрывало карточки */
-#services .wheel-center-mask{ display:none !important; }
-
-
-/* отключаем затемнения сверху/снизу у окна карусели */
+#services .wheel-center-mask,
 #services .tariff-wheel::before,
 #services .tariff-wheel::after{ display:none !important; }
 
-/* делаем окно без лишних отступов по вертикали */
-#services .tariff-wheel{
-  padding-top: 0;      /* якорный зазор теперь через TOP_OFFSET_PX в JS */
-  padding-bottom: 0;   /* уберёт «подвал» */
+#services .page-title + .tariff-wheel{ margin-top:14px; }
+
+/* список */
+#services .wheel-list{ display:flex; flex-direction:column; row-gap:12px; }
+
+/* карточка тарифа */
+#services .wheel-list .tariff{
+  position:relative; overflow:hidden; border-radius:16px;
+  transform-origin:center;
+  transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;
 }
 
-/* если есть глобальные безопасные отступы — обнулим для этой секции */
-#services{ padding-bottom: 0 !important; }
+/* внутренняя неоновая подсветка активной */
+:root{ --acc1:#7b5bff; --acc2:#3de0c5; }
+#services .wheel-list .tariff.active{
+  transform:scale(1.005);
+  border-color:rgba(255,255,255,.20);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb,var(--acc1) 70%,transparent) inset,
+    0 0 22px color-mix(in srgb,var(--acc1) 50%,transparent) inset,
+    0 0 46px color-mix(in srgb,var(--acc2) 40%,transparent) inset;
+}
+#services .wheel-list .tariff.active::after{
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
+  clip-path: inset(6px round 16px);
+  filter:blur(10px); opacity:.9;
+  background:
+    radial-gradient(120% 140% at 50% 0,   color-mix(in srgb,var(--acc2) 30%,transparent), transparent 60%),
+    radial-gradient(120% 140% at 50% 100%, color-mix(in srgb,var(--acc1) 45%,transparent), transparent 60%);
+}
 
+/* содержимое внутри карточки */
+#services .service-card{ min-height:140px; } /* анти-дёрганье при первом рендере */
+#services .price-row{ display:flex; gap:10px; align-items:baseline; margin-top:8px; }
+#services .price .num{ font-size:26px; font-weight:900; letter-spacing:.3px; }
+#services .price-note{ opacity:.85; }
 
+/* опционально: ширина карточек */
+#services .wheel-list .tariff{ width:100%; }
 
 
 </style>
@@ -3451,6 +3435,52 @@
 })();
 </script>
 
+<script>
+/* Высота окна = ROWS * (cardHeight + gap) */
+(function tuneTariffWheelHeight(){
+  const wheel = document.getElementById('tariffWheel');
+  const list  = document.getElementById('tariffList');
+  if (!wheel || !list) return;
+
+  const ROWS = 3;                 // сколько карточек в окне
+  const TOP_OFFSET_PX = 3;        // зазор сверху (как в твоей карусели)
+
+  const nodes = () => Array.from(list.querySelectorAll('.tariff'));
+  const getGap = () => parseFloat(getComputedStyle(list).rowGap || getComputedStyle(list).gap || 12) || 12;
+
+  function measureStep(){
+    const mid = nodes()[Math.floor(nodes().length/2)] || nodes()[0];
+    if (!mid) return 200;
+    const h = Math.round(mid.getBoundingClientRect().height);
+    return h + getGap();
+  }
+  function applyHeight(){
+    const step = measureStep();
+    const pTop = parseFloat(getComputedStyle(wheel).paddingTop) || 0;
+    const pBot = parseFloat(getComputedStyle(wheel).paddingBottom) || 0;
+    const H = Math.round(step * ROWS + pTop + pBot + TOP_OFFSET_PX);
+    wheel.style.height = H + 'px';
+  }
+
+  function reflow(){
+    // ждём стабильной геометрии (шрифты/изображения)
+    let last = 0, tries = 0;
+    (function probe(){
+      const cur = measureStep();
+      if (Math.abs(cur - last) < 1 || tries > 12){ applyHeight(); }
+      else { last = cur; tries++; requestAnimationFrame(probe); }
+    })();
+  }
+
+  reflow();
+  window.addEventListener('resize', reflow);
+  window.addEventListener('pageshow', e => { if (e.persisted) reflow(); });
+  document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) reflow(); });
+  document.addEventListener('tariff:ready',  reflow);   // когда карусель склонировалась
+  document.addEventListener('tariff:reflow', reflow);   // когда переключили Месяц/Год
+  if (document.fonts?.ready) document.fonts.ready.then(reflow).catch(()=>{});
+})();
+</script>
 
 <script>
 (function tariffPricing(){
