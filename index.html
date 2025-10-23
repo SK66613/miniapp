@@ -1613,7 +1613,7 @@
 /* внутренняя неоновая подсветка активной */
 :root{ --acc1:#7b5bff; --acc2:#3de0c5; }
 #services .wheel-list .tariff.active{
-  transform:scale(1.08);
+  transform:scale(1.05);
   border-color:rgba(255,255,255,.20);
   box-shadow:
     0 0 0 1px color-mix(in srgb,var(--acc1) 70%,transparent) inset,
@@ -3219,9 +3219,9 @@
 
   /* тюнинг */
   const TOP_OFFSET_PX = 3;   // зазор от верха, 2–4px
-  const SCROLL_GAIN   = 0.75;// скорость перетаскивания (<1 медленнее)
+  const SCROLL_GAIN   = 0.55;// скорость перетаскивания (<1 медленнее)
   const MOMENTUM_GAIN = 16;  // старт инерции (было 22 быстрее)
-  const FRICTION      = 0.90;// трение инерции
+  const FRICTION      = 0.60;// трение инерции
   const FRAME_STEP    = 12;  // шаг в px за кадр
 
   wheel.style.touchAction = 'none';
