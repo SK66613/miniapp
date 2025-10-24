@@ -1871,7 +1871,7 @@
             </div>
 
             <div class="row">
-              <label>Оптимизация маркетига: <strong id="pctVal">12%</strong></label>
+              <label>Оптимизация маркетинга: <strong id="pctVal">12%</strong></label>
               <input id="pct" type="range" min="1" max="30" step="1" value="12">
             </div>
 
@@ -2903,7 +2903,7 @@
       }
 
       /* ====== Кулдаун 24ч для «Забрать бонус» + таймер ====== */
-      const COOLDOWN_MS = 1 * 60 * 60 * 1000; // 1 час
+      const COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 часа
       const UID = (TG?.initDataUnsafe?.user?.id) || 'anon';
       const CLAIM_KEY = 'bonusClaim_ts_' + UID;
 
