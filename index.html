@@ -265,7 +265,7 @@
       margin: 14px 0;
       padding: 12px 14px;
       border-radius: 12px;
-      background: #3de0c524;
+      background: linear-gradient(135deg, rgba(61, 224, 197, .12), rgba(123, 91, 255, .16));
       color: #fdfeff;
       font-weight: 600;
       font-size: 15px
@@ -726,7 +726,7 @@
       padding: 10px 12px;
       border: 1px solid var(--border, rgba(255, 255, 255, .14));
       border-radius: 12px;
-      background: #3de0c524;
+      background: linear-gradient(135deg, rgba(61, 224, 197, .12), rgba(123, 91, 255, .16));
       font-weight: 700;
     }
 
@@ -1006,6 +1006,7 @@
     .picked-pill.muted {
       opacity: .7;
       font-weight: 600;
+      background: linear-gradient(135deg, rgba(61, 224, 197, .12), rgba(123, 91, 255, .16));
     }
 
     /* Колесо — устойчивое, фиксированной высоты */
@@ -1512,7 +1513,7 @@
     }
 
     #about .msg.me .bubble {
-      background: #3de0c524;
+      background: linear-gradient(135deg, rgba(61, 224, 197, .12), rgba(123, 91, 255, .16));
       color: #fafafa;
       border-color: transparent;
       font-weight: 10;
@@ -1617,8 +1618,8 @@
 :root{ --acc1:#7c5bff83; --acc2:#050505; }
 #services .wheel-list .tariff.active{
   transform:scale(1.07);
-  border-color:#33363672;
-  background: #3de0c524;
+  border-color:#f1f4f43a;
+  background: linear-gradient(135deg, rgba(61, 224, 197, .12), rgba(123, 91, 255, .16));
 }
 #services .wheel-list .tariff.active::after{
   content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
@@ -1932,7 +1933,6 @@
   <!-- Заголовок + переключатель -->
   <div class="card page-title">
     <h2 class="h1">Тарифы</h2>
-    <p class="muted-sm">Масштабируем бизнес модели, даем рекомендации по усилению слабых мест</p>
     <div id="planRow" class="plan-toggle">
       <button class="plan-btn active" data-plan="month">Месяц</button>
       <button class="plan-btn" data-plan="year">Год −15%</button>
@@ -2667,6 +2667,7 @@
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(() => { moveBubble(); centerActive(); }, 0));
       window.addEventListener('load', () => { moveBubble(); centerActive(); });
     })();
+    
 
     /* ==== История + Партнёрка: загрузка и рендер ==== */
     (function historyAndInvite() {
