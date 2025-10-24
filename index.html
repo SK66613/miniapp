@@ -726,7 +726,7 @@
       padding: 10px 12px;
       border: 1px solid var(--border, rgba(255, 255, 255, .14));
       border-radius: 12px;
-      background: rgba(255, 255, 255, .04);
+      background: #3de0c524;
       font-weight: 700;
     }
 
@@ -1512,7 +1512,7 @@
     }
 
     #about .msg.me .bubble {
-      background: linear-gradient();
+      background: #3de0c524;
       color: #fafafa;
       border-color: transparent;
       font-weight: 10;
@@ -1617,19 +1617,14 @@
 :root{ --acc1:#7c5bff83; --acc2:#050505; }
 #services .wheel-list .tariff.active{
   transform:scale(1.07);
-  border-color:rgba(10, 10, 10, 0.2);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb,var(--acc1) 70%,transparent) inset,
-    0 0 22px color-mix(in srgb,var(--acc1) 50%,transparent) inset,
-    0 0 46px color-mix(in srgb,var(--acc2) 40%,transparent) inset;
+  border-color:#33363672;
+  background: #3de0c524;
 }
 #services .wheel-list .tariff.active::after{
   content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
   clip-path: inset(6px round 16px);
   filter:blur(10px); opacity:.9;
-  background:
-    radial-gradient(120% 140% at 50% 0,   color-mix(in srgb,var(--acc2) 30%,transparent), transparent 60%),
-    radial-gradient(120% 140% at 50% 100%, color-mix(in srgb,var(--acc1) 45%,transparent), transparent 60%);
+  background: #60cdbd00;
 }
 
 /* содержимое внутри карточки */
@@ -2755,6 +2750,8 @@
     })();
 
   </script>
+
+  
 
   <script>
     // === Quick profit calc (sliders) ===
@@ -3884,18 +3881,6 @@
     pic.appendChild(img);
   });
 })();
-</script>
-
-<script>
-function doubleShowServices(){
-  // только если мы уже в разделе "Услуги"
-  if ((location.hash || '').replace(/^#/, '') !== 'services') return;
-  // минимальная задержка, чтобы разметка успела обновиться
-  setTimeout(() => {
-    if (typeof showPage === 'function') showPage('#services');
-    else location.hash = '#services';
-  }, 40);
-}
 </script>
 
 
