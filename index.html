@@ -3664,6 +3664,7 @@
 
   // Сообщаем, что лента готова (пересчёт цен учитывает клоны)
   document.dispatchEvent(new CustomEvent('tariff:ready'));
+  
 })();
 
 /* ===== 2) Переключатель Месяц/Год + пересчёт цен ===== */
@@ -3886,27 +3887,16 @@
 </script>
 
 <script>
-/* Двойной «тап» только по кнопке меню Услуги */
-(function doubleTapOnNavServices(){
-  const btn = document.querySelector('#spa-nav .track .btn[data-page="services"]');
-  if (!btn) return;
-  const DELAY = 40; 
-  let lock = false;
-
-  btn.addEventListener('click', () => {
-    if (lock) return;
-    lock = true;
-    setTimeout(() => {
-      if (typeof showPage === 'function') showPage('#services');
-      else btn.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true}));
-      lock = false;
-    }, DELAY);
-  });
-})();
+function doubleShowServices(){
+  // только если мы уже в разделе "Услуги"
+  if ((location.hash || '').replace(/^#/, '') !== 'services') return;
+  // минимальная задержка, чтобы разметка успела обновиться
+  setTimeout(() => {
+    if (typeof showPage === 'function') showPage('#services');
+    else location.hash = '#services';
+  }, 40);
+}
 </script>
-
-
-
 
 
 </body>
