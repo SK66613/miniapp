@@ -265,7 +265,7 @@
       margin: 14px 0;
       padding: 12px 14px;
       border-radius: 12px;
-      background: var(--bg);
+      background: #3de0c524;
       color: #fdfeff;
       font-weight: 600;
       font-size: 15px
@@ -1728,12 +1728,6 @@
 }
 </style>
 
-<style>
-/* меню липнет — без магии */
-#spa-nav{ position: sticky; top: 6px; z-index: 1000; }
-
-</style>
-
 
  <style>
 /* ===== БОНУСЫ: полный стиль (mobile-first) ===== */
@@ -1928,10 +1922,10 @@
           <ul class="list">
             <li><span class="dot"></span>Записывайтесь на бесплатную консультацию</li>
             <li><span class="dot"></span>Получите детальный рекомендации по оптимизации</li>
-            <li><span class="dot"></span>Внедряйте и наблюдайте как увеливается прибыль бизнеса</li>
+            <li><span class="dot"></span>Внедряйте и наблюдайте как увеличивается прибыль бизнеса</li>
           </ul>
           <div class="highlight-banner" style="text-align:left">
-            <strong>Бонус:</strong> мини-гайд «Как перейти на выгодный режим»
+            <strong>Бонус:</strong> Чек-лист для самостоятельного аудита маркетинга по 61 пункту
           </div>
         </div>
       </section>
@@ -2081,7 +2075,7 @@
       <div class="pic"></div>
       <div class="txt">
         <h3 class="h2">Маркетинг-аудит</h3>
-        <p class="muted-sm">Короткое описание…</p>
+        <p class="muted-sm">Найдем, где сливаются деньги и как вернуть прибыль</p>
       </div>
     </article>
 
@@ -2090,7 +2084,7 @@
       <div class="pic"></div>
       <div class="txt">
         <h3 class="h2">Мафия-оффер</h3>
-        <p class="muted-sm">Короткое описание…</p>
+        <p class="muted-sm">Упакуем ценность так, что клиент не сможет пройти мимо</p>
       </div>
     </article>
 
@@ -2099,7 +2093,7 @@
       <div class="pic"></div>
       <div class="txt">
         <h3 class="h2">Customer Development</h3>
-        <p class="muted-sm">Короткое описание…</p>
+        <p class="muted-sm">Вскроем боли, мотивы и мечты вашей аудитории</p>
       </div>
     </article>
 
@@ -2108,7 +2102,7 @@
       <div class="pic"></div>
       <div class="txt">
         <h3 class="h2">Скидка</h3>
-        <p class="muted-sm">Короткое описание…</p>
+        <p class="muted-sm">Скидка 15% на услуги по продвижению и настройке</p>
       </div>
     </article>
 
@@ -2117,7 +2111,7 @@
       <div class="pic"></div>
       <div class="txt">
         <h3 class="h2">Консультация</h3>
-        <p class="muted-sm">Короткое описание…</p>
+        <p class="muted-sm">Бесплатная консультация по продвижению и настройке</p>
       </div>
     </article>
 
@@ -2126,7 +2120,7 @@
       <div class="pic"></div>
       <div class="txt">
         <h3 class="h2">Чек-лист</h3>
-        <p class="muted-sm">Короткое описание…</p>
+        <p class="muted-sm">Чек-лист для самостоятельного аудита по 61 пункту</p>
       </div>
     </article>
 
@@ -2865,12 +2859,12 @@
 
       /* Название -> ссылка (поменяй под себя) */
       const bonusLinks = {
-        "Гайд": "#consult",
-        "Чек-лист": "#consult",
-        "Шаблон": "#consult",
         "Аудит": "#consult",
+        "Мафия-оффер": "#consult",
+        "Cust Dev": "#consult",
         "Скидка": "#consult",
-        "Консультация": "#consult"
+        "Консультация": "#consult",
+        "Чек-лист": "#consult"
       };
 
       /* ================== общие утилиты ================== */
@@ -3887,6 +3881,26 @@
 
     pic.innerHTML = '';
     pic.appendChild(img);
+  });
+})();
+</script>
+
+<script>
+/* Двойной «тап» только по кнопке меню Услуги */
+(function doubleTapOnNavServices(){
+  const btn = document.querySelector('#spa-nav .track .btn[data-page="services"]');
+  if (!btn) return;
+  const DELAY = 40; 
+  let lock = false;
+
+  btn.addEventListener('click', () => {
+    if (lock) return;
+    lock = true;
+    setTimeout(() => {
+      if (typeof showPage === 'function') showPage('#services');
+      else btn.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true}));
+      lock = false;
+    }, DELAY);
   });
 })();
 </script>
