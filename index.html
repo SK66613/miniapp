@@ -1896,14 +1896,14 @@
       <section class="page" id="home">
         <div class="card page-title">
           <h2 class="h1">Главная</h2>
-          <p class="muted-sm">Масштабируем бизнес модели, даем рекомендации по усилению слабых мест</p>
+          <p class="muted-sm">Строим системы, которые превращают рекламу в деньги на вашем счёте.</p>
         </div>
 
         <!-- ВСЕ НИЖЕ — ВНУТРИ #home -->
         <div class="grid grid-2" style="margin-top:14px">
           <!-- Быстрый расчет прибыли бизнеса -->
           <div class="card savings">
-            <div class="h1">Быстрый <span>расчет прибыли</span> бизнеса</div>
+            <div class="h1">Сколько денег<span> ты теряешь</span> каждый месяц</div>
 
             <div class="row">
               <label>Прибыль сейчас: <strong id="revVal">10 000 000 ₽</strong></label>
@@ -1918,21 +1918,21 @@
             <!-- Две отдельные рамки -->
             <div class="stat-chips equal">
               <div class="chip">
-                <span class="label">Было:</span>
+                <span class="label">До оптимизации:</span>
                 <span id="oldTax">1 500 000 ₽</span>
               </div>
               <div class="chip">
-                <span class="label">Стало:</span>
+                <span class="label">После оптимизации:</span>
                 <span id="newTax">1 320 000 ₽</span>
               </div>
             </div>
 
 
-            <div>Дополнительная прибыль:</div>
+            <div>Прибыль, которую ты теряешь::</div>
             <div class="big" id="saveCounter">0 ₽</div>
 
             <div class="cta">
-              <button class="btn btn-primary confetti" id="ctaCalc">Получить персональный расчёт</button>
+              <button class="btn btn-primary confetti" id="ctaCalc">Вернуть недополученные деньги</button>
             </div>
           </div>
 
@@ -1940,12 +1940,12 @@
         <div class="card">
           <div class="h1" style="margin-bottom:20px">Что <span>делать</span> дальше</div>
           <ul class="list">
-            <li><span class="dot"></span>Записывайтесь на бесплатную консультацию</li>
-            <li><span class="dot"></span>Получите детальный рекомендации по оптимизации</li>
-            <li><span class="dot"></span>Внедряйте и наблюдайте как увеличивается прибыль бизнеса</li>
+            <li><span class="dot"></span>Запишитесь на бесплатную консультацию и получите первые инсайты</li>
+            <li><span class="dot"></span>Заберите детальный план оптимизации именно для вашего бизнеса</li>
+            <li><span class="dot"></span>Внедряйте шаги и смотрите, как прибыль растёт на глазах</li>
           </ul>
           <div class="highlight-banner" style="text-align:left">
-            <strong>Бонус:</strong> Чек-лист для самостоятельного аудита маркетинга по 61 пункту
+            <strong>Бонус: </strong> Чек-лист-аудит на 61 пункт — выявите все дыры в маркетинге
           </div>
         </div>
 
@@ -1953,10 +1953,10 @@
           <div class="card" style="margin-bottom:12px">
             <div class="h1" style="margin-bottom:20px">Как <span>мы</span> работаем</div>
             <div id="flow" style="display:grid;gap:8px">
-              <div class="badge">Шаг 1 · Диагностика</div>
-              <div class="badge">Шаг 2 · План оптимизации</div>
-              <div class="badge">Шаг 3 · Внедрение</div>
-              <div class="badge">Шаг 4 · Контроль и отчёты</div>
+              <div class="badge">Шаг 1 · Диагностика 🔎 Разбираем ваш маркетинг по полочкам</div>
+              <div class="badge">Шаг 2 · План оптимизации 🛠 Чёткие шаги для роста прибыли</div>
+              <div class="badge">Шаг 3 · Внедрение 🚀 Настраиваем рекламу, CRM, ботов и аналитику</div>
+              <div class="badge">Шаг 4 · Контроль и отчёты 📈 Прозрачные цифры, регулярные отчёты и рост продаж</div>
             </div>
             <div class="cta" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
               <button class="btn btn-primary" id="flowNext">Дальше</button>
@@ -1984,6 +1984,42 @@
   <div class="tariff-wheel" id="tariffWheel">
     <div class="wheel-list" id="tariffList">
       <!-- КАЖДЫЙ тариф — ОДНА карточка (без вложенных .card) -->
+      <article class="card tariff service-card" data-id="tg"        data-month="20000">
+        <div class="h2">Аудит + консалтинг ежемесячно</div>
+        <p class="muted-sm">Разбор кампаний, гипотезы, рекомендации.</p>
+        <div class="price-row"><div class="price"><span class="num"></span> ₽</div><div class="price-note"></div></div>
+      </article>
+
+            <article class="card tariff service-card" data-id="tg"        data-month="65000">
+        <div class="h2">Автоматизация продаж</div>
+        <p class="muted-sm">CRM + боты + сквозная аналитика «под ключ».</p>
+        <div class="price-row"><div class="price"><span class="num"></span> ₽</div><div class="price-note"></div></div>
+      </article>
+
+            <article class="card tariff service-card" data-id="tg"        data-month="110000">
+        <div class="h2">Маркетинговое сопровождение 360°</div>
+        <p class="muted-sm">Комплекс: реклама, SMM, аналитика, CRM.</p>
+        <div class="price-row"><div class="price"><span class="num"></span> ₽</div><div class="price-note"></div></div>
+      </article>
+
+            <article class="card tariff service-card" data-id="tg"        data-month="40000">
+        <div class="h2">YouTube + Shorts / Reels</div>
+        <p class="muted-sm">Видео-продвижение, трафик и лиды через контент.</p>
+        <div class="price-row"><div class="price"><span class="num"></span> ₽</div><div class="price-note"></div></div>
+      </article>
+
+            <article class="card tariff service-card" data-id="tg"        data-month="49000">
+        <div class="h2">PR и инфлюенс-маркетинг</div>
+        <p class="muted-sm">СМИ, блогеры, лидеры мнений — рост доверия.</p>
+        <div class="price-row"><div class="price"><span class="num"></span> ₽</div><div class="price-note"></div></div>
+      </article>
+
+                  <article class="card tariff service-card" data-id="tg"        data-month="29000">
+        <div class="h2">Реферальные и партнёрские программы</div>
+        <p class="muted-sm">Система «приведи друга» и партнёрские сети.</p>
+        <div class="price-row"><div class="price"><span class="num"></span> ₽</div><div class="price-note"></div></div>
+      </article>
+
       <article class="card tariff service-card" data-id="avito"     data-month="30000">
         <div class="h2">Продвижение на Авито</div>
         <p class="muted-sm">Первые позиции объявлений при минимальном бюджете.</p>
@@ -2028,7 +2064,7 @@
 
       <article class="card tariff service-card" data-id="tg"        data-month="38000">
         <div class="h2">Telegram-маркетинг</div>
-        <p class="muted-sm">Каналы, рассылки, автоворонки, связка с CRM.</p>
+        <p class="muted-sm">Каналы, автоворонки, рассылки, связка с CRM.</p>
         <div class="price-row"><div class="price"><span class="num"></span> ₽</div><div class="price-note"></div></div>
       </article>
     </div>
