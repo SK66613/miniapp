@@ -1855,6 +1855,14 @@
 
  </style>
 
+  <style>
+    /* состояния шагов как мы работаем*/
+/*#flow .badge.is-current{ outline:2px solid rgba(123,91,255,.8); box-shadow:0 0 0 6px rgba(123,91,255,.18) inset; filter:none; opacity:1; } */
+#flow .badge.is-done   { opacity:.75; filter:none; }
+#flow .badge.is-future { opacity:.0; filter:grayscale(1); pointer-events:none; } /* «сливается» с фоном */
+
+  </style>
+
 
 </head>
 
@@ -2845,33 +2853,57 @@
 
 
     // === Steps: "Как мы работаем" ===
-    (function () {
-      const flow = document.getElementById('flow');
-      const next = document.getElementById('flowNext');
-      const reset = document.getElementById('flowReset');
-      if (!flow || !next) return;
-      const steps = Array.from(flow.querySelectorAll('.badge'));
-      let i = 0;
+(function () {
+  const flow  = document.getElementById('flow');
+  const next  = document.getElementById('flowNext');
+  const reset = document.getElementById('flowReset');
+  if (!flow || !next) return;
 
-      function render() {
-        steps.forEach((s, idx) => {
-          s.style.opacity = idx <= i ? 1 : .45;
-          s.style.filter = idx <= i ? 'none' : 'grayscale(.3)';
-        });
-        next.textContent = (i >= steps.length - 1) ? 'Перейти к консультации' : 'Дальше';
-      }
+  const steps = Array.from(flow.querySelectorAll('.badge'));
+  let i = 0; // текущий шаг
 
-      next.addEventListener('click', () => {
-        if (i < steps.length - 1) { i++; render(); }
-        else {
-          try { window.showToast && showToast('Готово', 'Открыл раздел «Консультация»'); } catch (_) { }
-          location.hash = '#consult';
-          try { const a = document.querySelector('#spa-nav .btn[data-page=\"consult\"]'); a && a.click(); } catch (_) { }
-        }
-      });
-      reset && reset.addEventListener('click', () => { i = 0; render(); });
+  // лёгкий хаптик (Telegram → fallback vibrate)
+  function hapticLight(){
+    try{
+      const TG = window.Telegram && window.Telegram.WebApp;
+      if (TG?.HapticFeedback){ TG.HapticFeedback.impactOccurred('light'); return; }
+    }catch(_){}
+    try{ navigator.vibrate && navigator.vibrate(12); }catch(_){}
+  }
+
+  function render(){
+    steps.forEach((s, idx) => {
+      s.classList.toggle('is-current', idx === i);
+      s.classList.toggle('is-done',    idx <  i);
+      s.classList.toggle('is-future',  idx >  i);
+      // для доступности
+      s.setAttribute('aria-current', idx === i ? 'step' : 'false');
+    });
+    next.textContent = (i >= steps.length - 1) ? 'Перейти к консультации' : 'Дальше';
+  }
+
+  next.addEventListener('click', () => {
+    if (i < steps.length - 1) {
+      i++;
+      hapticLight();   // лёгкий «щелчок» на шаг
       render();
-    })();
+    } else {
+      hapticLight();
+      try { window.showToast && showToast('Готово', 'Открыл раздел «Консультация»'); } catch(_) {}
+      // переход в консультацию
+      location.hash = '#consult';
+      try {
+        const a = document.querySelector('#spa-nav .btn[data-page="consult"]');
+        a?.click();
+      } catch(_) { /* no-op */ }
+    }
+  });
+
+  reset && reset.addEventListener('click', () => { i = 0; hapticLight(); render(); });
+
+  // стартовое состояние: текущий = 0, будущие скрыты
+  render();
+})();
   </script>
 
   <script>
