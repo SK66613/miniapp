@@ -2428,7 +2428,7 @@
 
     /* ==== Toast (дедупликация) ==== */
     const __toasts = new Set();
-    function showToast(title, msg = '', key = '', timeout = 2600) {
+    function showToast(title, msg = '', key = '', timeout = 4600) {
       if (key && __toasts.has(key)) return; if (key) __toasts.add(key);
       let box = document.querySelector('.toasts'); const t = document.createElement('div'); t.className = 'toast';
       t.innerHTML = `<div class="t">${title}</div>${msg ? `<div class="m">${msg}</div>` : ''}`; box.appendChild(t);
