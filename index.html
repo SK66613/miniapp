@@ -3985,21 +3985,91 @@
 })();
 </script>
 
+
+
 <script>
-function openBotAndKeepApp(bot = 'your_bot', payload = '') {
-  const TG = window.Telegram && window.Telegram.WebApp;
-  if (!TG) return; // запасной выход
+/* Открывает t.me через Telegram API, чтобы Mini App свернулся, а не закрылся */
+function openTgLinkKeepApp(url, { preferStartApp = true } = {}){
+  try{
+    const TG = window.Telegram && window.Telegram.WebApp;
 
-  // Рекомендуется включить свайпы — Telegram тогда аккуратно сворачивает апку
-  try { TG.enableVerticalSwipes && TG.enableVerticalSwipes(); } catch(_) {}
+    // если это t.me-ссылка — можем переписать ?start → ?startapp (удобно для возврата в Mini App)
+    if (/^https?:\/\/t\.me\//i.test(url) && preferStartApp){
+      const u = new URL(url);
+      const start = u.searchParams.get('start');
+      const startapp = u.searchParams.get('startapp');
+      if (start && !startapp){
+        u.searchParams.delete('start');
+        u.searchParams.set('startapp', start);
+        url = u.toString();
+      }
+    }
 
-  // Используем startapp, чтобы в чате была кнопка мгновенно вернуть Mini App
-  const url = `https://t.me/${bot}` + (payload ? `?startapp=${encodeURIComponent(payload)}` : '');
+    if (TG?.openTelegramLink){
+      try { TG.enableVerticalSwipes && TG.enableVerticalSwipes(); } catch(_){}
+      TG.openTelegramLink(url);     // <-- Mini App остаётся свернутым
+      return true;
+    }
+  }catch(_){}
 
-  // На современных версиях Telegram Mini App НЕ закрывается при этом вызове
-  TG.openTelegramLink(url);
+  // Фолбэк: вне Telegram — обычное открытие
+  if (url.startsWith('#')) { location.hash = url; return true; }
+  if (/^https?:\/\//i.test(url)) { window.open(url, '_blank'); return true; }
+  location.href = url;
+  return true;
 }
 </script>
+<script>
+/* «Забрать бонус» — без закрытия мини-аппа */
+(function initClaimBtn(){
+  const claim = document.getElementById('claimBtn');
+  const pill  = document.getElementById('pickedPill');
+  const track = document.getElementById('wheelTrack');
+  if (!claim || !track) return;
+
+  claim.addEventListener('click', () => {
+    if (claim.disabled) return;
+
+    // текущий выбранный бонус
+    const active = track.querySelector('.bonus.active') || track.children[0];
+    const name   = active?.dataset?.name || claim.dataset.bonus || '';
+    const url    = (window.bonusLinks && window.bonusLinks[name]) || '';
+
+    // фиксация кулдауна (если у тебя было)
+    try { setLastClaim && setLastClaim(); refreshClaimState && refreshClaimState(); } catch(_){}
+
+    if (!url) return;
+
+    // Телега-ссылки → через openTelegramLink (Mini App сворачивается)
+    if (/^https?:\/\/t\.me\//i.test(url)){
+      openTgLinkKeepApp(url, { preferStartApp: true });
+      return;
+    }
+
+    // внутренняя навигация
+    if (url.startsWith('#')){
+      location.hash = url;
+      try { typeof showPage === 'function' && showPage(url); } catch(_){}
+      return;
+    }
+
+    // обычные внешние (не t.me)
+    if (/^https?:\/\//i.test(url)) { window.open(url, '_blank'); return; }
+    // или относительные
+    location.href = url;
+  });
+})();
+</script>
+<script>
+document.addEventListener('click', (e)=>{
+  const a = e.target.closest('a[href^="https://t.me/"], a[href^="http://t.me/"]');
+  if (!a) return;
+  e.preventDefault();
+  openTgLinkKeepApp(a.href, { preferStartApp: true });
+});
+</script>
+
+
 
 </body>
 
