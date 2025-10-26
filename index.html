@@ -2958,7 +2958,7 @@
 
       /* Название -> ссылка (поменяй под себя) */
       const bonusLinks = {
-        "Аудит": "#consult",
+        "Аудит": "https://t.me/sales_genius_aibot?start=audit",
         "Мафия-оффер": "#consult",
         "Cust Dev": "#consult",
         "Скидка": "#consult",
@@ -3004,7 +3004,7 @@
       }
 
       /* ====== Кулдаун 24ч для «Забрать бонус» + таймер ====== */
-      const COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 часа
+      const COOLDOWN_MS = 0.1 * 60 * 60 * 1000; // 24 часа
       const UID = (TG?.initDataUnsafe?.user?.id) || 'anon';
       const CLAIM_KEY = 'bonusClaim_ts_' + UID;
 
