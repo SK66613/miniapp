@@ -4019,47 +4019,7 @@ function openTgLinkKeepApp(url, { preferStartApp = true } = {}){
   return true;
 }
 </script>
-<script>
-/* «Забрать бонус» — без закрытия мини-аппа */
-(function initClaimBtn(){
-  const claim = document.getElementById('claimBtn');
-  const pill  = document.getElementById('pickedPill');
-  const track = document.getElementById('wheelTrack');
-  if (!claim || !track) return;
 
-  claim.addEventListener('click', () => {
-    if (claim.disabled) return;
-
-    // текущий выбранный бонус
-    const active = track.querySelector('.bonus.active') || track.children[0];
-    const name   = active?.dataset?.name || claim.dataset.bonus || '';
-    const url    = (window.bonusLinks && window.bonusLinks[name]) || '';
-
-    // фиксация кулдауна (если у тебя было)
-    try { setLastClaim && setLastClaim(); refreshClaimState && refreshClaimState(); } catch(_){}
-
-    if (!url) return;
-
-    // Телега-ссылки → через openTelegramLink (Mini App сворачивается)
-    if (/^https?:\/\/t\.me\//i.test(url)){
-      openTgLinkKeepApp(url, { preferStartApp: true });
-      return;
-    }
-
-    // внутренняя навигация
-    if (url.startsWith('#')){
-      location.hash = url;
-      try { typeof showPage === 'function' && showPage(url); } catch(_){}
-      return;
-    }
-
-    // обычные внешние (не t.me)
-    if (/^https?:\/\//i.test(url)) { window.open(url, '_blank'); return; }
-    // или относительные
-    location.href = url;
-  });
-})();
-</script>
 <script>
 document.addEventListener('click', (e)=>{
   const a = e.target.closest('a[href^="https://t.me/"], a[href^="http://t.me/"]');
