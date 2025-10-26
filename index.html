@@ -3985,6 +3985,21 @@
 })();
 </script>
 
+<script>
+function openBotAndKeepApp(bot = 'your_bot', payload = '') {
+  const TG = window.Telegram && window.Telegram.WebApp;
+  if (!TG) return; // запасной выход
+
+  // Рекомендуется включить свайпы — Telegram тогда аккуратно сворачивает апку
+  try { TG.enableVerticalSwipes && TG.enableVerticalSwipes(); } catch(_) {}
+
+  // Используем startapp, чтобы в чате была кнопка мгновенно вернуть Mini App
+  const url = `https://t.me/${bot}` + (payload ? `?startapp=${encodeURIComponent(payload)}` : '');
+
+  // На современных версиях Telegram Mini App НЕ закрывается при этом вызове
+  TG.openTelegramLink(url);
+}
+</script>
 
 </body>
 
