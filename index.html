@@ -110,23 +110,23 @@ body.sheet-open{ overflow:hidden; }
     <!-- ===== Bottom Nav (НАШЕ НОВОЕ МЕНЮ) ===== -->
     <nav id="btm-nav" class="btm-nav" aria-label="Навигация по разделам">
       <button class="tab" data-page="home">
-        <img src="miniapp/ic_home.png" alt="">
+        <img src="/ic_home.png" alt="">
         <span>Главная</span>
       </button>
       <button class="tab" data-page="services">
-        <img src="miniapp/ic_services.png" alt="">
+        <img src="/ic_services.png" alt="">
         <span>Услуги</span>
       </button>
       <button class="tab" data-page="consult">
-        <img src="miniapp/ic_consult.png" alt="">
+        <img src="/ic_consult.png" alt="">
         <span>Запись</span>
       </button>
       <button class="tab" data-page="bonuses">
-        <img src="miniapp/ic_bonus.png" alt="">
+        <img src="/ic_bonus.png" alt="">
         <span>Бонусы</span>
       </button>
       <button class="tab" data-page="about">
-        <img src="miniapp/ic_about.png" alt="">
+        <img src="/ic_about.png" alt="">
         <span>Обо мне</span>
       </button>
     </nav>
@@ -304,6 +304,94 @@ body.sheet-open{ overflow:hidden; }
     const ttl  = t.getAttribute('title') || t.dataset.title || t.textContent.trim() || '';
     openSheet({ title: ttl, html });
   });
+})();
+</script>
+
+
+<script>
+/* ===== Telegram-навигация: системный Back + нативное закрытие ===== */
+(function tgNav(){
+  const TG = window.Telegram && window.Telegram.WebApp;
+  if (!TG) return;
+
+  TG.ready();                 // сообщаем, что всё инициализировалось
+  TG.expand();                // разворачиваем во весь экран
+  TG.enableVerticalSwipes && TG.enableVerticalSwipes(); // свайп вниз = закрыть (iOS)
+
+  const ROOT = 'home';        // id твоей стартовой страницы (#home)
+  let depth = 0;              // своя «глубина» стек-навигации
+
+  /** показать нужную страницу + подсветить меню */
+  function sync(){
+    const hash = (location.hash || '#' + ROOT);
+    // твоя логика показа секций
+    typeof showPage === 'function' && showPage(hash);
+
+    // если открыта верхняя шторка — Back должен быть виден
+    const sheetOpen = !!document.querySelector('#top-sheet.is-open');
+
+    const atRoot = (hash.replace('#','') === ROOT);
+    if (sheetOpen || !atRoot || depth > 0) TG.BackButton.show();
+    else TG.BackButton.hide();
+  }
+
+  /** перейти на страницу и добавить в историю */
+  function go(id){
+    if (!id) return;
+    const h = '#'+id;
+    if (h === (location.hash || '#'+ROOT)) return;
+    history.pushState({id}, '', h);
+    depth++;
+    sync();
+  }
+
+  // ===== привязываем системную кнопку «Назад» =====
+  TG.BackButton.onClick(() => {
+    // приоритет: сперва закрыть шторку/профиль, если открыт
+    const sheet = document.getElementById('top-sheet');
+    if (sheet && sheet.classList.contains('is-open')) {
+      window.closeSheet && window.closeSheet();
+      sync();
+      return;
+    }
+    // иначе — шаг назад по истории внутри мини-аппа
+    if (depth > 0){
+      depth = Math.max(0, depth - 1);
+      history.back();
+    } else {
+      // мы на корне — НИЧЕГО не делаем:
+      // пользователь закроет мини-апп встроенной крестик/свайпом
+      // (не вызываем TG.close(), чтобы «только нативное закрытие»)
+    }
+  });
+
+  // браузерная история (назад/вперёд) → синхронизируем UI
+  window.addEventListener('popstate', sync);
+
+  // ===== инициализация стека =====
+  const start = (() => {
+    const idFromHash = (location.hash || '').replace(/^#/,'');
+    return document.getElementById(idFromHash) ? idFromHash : ROOT;
+  })();
+  history.replaceState({id:start}, '', '#'+start);
+  depth = 0;
+  sync();
+
+  // ===== подключаем нижнее/верхнее меню к роутеру =====
+  // Если у тебя уже есть обработчики — просто поменяй в них replaceState на go(id)
+  document.addEventListener('click', (e)=>{
+    const tab = e.target.closest('#btm-nav .tab, #spa-nav [data-page]');
+    if (!tab) return;
+    const id = tab.dataset.page;
+    if (!id) return;
+    e.preventDefault();
+    go(id);                  // ← вместо ручной смены hash
+  });
+
+  // опционально: защита от случайного закрытия (включать на формах/заявках)
+  window.enableCloseGuard = (on) => {
+    on ? TG.enableClosingConfirmation() : TG.disableClosingConfirmation();
+  };
 })();
 </script>
 
