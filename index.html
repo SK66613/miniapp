@@ -179,20 +179,6 @@
           <p class="muted-sm">Так так так проверка</p>
         </div>
 
-                <div class="card">
-          <div class="h1">Внутренняя страница</div>
-          <p class="muted-sm">Так так так проверка</p>
-        </div>
-
-                <div class="card">
-          <div class="h1">Внутренняя страница</div>
-          <p class="muted-sm">Так так так проверка</p>
-        </div>
-
-                <div class="card">
-          <div class="h1">Внутренняя страница</div>
-          <p class="muted-sm">Так так так проверка</p>
-        </div>
       </template>
       
       
@@ -273,11 +259,13 @@
       root.classList.add('is-open'); document.body.classList.add('sheet-open');
       requestAnimationFrame(()=> panel?.focus({preventScroll:true}));
       haptic('light');
+      window.__syncBack && window.__syncBack();     // <<< добавить
     };
     window.closeSheet = ()=>{
       if (!root) return;
       root.classList.remove('is-open'); document.body.classList.remove('sheet-open');
       haptic('light');
+      window.__syncBack && window.__syncBack();     // <<< добавить
     };
 
     root?.addEventListener('click', (e)=>{ if (e.target.closest('[data-close-sheet]')) window.closeSheet(); });
@@ -365,5 +353,79 @@
     });
   })();
   </script>
+
+  <script>
+(function tgBackRouter(){
+  const TG = window.Telegram && window.Telegram.WebApp;
+  const ROOT = 'home';          // твоя корневая страница
+  let depth = 0;
+  let backHandler = null;
+
+  if (TG){ TG.ready(); TG.expand(); }
+
+  function showBack(){
+    if (!TG) return;
+    TG.BackButton.show();
+    if (backHandler && TG.BackButton.offClick) TG.BackButton.offClick(backHandler);
+    backHandler = () => {
+      const sheetOpen = !!document.querySelector('#top-sheet.is-open');
+      if (sheetOpen){ window.closeSheet && window.closeSheet(); syncBack(); return; }
+      if (depth > 0){ depth = Math.max(0, depth-1); history.back(); }
+      else { /* TG.close(); — обычно так закрывают мини-апп */ }
+    };
+    TG.BackButton.onClick(backHandler);
+  }
+  function hideBack(){
+    if (!TG) return;
+    TG.BackButton.hide();
+    if (backHandler && TG.BackButton.offClick) TG.BackButton.offClick(backHandler);
+    backHandler = null;
+  }
+
+  function currentId(){
+    const id = (location.hash || '#'+ROOT).slice(1);
+    return document.getElementById(id) ? id : ROOT;
+  }
+
+  function syncBack(){
+    // решаем, показывать ли «Назад»
+    const id = currentId();
+    const atRoot = id === ROOT;
+    const sheetOpen = !!document.querySelector('#top-sheet.is-open');
+    if (sheetOpen || !atRoot || depth > 0) showBack(); else hideBack();
+  }
+
+  // Экспорт чтобы дергать из openSheet/closeSheet:
+  window.__syncBack = syncBack;
+
+  // Навигация по вкладкам нижнего меню
+  function navigateTo(id){
+    if (!id) return;
+    const h = '#'+id;
+    if (h !== (location.hash || '#'+ROOT)){ history.pushState({id}, '', h); depth++; }
+    window.showPage && showPage(h);
+    syncBack();
+  }
+
+  // Инициализация истории
+  const start = currentId();
+  history.replaceState({id:start}, '', '#'+start);
+  window.showPage && showPage('#'+start);
+  depth = 0;
+  syncBack();
+
+  // popstate
+  window.addEventListener('popstate', ()=>{ window.showPage && showPage(); syncBack(); });
+
+  // клики по нижнему меню
+  document.addEventListener('click', (e)=>{
+    const t = e.target.closest('#btm-nav .tab, #spa-nav [data-page]');
+    if (!t) return;
+    e.preventDefault();
+    navigateTo(t.dataset.page);
+  });
+})();
+</script>
+
 </body>
 </html>
