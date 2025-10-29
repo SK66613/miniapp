@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <title>Mini‑app | Unified Router + BackButton</title>
+  <title>Mini‑app | Unified Router + BackButton (patched)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="format-detection" content="telephone=no" />
 
@@ -21,6 +21,7 @@
     html,body{ height:100% }
     body{ margin:0; background:var(--bg); color:var(--text);
       font:16px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      overscroll-behavior-y: none; /* приглушаем системный pull‑down */
     }
 
     /* Центруем «корпус» на десктопе как телефон */
@@ -96,6 +97,8 @@
       box-shadow:0 20px 40px rgba(0,0,0,.45);
       transition: transform .28s cubic-bezier(.2,.8,.2,1), opacity .2s ease;
       padding:12px 14px calc(16px + var(--tabH) + var(--navGap) + env(safe-area-inset-bottom, 0px));
+      will-change: transform;
+      touch-action: pan-y;
     }
     .sheet.sheet-bottom .sheet__panel{
       bottom:0; top:auto; border-radius: 16px 16px 0 0;
@@ -189,7 +192,14 @@
   <script>
   (function app(){
     const TG = window.Telegram && window.Telegram.WebApp;
-    if (TG){ try{ TG.ready(); TG.expand(); }catch(_){} }
+    if (TG){
+      try{
+        TG.ready();
+        TG.expand();
+        if (typeof TG.disableVerticalSwipes === 'function') TG.disableVerticalSwipes();
+        if (typeof TG.enableClosingConfirmation === 'function') TG.enableClosingConfirmation();
+      }catch(_){/* noop */}
+    }
 
     const ROOT = 'home';
     const sheetRoot = document.getElementById('sheet');
@@ -198,7 +208,6 @@
     const sheetTitle= sheetRoot?.querySelector('.sheet__title');
 
     /* -------- Helpers -------- */
-    const qs  = sel => document.querySelector(sel);
     const qsa = sel => Array.from(document.querySelectorAll(sel));
     const isInDOM = id => !!document.getElementById(id);
 
@@ -219,6 +228,7 @@
       });
       qsa('[data-page]').forEach(t => t.classList.toggle('active', t.dataset.page === id));
       requestAnimationFrame(()=> window.scrollTo({ top: 0, behavior:'auto' }));
+      syncBack();
     }
 
     function navigateTo(id){
@@ -226,7 +236,6 @@
       const h = '#'+id;
       if (h !== (location.hash || '#'+ROOT)){ history.pushState({id}, '', h); }
       setActivePage(id);
-      syncBack();
     }
 
     /* -------- Telegram BackButton -------- */
@@ -236,17 +245,17 @@
       const sheetOpen = sheetRoot?.classList.contains('is-open');
       if (sheetOpen || !atRoot) TG.BackButton.show(); else TG.BackButton.hide();
     }
-    if (TG){
+    if (TG && TG.BackButton){
       TG.BackButton.onClick(() => {
         // приоритет — закрыть шторку
         if (sheetRoot && sheetRoot.classList.contains('is-open')){ closeSheet(); return; }
         const atRoot = (currentId() === ROOT);
         if (!atRoot) history.back();
-        else { /* TG.close(); — обычно закрывают мини‑апп */ }
+        else { /* TG.close(); — по желанию */ }
       });
     }
 
-    window.addEventListener('popstate', () => { setActivePage(currentId()); syncBack(); });
+    window.addEventListener('popstate', () => { setActivePage(currentId()); });
 
     /* -------- Шторка снизу -------- */
     function haptic(level='light'){
@@ -272,13 +281,18 @@
 
     sheetRoot?.addEventListener('click', (e)=>{ if (e.target.closest('[data-close-sheet]')) closeSheet(); });
     document.addEventListener('keydown', (e)=>{ if (e.key==='Escape' && sheetRoot?.classList.contains('is-open')) closeSheet(); });
-    /* жест вниз для закрытия */
+
+    /* жест вниз для закрытия (fallback, если метод TG.disableVerticalSwipes недоступен) */
     let y0=0,y=0,drag=false;
     sheetPanel?.addEventListener('touchstart', e=>{ drag=true; y0=y=e.touches[0].clientY; sheetPanel.style.transition='none'; }, {passive:true});
-    sheetPanel?.addEventListener('touchmove',  e=>{ if(!drag) return; y=e.touches[0].clientY; const dy=Math.max(0,y-y0); sheetPanel.style.transform=`translateY(${dy}px)`; }, {passive:true});
-    sheetPanel?.addEventListener('touchend',   ()=>{ if(!drag) return; drag=false; sheetPanel.style.transition=''; sheetPanel.style.transform=''; if (y-y0>80) closeSheet(); });
+    sheetPanel?.addEventListener('touchmove',  e=>{
+      if(!drag) return; y=e.touches[0].clientY; const dy=Math.max(0,y-y0);
+      if (TG && typeof TG.disableVerticalSwipes === 'function'){ e.preventDefault?.(); return; }
+      sheetPanel.style.transform=`translateY(${dy}px)`; 
+    }, {passive:false});
+    sheetPanel?.addEventListener('touchend',   ()=>{ if(!drag) return; drag=false; sheetPanel.style.transition=''; sheetPanel.style.transform=''; if (y-y0>100) closeSheet(); });
 
-    /* Авто‑инициализация по data-атрибутам (работает и для будущих кнопок) */
+    /* Делегирование: любые будущие кнопки */
     document.addEventListener('click', (e)=>{
       const openBtn = e.target.closest('[data-open-sheet]');
       if (openBtn){
