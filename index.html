@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <title>Mini-app | Router + BackButton + No-Swipe (robust)</title>
+  <title>Mini‑app | Router + BackButton + No-Swipe (robust)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="format-detection" content="telephone=no" />
   <style>
@@ -99,25 +99,6 @@
   </style>
 </head>
 <body>
-
-  <!-- EARLY TG INIT: максимально ранняя инициализация + BackButton -->
-  <script>
-  (function TG_early(){
-    const TG = window.Telegram && window.Telegram.WebApp;
-    if (!TG) return;
-    try{
-      TG.ready();
-      TG.expand();
-      TG.disableVerticalSwipes?.();
-      TG.enableClosingConfirmation?.();
-      TG.setHeaderColor?.('secondary_bg_color');
-      TG.BackButton?.show();
-      TG.onEvent?.('viewportChanged', () => { TG.disableVerticalSwipes?.(); TG.BackButton?.show(); });
-      TG.onEvent?.('themeChanged',   () => { TG.BackButton?.show(); });
-    }catch(e){ console.warn('TG early init error', e); }
-  })();
-  </script>
-
   <div class="wrap">
     <nav id="btm-nav" class="btm-nav" aria-label="Навигация">
       <button class="tab" data-page="home"><img src="ic_home.png" alt=""><span>Главная</span></button>
@@ -142,7 +123,7 @@
 
       <template id="tpl-example">
         <div class="card">
-          <div class="h1">Демо-страница</div>
+          <div class="h1">Демо‑страница</div>
           <p class="muted-sm">Любой HTML внутрь: формы, карточки, таблицы…</p>
         </div>
       </template>
@@ -188,7 +169,6 @@
   (function app(){
     const TG = window.Telegram && window.Telegram.WebApp;
 
-    // базовая инициализация (дублируем на всякий случай)
     if (TG){
       try{
         TG.ready();
@@ -223,12 +203,7 @@
         s.style.display = on ? 'block' : 'none';
       });
       qsa('[data-page]').forEach(t => t.classList.toggle('active', t.dataset.page === id));
-
-      // наверх и гарантированно подсветить системный Back
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: 0, behavior:'auto' });
-        window.Telegram?.WebApp?.BackButton?.show?.();
-      });
+      requestAnimationFrame(()=> window.scrollTo({ top: 0, behavior:'auto' }));
       syncBack();
     }
 
@@ -239,26 +214,28 @@
       setActivePage(id);
     }
 
-    // === Всегда показываем BackButton ===
+    function showBack(){ try{ TG?.BackButton?.show && TG.BackButton.show(); }catch(_){ } }
+    function hideBack(){ try{ TG?.BackButton?.hide && TG.BackButton.hide(); }catch(_){ } }
     function syncBack(){
-      const TG = window.Telegram && window.Telegram.WebApp;
       if (!TG) return;
-      TG.BackButton?.show?.();
+      const atRoot = (currentId() === ROOT);
+      const sheetOpen = sheetRoot?.classList.contains('is-open');
+      if (sheetOpen || !atRoot) showBack(); else hideBack();
     }
 
-    // Обработчики клика по Back (оба API)
-    TG?.BackButton?.onClick?.(() => {
-      if (sheetRoot && sheetRoot.classList.contains('is-open')) { closeSheet(); return; }
-      history.back();
+    TG?.BackButton?.onClick?.(()=>{
+      if (sheetRoot && sheetRoot.classList.contains('is-open')){ closeSheet(); return; }
+      const atRoot = (currentId() === ROOT);
+      if (!atRoot) history.back();
     });
-    TG?.onEvent?.('backButtonClicked', () => {
-      if (sheetRoot && sheetRoot.classList.contains('is-open')) { closeSheet(); return; }
-      history.back();
+    TG?.onEvent?.('backButtonClicked', ()=>{
+      if (sheetRoot && sheetRoot.classList.contains('is-open')){ closeSheet(); return; }
+      const atRoot = (currentId() === ROOT);
+      if (!atRoot) history.back();
     });
 
-    window.addEventListener('popstate', () => setActivePage(currentId()));
+    window.addEventListener('popstate', ()=> setActivePage(currentId()));
 
-    // Шторка
     function haptic(level='light'){
       try{ TG?.HapticFeedback?.impactOccurred && TG.HapticFeedback.impactOccurred(level); }
       catch(_){ try{ navigator.vibrate && navigator.vibrate(level==='light'?10:16); }catch(_){} }
@@ -269,17 +246,13 @@
       if (sheetTitle) sheetTitle.textContent = title || '';
       if (sheetBody && html != null) sheetBody.innerHTML = html;
       sheetRoot.classList.add('is-open'); document.body.classList.add('sheet-open');
-      requestAnimationFrame(() => sheetPanel?.focus({preventScroll:true}));
-      haptic('light');
-      window.Telegram?.WebApp?.BackButton?.show?.(); // ← показать Back
-      syncBack();
+      requestAnimationFrame(()=> sheetPanel?.focus({preventScroll:true}));
+      haptic('light'); syncBack();
     }
     function closeSheet(){
       if (!sheetRoot) return;
       sheetRoot.classList.remove('is-open'); document.body.classList.remove('sheet-open');
-      haptic('light');
-      window.Telegram?.WebApp?.BackButton?.show?.(); // ← на всякий случай
-      syncBack();
+      haptic('light'); syncBack();
     }
     window.openSheet = openSheet;
     window.closeSheet = closeSheet;
@@ -287,7 +260,6 @@
     sheetRoot?.addEventListener('click', (e)=>{ if (e.target.closest('[data-close-sheet]')) closeSheet(); });
     document.addEventListener('keydown', (e)=>{ if (e.key==='Escape' && sheetRoot?.classList.contains('is-open')) closeSheet(); });
 
-    // Fallback-жест вниз для закрытия шторки, когда disableVerticalSwipes недоступен
     let y0=0,y=0,drag=false;
     sheetPanel?.addEventListener('touchstart', e=>{ drag=true; y0=y=e.touches[0].clientY; sheetPanel.style.transition='none'; }, {passive:true});
     sheetPanel?.addEventListener('touchmove',  e=>{
@@ -297,7 +269,17 @@
     }, {passive:false});
     sheetPanel?.addEventListener('touchend',   ()=>{ if(!drag) return; drag=false; sheetPanel.style.transition=''; sheetPanel.style.transform=''; if (y-y0>100) closeSheet(); });
 
-    // делегирование: любые будущие кнопки
+    const isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (isiOS && !(TG && typeof TG.disableVerticalSwipes === 'function')){
+      let startY = 0;
+      document.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, {passive:true});
+      document.addEventListener('touchmove', e => {
+        const dy = e.touches[0].clientY - startY;
+        const atTop = (window.scrollY <= 0);
+        if (dy > 0 && atTop){ e.preventDefault(); }
+      }, {passive:false});
+    }
+
     document.addEventListener('click', (e)=>{
       const openBtn = e.target.closest('[data-open-sheet]');
       if (openBtn){
@@ -317,12 +299,11 @@
       }
     });
 
-    // старт
     const start = currentId();
     history.replaceState({id:start}, '', '#'+start);
     setActivePage(start);
-    setTimeout(()=>{ TG?.disableVerticalSwipes?.(); window.Telegram?.WebApp?.BackButton?.show?.(); }, 0);
-    setTimeout(()=>{ TG?.disableVerticalSwipes?.(); window.Telegram?.WebApp?.BackButton?.show?.(); }, 300);
+    setTimeout(()=>{ TG?.disableVerticalSwipes?.(); syncBack(); }, 0);
+    setTimeout(()=>{ TG?.disableVerticalSwipes?.(); syncBack(); }, 300);
   })();
   </script>
 </body>
