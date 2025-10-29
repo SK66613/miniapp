@@ -2,47 +2,65 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <title>Mini‑app | Router + BackButton + No-Swipe (robust)</title>
+  <title>Serge | Mini-App — Pro UI</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="format-detection" content="telephone=no" />
   <style>
     :root{
-      --tabH: 64px;
-      --navGap: 12px;
-      --bg:#0b0c15; --text:#f4f6fa; --border:rgba(255,255,255,.10);
-      --appW: 428px;
+      --bg:#0b0c15;
+      --text:#f4f6fa;
+      --muted:#c9ced6;
+      --border:rgba(255,255,255,.10);
+      --card:rgba(255,255,255,.05);
+      --tabH:64px;               /* высота нижнего таб-бара */
+      --navGap:12px;             /* отступ таб-бара от нижнего края */
+      --appW:428px;              /* «ширина телефона» на десктопе */
+      --radius:16px;
+      --grad: linear-gradient(135deg,#6bdcff,#7b5bff);
     }
     *{ box-sizing:border-box }
     img{ max-width:100%; display:block }
     html,body{ height:100% }
     body{
-      margin:0; background:var(--bg); color:var(--text);
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
       font:16px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-      overscroll-behavior: none;
+      overscroll-behavior:none;
     }
     @media (min-width:900px){ body{ display:grid; place-items:center; } }
+
+    /* Контент учитывает safe-area и место под таб-бар */
     .wrap{
       width:100%; max-width:1080px; margin:0 auto;
       min-height:100svh;
-      padding:16px 14px calc(var(--tabH) + var(--navGap) + env(safe-area-inset-bottom,0px) + 22px);
+      padding: calc(env(safe-area-inset-top,0px) + 12px) 14px
+               calc(var(--tabH) + var(--navGap) + env(safe-area-inset-bottom,0px) + 20px);
     }
-    @media (min-width:900px){
-      .wrap{ max-width:var(--appW); padding:20px 14px calc(var(--tabH) + var(--navGap) + env(safe-area-inset-bottom,0px) + 22px); }
-    }
-    main>section, section.page{ display:none }
-    main>section.active, section.page.active{ display:block }
+    @media (min-width:900px){ .wrap{ max-width:var(--appW); } }
+
+    /* Карточки / заголовки */
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
+    .page-title{ margin:0 0 12px }
+    .h1{ font-weight:800; font-size:22px; margin:0 0 8px }
+    .muted-sm{ color:var(--muted) }
+
+    /* ===== Нижнее меню ===== */
     .btm-nav{
       position:fixed; left:0; right:0;
       bottom: calc(var(--navGap) + env(safe-area-inset-bottom, 0px));
       height: var(--tabH);
       z-index: 9999;
       display:grid; grid-template-columns:repeat(5,1fr); align-items:center;
-      padding: 6px 6px 6px;
+      padding:6px;
       background: rgba(10,12,14,.72);
       -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
       border: 1px solid rgba(255,255,255,.08);
       border-left:0; border-right:0; border-bottom:0;
       border-radius: 16px 16px 0 0;
+    }
+    @media (min-width:900px){
+      .btm-nav{ left:50%; right:auto; width: var(--appW); transform: translateX(-50%); }
     }
     .btm-nav .tab{
       height:100%; border:0; background:none; color:#dfe3e6; cursor:pointer;
@@ -51,21 +69,20 @@
       filter: grayscale(.35) saturate(.8); opacity:.85;
       border-radius:14px; -webkit-tap-highlight-color:transparent;
     }
-    .btm-nav .tab img{ width:24px; height:24px }
     .btm-nav .tab:active{ transform: translateY(1px) }
+    .btm-nav .tab img{ width:24px; height:24px }
     .btm-nav .tab.active{ opacity:1; filter:none; color:#fff; position:relative }
     .btm-nav .tab.active::before{
       content:""; position:absolute; inset:6px 10px 18px 10px; z-index:-1;
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
       border:1px solid rgba(255,255,255,.08); border-radius:12px;
     }
-    @media (min-width:900px){
-      .btm-nav{ left:50%; right:auto; width: var(--appW); transform: translateX(-50%); }
-    }
-    .card{ background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:16px; padding:16px; }
-    .page-title{ margin:0 0 12px }
-    .h1{ font-weight:800; font-size:20px; margin:0 0 8px }
-    .muted-sm{ opacity:.8 }
+
+    /* ===== Роутер ===== */
+    main>section, section.page{ display:none }
+    main>section.active, section.page.active{ display:block }
+
+    /* ===== Шторка снизу (из-под меню) ===== */
     .sheet{ position:fixed; inset:0; z-index:9990; pointer-events:none; }
     .sheet.is-open{ pointer-events:auto; }
     .sheet__overlay{
@@ -75,6 +92,7 @@
       -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
     }
     .sheet.is-open .sheet__overlay{ opacity:1; }
+
     .sheet__panel{
       position:absolute; left:0; right:0; margin:0 auto;
       width:min(820px,100%); max-height:88vh; overflow:auto;
@@ -96,10 +114,40 @@
     .sheet__body{ display:grid; gap:10px }
     body.sheet-open{ overflow:hidden }
     @media (min-width:900px){ .sheet__panel{ width:min(var(--appW),92vw); } }
+
+    /* ===== Полноэкранные слайды (страница без меню) ===== */
+    [data-fullscreen="1"]{ padding:0 }
+    .slides{
+      position:relative; width:100%; height:100svh; overflow:hidden;
+      padding-top: calc(env(safe-area-inset-top,0px) + 8px);
+    }
+    .slides .rail{ display:flex; width:100%; height:100%; transition: transform .35s cubic-bezier(.2,.8,.2,1) }
+    .slide{ min-width:100%; height:100%; display:grid; place-items:center; color:#fff; position:relative }
+    .slide .title{ font-size:44px; font-weight:900; letter-spacing:.02em }
+    .slide .hint{ position:absolute; bottom:80px; left:0; right:0; text-align:center; opacity:.9 }
+    .slide .bg{
+      position:absolute; inset:0; z-index:-1;
+      background: radial-gradient(1200px 900px at 50% 20%, rgba(123,91,255,.25), transparent 60%);
+      filter: blur(6px);
+    }
+    .slides .dots{ position:absolute; top:20px; left:0; right:0; display:flex; gap:8px; justify-content:center; opacity:.9 }
+    .slides .dots .dot{ width:28px; height:4px; border-radius:999px; background:rgba(255,255,255,.25) }
+    .slides .dots .dot.on{ background:#fff }
+    .slides .cta{
+      position:absolute; bottom: calc(18px + env(safe-area-inset-bottom,0px));
+      left:16px; right:16px;
+      padding:14px 18px; border-radius:14px; text-align:center; font-weight:800; cursor:pointer;
+      color:#0b0c15; background: var(--grad); box-shadow: 0 10px 24px rgba(0,0,0,.38);
+    }
+
+    /* Кнопки */
+    .btn{ border:1px solid var(--border); background:transparent; color:#fff; padding:10px 12px; border-radius:12px; font-weight:800; }
+    .btn-primary{ background:var(--grad); border-color:transparent; color:#0b0c15 }
   </style>
 </head>
 <body>
   <div class="wrap">
+    <!-- ===== Нижнее фикс-меню ===== -->
     <nav id="btm-nav" class="btm-nav" aria-label="Навигация">
       <button class="tab" data-page="home"><img src="ic_home.png" alt=""><span>Главная</span></button>
       <button class="tab" data-page="services"><img src="ic_services.png" alt=""><span>Услуги</span></button>
@@ -109,6 +157,7 @@
     </nav>
 
     <main>
+      <!-- ===== Шторка снизу ===== -->
       <div id="sheet" class="sheet sheet-bottom" aria-hidden="true" role="dialog" aria-modal="true">
         <div class="sheet__overlay" data-close-sheet></div>
         <section class="sheet__panel" tabindex="-1">
@@ -121,18 +170,22 @@
         </section>
       </div>
 
+      <!-- шаблон для примера -->
       <template id="tpl-example">
         <div class="card">
-          <div class="h1">Демо‑страница</div>
+          <div class="h1">Демо-страница</div>
           <p class="muted-sm">Любой HTML внутрь: формы, карточки, таблицы…</p>
         </div>
       </template>
 
+      <!-- ===== Страницы ===== -->
       <section class="page" id="home">
         <div class="card page-title">
           <div class="h1">Главная</div>
           <p class="muted-sm">Контент главной.</p>
-          <button class="btn btn-primary" data-open-sheet data-title="Детали" data-tpl="#tpl-example" data-from="bottom">Открыть снизу</button>
+          <button class="btn btn-primary" data-open-sheet data-title="Детали" data-tpl="#tpl-example">Открыть снизу</button>
+          <div style="height:24px"></div>
+          <button class="btn" data-open-slides>Открыть полноэкранные слайды</button>
         </div>
       </section>
 
@@ -140,14 +193,14 @@
         <div class="card page-title">
           <div class="h1">Услуги</div>
           <p class="muted-sm">Тарифы, переключатель месяц/год и т.д.</p>
-          <button class="btn" data-open-sheet data-title="Прайс" data-tpl="#tpl-example" data-from="bottom">Показать прайс</button>
+          <button class="btn" data-open-sheet data-title="Прайс" data-tpl="#tpl-example">Показать прайс</button>
         </div>
       </section>
 
       <section class="page" id="consult">
         <div class="card page-title">
           <div class="h1">Запись на консультацию</div>
-          <button class="btn btn-primary" data-open-sheet data-title="Подтверждение" data-tpl="#tpl-example" data-from="bottom">Открыть снизу</button>
+          <button class="btn btn-primary" data-open-sheet data-title="Подтверждение" data-tpl="#tpl-example">Открыть снизу</button>
         </div>
       </section>
 
@@ -162,6 +215,26 @@
           <div class="h1">Обо мне</div>
         </div>
       </section>
+
+      <!-- ===== Полноэкранные слайды (без меню) ===== -->
+      <section class="page" id="slides" data-fullscreen="1">
+        <div class="slides">
+          <div class="dots" id="dots"></div>
+          <div class="rail" id="rail">
+            <div class="slide">
+              <div class="bg"></div>
+              <div class="title">Welcome fren</div>
+              <div class="hint">Свайпай влево</div>
+            </div>
+            <div class="slide"><div class="bg"></div><div class="title">Learn</div></div>
+            <div class="slide">
+              <div class="bg"></div>
+              <div class="title">Build</div>
+              <div class="cta" data-exit-slides>Начать</div>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -169,33 +242,41 @@
   (function app(){
     const TG = window.Telegram && window.Telegram.WebApp;
 
+    /* ==== Telegram init ==== */
     if (TG){
       try{
         TG.ready();
         TG.expand();
-        TG.disableVerticalSwipes?.();
+        TG.disableVerticalSwipes?.();              // свайп вниз не сворачивает мини-апп
         TG.enableClosingConfirmation?.();
         TG.onEvent?.('viewportChanged', () => TG.disableVerticalSwipes?.());
       }catch(e){ console.warn('TG init error', e); }
     }
 
+    /* ==== Утилиты ==== */
     const ROOT = 'home';
-    const sheetRoot = document.getElementById('sheet');
-    const sheetPanel= sheetRoot?.querySelector('.sheet__panel');
-    const sheetBody = document.getElementById('sheet-body');
-    const sheetTitle= sheetRoot?.querySelector('.sheet__title');
-
     const qsa = sel => Array.from(document.querySelectorAll(sel));
-    const isInDOM = id => !!document.getElementById(id);
+    const $ = sel => document.querySelector(sel);
+    const sheetRoot = $('#sheet');
+    const sheetPanel= sheetRoot?.querySelector('.sheet__panel');
+    const sheetBody = $('#sheet-body');
+    const sheetTitle= sheetRoot?.querySelector('.sheet__title');
+    const nav = $('#btm-nav');
 
-    function currentId(){
+    function isInDOM(id){ return !!document.getElementById(id); }
+    function nowPageId(){
       const url = new URL(location.href);
       const qp = (url.searchParams.get('page') || '').trim();
       if (qp && isInDOM(qp)) return qp;
       const h = (location.hash || '#'+ROOT).replace(/^#/, '');
       return isInDOM(h) ? h : ROOT;
     }
+    function haptic(level='light'){
+      try{ TG?.HapticFeedback?.impactOccurred && TG.HapticFeedback.impactOccurred(level); }
+      catch(_){ try{ navigator.vibrate && navigator.vibrate(level==='light'?10:16); }catch(_){} }
+    }
 
+    /* ==== Роутер ==== */
     function setActivePage(id){
       qsa('main > section, section.page').forEach(s => {
         const on = (s.id === id);
@@ -203,46 +284,44 @@
         s.style.display = on ? 'block' : 'none';
       });
       qsa('[data-page]').forEach(t => t.classList.toggle('active', t.dataset.page === id));
+
+      // если страница полноэкранная — прячем нижнее меню
+      const fs = document.getElementById(id)?.dataset.fullscreen === '1';
+      nav.style.display = fs ? 'none' : 'grid';
+
       requestAnimationFrame(()=> window.scrollTo({ top: 0, behavior:'auto' }));
       syncBack();
     }
-
     function navigateTo(id){
       if (!id || !isInDOM(id)) return;
       const h = '#'+id;
       if (h !== (location.hash || '#'+ROOT)){ history.pushState({id}, '', h); }
-      setActivePage(id);
+      setActivePage(id); haptic('light');
     }
+    window.addEventListener('popstate', ()=> setActivePage(nowPageId()));
 
+    /* ==== BackButton: шторка > страница > корень ==== */
     function showBack(){ try{ TG?.BackButton?.show && TG.BackButton.show(); }catch(_){ } }
     function hideBack(){ try{ TG?.BackButton?.hide && TG.BackButton.hide(); }catch(_){ } }
     function syncBack(){
-      if (!TG) return;
-      const atRoot = (currentId() === ROOT);
+      const atRoot = (nowPageId() === ROOT);
       const sheetOpen = sheetRoot?.classList.contains('is-open');
       if (sheetOpen || !atRoot) showBack(); else hideBack();
     }
-
     TG?.BackButton?.onClick?.(()=>{
       if (sheetRoot && sheetRoot.classList.contains('is-open')){ closeSheet(); return; }
-      const atRoot = (currentId() === ROOT);
+      const atRoot = (nowPageId() === ROOT);
       if (!atRoot) history.back();
     });
     TG?.onEvent?.('backButtonClicked', ()=>{
       if (sheetRoot && sheetRoot.classList.contains('is-open')){ closeSheet(); return; }
-      const atRoot = (currentId() === ROOT);
+      const atRoot = (nowPageId() === ROOT);
       if (!atRoot) history.back();
     });
 
-    window.addEventListener('popstate', ()=> setActivePage(currentId()));
-
-    function haptic(level='light'){
-      try{ TG?.HapticFeedback?.impactOccurred && TG.HapticFeedback.impactOccurred(level); }
-      catch(_){ try{ navigator.vibrate && navigator.vibrate(level==='light'?10:16); }catch(_){} }
-    }
-    function openSheet({title='', html='', from='bottom'} = {}){
+    /* ==== Шторка ==== */
+    function openSheet({title='', html=''} = {}){
       if (!sheetRoot) return;
-      sheetRoot.classList.toggle('sheet-bottom', from==='bottom');
       if (sheetTitle) sheetTitle.textContent = title || '';
       if (sheetBody && html != null) sheetBody.innerHTML = html;
       sheetRoot.classList.add('is-open'); document.body.classList.add('sheet-open');
@@ -254,32 +333,22 @@
       sheetRoot.classList.remove('is-open'); document.body.classList.remove('sheet-open');
       haptic('light'); syncBack();
     }
-    window.openSheet = openSheet;
-    window.closeSheet = closeSheet;
+    window.openSheet = openSheet; window.closeSheet = closeSheet;
 
     sheetRoot?.addEventListener('click', (e)=>{ if (e.target.closest('[data-close-sheet]')) closeSheet(); });
     document.addEventListener('keydown', (e)=>{ if (e.key==='Escape' && sheetRoot?.classList.contains('is-open')) closeSheet(); });
 
+    // Свайп-закрытие шторки
     let y0=0,y=0,drag=false;
     sheetPanel?.addEventListener('touchstart', e=>{ drag=true; y0=y=e.touches[0].clientY; sheetPanel.style.transition='none'; }, {passive:true});
     sheetPanel?.addEventListener('touchmove',  e=>{
       if(!drag) return; y=e.touches[0].clientY; const dy=Math.max(0,y-y0);
-      if (TG && typeof TG.disableVerticalSwipes === 'function'){ e.preventDefault?.(); return; }
+      if (TG && typeof TG.disableVerticalSwipes === 'function'){ e.preventDefault?.(); return; } // если Telegram уже перехватывает ↓
       sheetPanel.style.transform=`translateY(${dy}px)`;
     }, {passive:false});
     sheetPanel?.addEventListener('touchend',   ()=>{ if(!drag) return; drag=false; sheetPanel.style.transition=''; sheetPanel.style.transform=''; if (y-y0>100) closeSheet(); });
 
-    const isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    if (isiOS && !(TG && typeof TG.disableVerticalSwipes === 'function')){
-      let startY = 0;
-      document.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, {passive:true});
-      document.addEventListener('touchmove', e => {
-        const dy = e.touches[0].clientY - startY;
-        const atTop = (window.scrollY <= 0);
-        if (dy > 0 && atTop){ e.preventDefault(); }
-      }, {passive:false});
-    }
-
+    /* ==== Делегация кликов ==== */
     document.addEventListener('click', (e)=>{
       const openBtn = e.target.closest('[data-open-sheet]');
       if (openBtn){
@@ -288,18 +357,55 @@
         const tpl    = tplSel ? document.querySelector(tplSel) : null;
         const html   = tpl ? tpl.innerHTML : '';
         const ttl    = openBtn.getAttribute('title') || openBtn.dataset.title || openBtn.textContent.trim() || '';
-        const from   = openBtn.dataset.from || 'bottom';
-        openSheet({ title: ttl, html, from });
+        openSheet({ title: ttl, html });
         return;
       }
       const tab = e.target.closest('[data-page]');
-      if (tab){
-        e.preventDefault();
-        navigateTo(tab.dataset.page);
-      }
+      if (tab){ e.preventDefault(); navigateTo(tab.dataset.page); }
+
+      if (e.target.closest('[data-open-slides]')) navigateTo('slides');
+      if (e.target.closest('[data-exit-slides]')) history.back();
     });
 
-    const start = currentId();
+    /* ==== Слайды: горизонтальный свайп + точки + хаптик ==== */
+    (function slides(){
+      const rail = document.getElementById('rail'); if (!rail) return;
+      const dotsEl = document.getElementById('dots');
+      const slides = qsa('.slide');
+      dotsEl.innerHTML = slides.map((_,i)=>`<i class="dot${i? '':' on'}"></i>`).join('');
+      const dots = qsa('#dots .dot');
+
+      let idx = 0, x0=0, x=0, swiping=false, W=0;
+      const set = (i, animate=true)=>{
+        idx = Math.max(0, Math.min(slides.length-1, i));
+        W = rail.clientWidth || window.innerWidth;
+        rail.style.transition = animate? 'transform .35s cubic-bezier(.2,.8,.2,1)':'';
+        rail.style.transform = `translateX(${-idx*W}px)`;
+        dots.forEach((d,j)=> d.classList.toggle('on', j===idx));
+        if (animate) haptic('light');
+      };
+      set(0,false);
+
+      rail.addEventListener('touchstart', e=>{ swiping=true; x0=x=e.touches[0].clientX; rail.style.transition='none'; }, {passive:true});
+      rail.addEventListener('touchmove',  e=>{
+        if(!swiping) return;
+        x = e.touches[0].clientX;
+        const dx = x - x0;
+        rail.style.transform = `translateX(${-idx*W + dx}px)`;
+      }, {passive:true});
+      rail.addEventListener('touchend',   ()=>{
+        if(!swiping) return; swiping=false;
+        const dx = x - x0;
+        const thr = Math.max(50, (rail.clientWidth||window.innerWidth)*0.18);
+        if (dx < -thr) set(idx+1,true);
+        else if (dx > thr) set(idx-1,true);
+        else set(idx,true);
+      });
+      window.addEventListener('resize', ()=> set(idx,false));
+    })();
+
+    /* ==== Старт ==== */
+    const start = nowPageId();
     history.replaceState({id:start}, '', '#'+start);
     setActivePage(start);
     setTimeout(()=>{ TG?.disableVerticalSwipes?.(); syncBack(); }, 0);
