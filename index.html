@@ -6,121 +6,130 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="format-detection" content="telephone=no" />
 
-  <!--
-    Положи эти файлы РЯДОМ с index.html (в корень):
-      ic_home.png
-      ic_services.png
-      ic_consult.png
-      ic_bonus.png
-      ic_about.png
-  -->
+  <!-- Иконки должны лежать в КОРНЕ рядом с этим файлом: -->
+  <!-- ic_home.png, ic_services.png, ic_consult.png, ic_bonus.png, ic_about.png -->
 
   <style>
     :root{
-      --tabH:64px;
+      --tabH: 64px;                                 /* высота нижнего меню */
+      --navGap: 12px;                               /* ОТСТУП меню от нижнего края */
       --bg:#0b0c15; --text:#f4f6fa; --border:rgba(255,255,255,.10);
-      --appW:428px; /* ширина «мобилки» на десктопе */
+      --appW: 428px;                                /* ширина «мобилки» на десктопе */
     }
-    *{box-sizing:border-box}
-    img{max-width:100%;display:block}
-    html,body{height:100%}
+    *{ box-sizing:border-box }
+    img{ max-width:100%; display:block }
+    html,body{ height:100% }
     body{
-      margin:0;background:var(--bg);color:var(--text);
+      margin:0; background:var(--bg); color:var(--text);
       font:16px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     }
 
-    /* центрируем корпус на десктопе */
-    @media (min-width:900px){ body{display:grid;place-items:center;} }
+    /* Центрируем корпус на десктопе как «мобилку» */
+    @media (min-width:900px){ body{ display:grid; place-items:center; } }
 
     .wrap{
       width:100%; max-width:1080px; margin:0 auto;
       min-height:100svh;
-      padding:16px 14px calc(var(--tabH) + 22px);
+      /* место под поднятое меню + safe-area */
+      padding:16px 14px calc(var(--tabH) + var(--navGap) + env(safe-area-inset-bottom,0px) + 22px);
     }
     @media (min-width:900px){
-      .wrap{ max-width:var(--appW); padding:20px 14px calc(var(--tabH) + 22px); }
+      .wrap{ max-width:var(--appW); padding:20px 14px calc(var(--tabH) + var(--navGap) + env(safe-area-inset-bottom,0px) + 22px); }
     }
 
-    /* SPA секции */
-    main>section, section.page{display:none}
-    main>section.active, section.page.active{display:block}
+    /* SPA: секции страниц */
+    main>section, section.page{ display:none }
+    main>section.active, section.page.active{ display:block }
 
-    /* фикс-меню снизу */
+    /* ===== Нижнее меню (поднято над краем, активно, кликабельно) ===== */
     .btm-nav{
-      position:fixed; left:0; right:0; bottom:0; z-index:9999;
-      height:var(--tabH);
+      position:fixed; left:0; right:0;
+      bottom: calc(var(--navGap) + env(safe-area-inset-bottom, 0px));
+      height: var(--tabH);
+      z-index: 9999; /* меню поверх шторки */
       display:grid; grid-template-columns:repeat(5,1fr); align-items:center;
-      padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));
-      background:rgba(10,12,14,.72);
-      -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
-      border-top:1px solid rgba(255,255,255,.08);
+      padding: 6px 6px 6px;
+      background: rgba(10,12,14,.72);
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.08);
+      border-left:0; border-right:0; border-bottom:0;
+      border-radius: 16px 16px 0 0;
     }
     .btm-nav .tab{
       height:100%; border:0; background:none; color:#dfe3e6; cursor:pointer;
       display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
       font-size:11px; font-weight:700;
-      filter:grayscale(.35) saturate(.8); opacity:.85; border-radius:14px;
-      -webkit-tap-highlight-color:transparent;
+      filter: grayscale(.35) saturate(.8); opacity:.85;
+      border-radius:14px; -webkit-tap-highlight-color:transparent;
     }
-    .btm-nav .tab img{width:24px;height:24px}
-    .btm-nav .tab:active{transform:translateY(1px)}
-    .btm-nav .tab.active{opacity:1; filter:none; color:#fff; position:relative}
+    .btm-nav .tab img{ width:24px; height:24px }
+    .btm-nav .tab:active{ transform: translateY(1px) }
+    .btm-nav .tab.active{ opacity:1; filter:none; color:#fff; position:relative }
     .btm-nav .tab.active::before{
       content:""; position:absolute; inset:6px 10px 18px 10px; z-index:-1;
-      background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
       border:1px solid rgba(255,255,255,.08); border-radius:12px;
     }
+
+    /* На десктопе меню ограничиваем шириной корпуса */
     @media (min-width:900px){
       .btm-nav{
-        left:50%; right:auto; width:var(--appW); transform:translateX(-50%);
-        border-left:1px solid rgba(255,255,255,.08);
-        border-right:1px solid rgba(255,255,255,.08);
-        border-radius:16px 16px 0 0;
+        left:50%; right:auto; width: var(--appW);
+        transform: translateX(-50%);
       }
     }
 
-    /* базовые карточки (пример) */
-    .card{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:16px;padding:16px}
-    .page-title{margin:0 0 12px}
-    .h1{font-weight:800;font-size:20px;margin:0 0 8px}
-    .muted-sm{opacity:.8}
-  </style>
+    /* ===== Пример карточек (можно удалить) ===== */
+    .card{ background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:16px; padding:16px; }
+    .page-title{ margin:0 0 12px }
+    .h1{ font-weight:800; font-size:20px; margin:0 0 8px }
+    .muted-sm{ opacity:.8 }
 
-  <style>
-  /* Верхняя «шторка» (универсальная внутренняя страница) */
-  .sheet{position:fixed;inset:0;z-index:10000;pointer-events:none}
-  .sheet.is-open{pointer-events:auto}
-  .sheet__overlay{
-    position:absolute;inset:0;background:rgba(0,0,0,.48);
-    opacity:0;transition:opacity .2s ease;
-    -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
-  }
-  .sheet.is-open .sheet__overlay{opacity:1}
-  .sheet__panel{
-    position:absolute;left:0;right:0;top:0;margin:0 auto;
-    width:min(820px,100%);max-height:88vh;overflow:auto;
-    background:linear-gradient(180deg,rgba(18,20,24,.98),rgba(18,20,24,.96));
-    border:1px solid rgba(255,255,255,.08); border-radius:0 0 16px 16px;
-    box-shadow:0 20px 40px rgba(0,0,0,.45);
-    transform:translateY(-24px);opacity:0;
-    transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .2s ease;
-    padding:12px 14px 16px;
-    padding-top:calc(10px + env(safe-area-inset-top,0px));
-  }
-  .sheet.is-open .sheet__panel{transform:translateY(0);opacity:1}
-  .sheet__handle{width:42px;height:4px;border-radius:999px;margin:6px auto 10px;background:rgba(255,255,255,.18)}
-  .sheet__header{display:flex;align-items:center;gap:10px;margin:0 0 8px}
-  .sheet__title{font-weight:800;font-size:18px;margin:0}
-  .sheet__close{margin-left:auto;border:0;background:transparent;color:#fff;opacity:.85;width:36px;height:36px;border-radius:10px;display:grid;place-items:center}
-  .sheet__close:active{transform:translateY(1px);opacity:1}
-  .sheet__body{display:grid;gap:10px}
-  body.sheet-open{overflow:hidden}
-  @media (min-width:900px){ .sheet__panel{ width:min(var(--appW),92vw); } }
+    /* ===== ВЕРХНЯЯ ШТОРКА, ВЫЕЗЖАЮЩАЯ СНИЗУ, ИЗ-ПОД МЕНЮ ===== */
+    .sheet{ position:fixed; inset:0; z-index:9990; pointer-events:none; }  /* ниже меню */
+    .sheet.is-open{ pointer-events:auto; }
+    /* Оверлей НЕ перекрывает область меню снизу → клики по меню проходят */
+    .sheet__overlay{
+      position:absolute; left:0; right:0; top:0;
+      bottom: calc(var(--tabH) + var(--navGap) + env(safe-area-inset-bottom, 0px));
+      background: rgba(0,0,0,.48);
+      opacity:0; transition:opacity .2s ease;
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+    }
+    .sheet.is-open .sheet__overlay{ opacity:1; }
+
+    .sheet__panel{
+      position:absolute; left:0; right:0; margin:0 auto;
+      width:min(820px,100%); max-height:88vh; overflow:auto;
+      background:linear-gradient(180deg, rgba(18,20,24,.98), rgba(18,20,24,.96));
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:0 20px 40px rgba(0,0,0,.45);
+      transition: transform .28s cubic-bezier(.2,.8,.2,1), opacity .2s ease;
+      padding:12px 14px calc(16px + var(--tabH) + var(--navGap) + env(safe-area-inset-bottom, 0px)); /* запас снизу под меню */
+    }
+    /* Режим снизу */
+    .sheet.sheet-bottom .sheet__panel{
+      bottom:0; top:auto;
+      border-radius: 16px 16px 0 0;
+      transform: translateY(100%); /* старт вне экрана снизу */
+      opacity:1;
+    }
+    .sheet.is-open.sheet-bottom .sheet__panel{
+      transform: translateY(0);    /* выезд вверх */
+    }
+    .sheet__handle{ width:42px; height:4px; border-radius:999px; margin:6px auto 10px; background:rgba(255,255,255,.18) }
+    .sheet__header{ display:flex; align-items:center; gap:10px; margin:0 0 8px }
+    .sheet__title{ font-weight:800; font-size:18px; margin:0 }
+    .sheet__close{ margin-left:auto; border:0; background:transparent; color:#fff; opacity:.85; width:36px; height:36px; border-radius:10px; display:grid; place-items:center }
+    .sheet__close:active{ transform:translateY(1px); opacity:1 }
+    .sheet__body{ display:grid; gap:10px }
+    body.sheet-open{ overflow:hidden }
+    @media (min-width:900px){ .sheet__panel{ width:min(var(--appW),92vw); } }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <!-- нижнее меню -->
+    <!-- ===== Нижнее меню ===== -->
     <nav id="btm-nav" class="btm-nav" aria-label="Навигация">
       <button class="tab" data-page="home">
         <img src="ic_home.png" alt=""><span>Главная</span>
@@ -140,20 +149,8 @@
     </nav>
 
     <main>
-
-
-      
-
-      <!-- страницы -->
-      <section class="page" id="home">
-        <div class="card page-title">
-          <div class="h1">Главная</div>
-          <p class="muted-sm">Контент главной.</p>
-          <button class="btn btn-primary" data-open-sheet data-title="Детали" data-tpl="#tpl-example">Открыть сверху</button>
-        </div>
-
-              <!-- верхняя шторка -->
-      <div id="top-sheet" class="sheet" aria-hidden="true" role="dialog" aria-modal="true">
+      <!-- ===== ШТОРКА (вынесена НА УРОВЕНЬ main, не внутри раздела) ===== -->
+      <div id="top-sheet" class="sheet sheet-bottom" aria-hidden="true" role="dialog" aria-modal="true">
         <div class="sheet__overlay" data-close-sheet></div>
         <section class="sheet__panel" tabindex="-1">
           <div class="sheet__handle"></div>
@@ -165,31 +162,35 @@
         </section>
       </div>
 
+      <!-- ===== Шаблон контента шторки ===== -->
       <template id="tpl-example">
         <div class="card">
           <div class="h1">Внутренняя страница</div>
-          <p class="muted-sm">Тут любой твой ГЛАВНАЯ.</p>
+          <p class="muted-sm">Тут любой твой HTML: форма, карточки, таблица и т.д.</p>
         </div>
       </template>
+
+      <!-- ===== Страницы ===== -->
+      <section class="page" id="home">
+        <div class="card page-title">
+          <div class="h1">Главная</div>
+          <p class="muted-sm">Контент главной.</p>
+          <button class="btn btn-primary" data-open-sheet data-title="Детали" data-tpl="#tpl-example" data-from="bottom">Открыть снизу</button>
+        </div>
       </section>
 
       <section class="page" id="services">
         <div class="card page-title">
           <div class="h1">Услуги</div>
           <p class="muted-sm">Тарифы, переключатель месяц/год и т.д.</p>
+          <button class="btn" data-open-sheet data-title="Прайс" data-tpl="#tpl-example" data-from="bottom">Показать прайс</button>
         </div>
       </section>
 
       <section class="page" id="consult">
         <div class="card page-title">
           <div class="h1">Запись на консультацию</div>
-          <!-- СНИЗУ -->
-<button class="btn btn-primary"
-        data-open-sheet
-        data-title="Детали"
-        data-tpl="#tpl-example"
-        data-from="bottom">Открыть снизу</button>
-
+          <button class="btn btn-primary" data-open-sheet data-title="Подтверждение" data-tpl="#tpl-example" data-from="bottom">Открыть снизу</button>
         </div>
       </section>
 
@@ -207,7 +208,7 @@
     </main>
   </div>
 
-  <!-- простая отрисовка страницы -->
+  <!-- ===== Рендер секций SPA ===== -->
   <script>
     function showPage(hash){
       const id = (hash || location.hash || '#home').replace(/^#/, '') || 'home';
@@ -221,91 +222,65 @@
       });
       requestAnimationFrame(()=> window.scrollTo({ top: 0, behavior: 'auto' }));
     }
-    // мгновенная отрисовка старта
-    document.addEventListener('DOMContentLoaded', () => {
-      showPage(location.hash || '#home');
-    });
+    document.addEventListener('DOMContentLoaded', ()=> showPage(location.hash || '#home'));
   </script>
 
-<script>
-(function sheetInit(){
-  const root  = document.getElementById('top-sheet');
-  const panel = root?.querySelector('.sheet__panel');
-  const body  = document.getElementById('sheet-body');
-  const titleEl = root?.querySelector('.sheet__title');
+  <!-- ===== Логика шторки (снизу, из-под меню) ===== -->
+  <script>
+  (function sheetInit(){
+    const root  = document.getElementById('top-sheet');
+    const panel = root?.querySelector('.sheet__panel');
+    const body  = document.getElementById('sheet-body');
+    const titleEl = root?.querySelector('.sheet__title');
 
-  function haptic(level='light'){
-    try{ const TG=window.Telegram?.WebApp; TG?.HapticFeedback?.impactOccurred(level); }
-    catch(_){ try{ navigator.vibrate && navigator.vibrate(level==='light'?10:16); }catch(_){} }
-  }
+    function haptic(level='light'){
+      try{ const TG=window.Telegram?.WebApp; TG?.HapticFeedback?.impactOccurred(level); }
+      catch(_){ try{ navigator.vibrate && navigator.vibrate(level==='light'?10:16); }catch(_){} }
+    }
 
-  // 👇 по умолчанию from='bottom' — шторка снизу, под меню
-  window.openSheet = ({title='', html='', from='bottom'} = {})=>{
-    if (!root) return;
-    root.classList.toggle('sheet-bottom', from==='bottom'); // класс для снизу
-    if (titleEl && title) titleEl.textContent = title;
-    if (body && html != null) body.innerHTML = html;
-    root.classList.add('is-open'); document.body.classList.add('sheet-open');
-    requestAnimationFrame(()=> panel?.focus({preventScroll:true}));
-    haptic('light');
-  };
+    window.openSheet = ({title='', html='', from='bottom'} = {})=>{
+      if (!root) return;
+      root.classList.toggle('sheet-bottom', from==='bottom');  /* включаем режим снизу */
+      if (titleEl && title) titleEl.textContent = title;
+      if (body && html != null) body.innerHTML = html;
+      root.classList.add('is-open'); document.body.classList.add('sheet-open');
+      requestAnimationFrame(()=> panel?.focus({preventScroll:true}));
+      haptic('light');
+    };
+    window.closeSheet = ()=>{
+      if (!root) return;
+      root.classList.remove('is-open'); document.body.classList.remove('sheet-open');
+      haptic('light');
+    };
 
-  window.closeSheet = ()=>{
-    if (!root) return;
-    root.classList.remove('is-open'); document.body.classList.remove('sheet-open');
-    haptic('light');
-  };
+    root?.addEventListener('click', (e)=>{ if (e.target.closest('[data-close-sheet]')) window.closeSheet(); });
+    document.addEventListener('keydown', (e)=>{ if (e.key==='Escape' && root?.classList.contains('is-open')) window.closeSheet(); });
 
-  // закрытие по оверлею/крестику
-  root?.addEventListener('click', (e)=>{
-    if (e.target.closest('[data-close-sheet]')) window.closeSheet();
-  });
-  document.addEventListener('keydown', (e)=>{
-    if (e.key==='Escape' && root?.classList.contains('is-open')) window.closeSheet();
-  });
+    /* жест вниз для закрытия */
+    let y0=0,y=0,drag=false;
+    panel?.addEventListener('touchstart', e=>{ drag=true; y0=y=e.touches[0].clientY; panel.style.transition='none'; }, {passive:true});
+    panel?.addEventListener('touchmove',  e=>{ if(!drag) return; y=e.touches[0].clientY; const dy=Math.max(0,y-y0); panel.style.transform=`translateY(${dy}px)`; }, {passive:true});
+    panel?.addEventListener('touchend',   ()=>{ if(!drag) return; drag=false; panel.style.transition=''; panel.style.transform=''; if (y-y0>80) window.closeSheet(); });
 
-  // жест — тянуть вниз, чтобы закрыть (в нижнем режиме)
-  let y0=0, y=0, dragging=false;
-  panel?.addEventListener('touchstart', e=>{
-    dragging=true; y0=y=e.touches[0].clientY; panel.style.transition='none';
-  }, {passive:true});
-  panel?.addEventListener('touchmove', e=>{
-    if(!dragging) return;
-    y=e.touches[0].clientY;
-    const dy=Math.max(0, y-y0);      // тянем ТОЛЬКО вниз
-    panel.style.transform=`translateY(${dy}px)`;
-  }, {passive:true});
-  panel?.addEventListener('touchend', ()=>{
-    if(!dragging) return;
-    dragging=false; panel.style.transition='';
-    panel.style.transform='';
-    // если сильно потянули — закрываем
-    if (y-y0>80) window.closeSheet();
-  });
+    /* авто-инициализация по дата-атрибутам */
+    document.addEventListener('click', (e)=>{
+      const t = e.target.closest('[data-open-sheet]'); if (!t) return;
+      e.preventDefault();
+      const tplSel = t.dataset.tpl || '';
+      const tpl    = tplSel ? document.querySelector(tplSel) : null;
+      const html   = tpl ? tpl.innerHTML : '';
+      const ttl    = t.getAttribute('title') || t.dataset.title || t.textContent.trim() || '';
+      const from   = t.dataset.from || 'bottom';
+      openSheet({ title: ttl, html, from });
+    });
+  })();
+  </script>
 
-  // авто-инициализация через data-open-sheet (по клику)
-  document.addEventListener('click', (e)=>{
-    const t = e.target.closest('[data-open-sheet]'); if (!t) return;
-    e.preventDefault();
-    const tplSel = t.dataset.tpl || '';
-    const tpl    = tplSel ? document.querySelector(tplSel) : null;
-    const html   = tpl ? tpl.innerHTML : '';
-    const ttl    = t.getAttribute('title') || t.dataset.title || t.textContent.trim() || '';
-    const from   = t.dataset.from || 'bottom';   // можно data-from="top", если нужно
-    openSheet({ title: ttl, html, from });
-  });
-})();
-</script>
-
-
-  <!-- Telegram BackButton + SPA router -->
+  <!-- ===== Telegram BackButton + SPA router ===== -->
   <script>
   (function tgNav(){
     const TG = window.Telegram && window.Telegram.WebApp;
-    if (TG){
-      TG.ready(); TG.expand();
-      TG.enableVerticalSwipes && TG.enableVerticalSwipes();
-    }
+    if (TG){ TG.ready(); TG.expand(); TG.enableVerticalSwipes && TG.enableVerticalSwipes(); }
 
     const ROOT = 'home';
     let depth = 0;
@@ -334,37 +309,25 @@
       const h = '#'+id;
       if (h === (location.hash || '#'+ROOT)) return;
       history.pushState({id}, '', h);
-      depth++;
-      sync();
+      depth++; sync();
     }
 
     if (TG){
       TG.BackButton.onClick(() => {
         const sheet = document.getElementById('top-sheet');
-        if (sheet && sheet.classList.contains('is-open')){
-          window.closeSheet && window.closeSheet();
-          sync();
-          return;
-        }
-        if (depth > 0){
-          depth = Math.max(0, depth - 1);
-          history.back();
-        } else {
-          // Закрыть мини-апп — только нативной кнопкой Telegram
-        }
+        if (sheet && sheet.classList.contains('is-open')){ window.closeSheet && window.closeSheet(); sync(); return; }
+        if (depth > 0){ depth = Math.max(0, depth - 1); history.back(); }
+        else { /* закрытие мини-аппа — нативной кнопкой Telegram */ }
       });
     }
 
     window.addEventListener('popstate', sync);
 
-    // старт
     const start = getStartId();
     history.replaceState({id:start}, '', '#'+start);
-    showPage('#'+start);  // мгновенный рендер
-    depth = 0;
-    sync();
+    showPage('#'+start);
+    depth = 0; sync();
 
-    // клики по нижнему меню
     document.addEventListener('click', (e)=>{
       const tab = e.target.closest('#btm-nav .tab, #spa-nav [data-page]');
       if (!tab) return;
