@@ -140,7 +140,19 @@
     </nav>
 
     <main>
-      <!-- верхняя шторка -->
+
+
+      
+
+      <!-- страницы -->
+      <section class="page" id="home">
+        <div class="card page-title">
+          <div class="h1">Главная</div>
+          <p class="muted-sm">Контент главной.</p>
+          <button class="btn btn-primary" data-open-sheet data-title="Детали" data-tpl="#tpl-example">Открыть сверху</button>
+        </div>
+
+              <!-- верхняя шторка -->
       <div id="top-sheet" class="sheet" aria-hidden="true" role="dialog" aria-modal="true">
         <div class="sheet__overlay" data-close-sheet></div>
         <section class="sheet__panel" tabindex="-1">
@@ -156,17 +168,9 @@
       <template id="tpl-example">
         <div class="card">
           <div class="h1">Внутренняя страница</div>
-          <p class="muted-sm">Тут любой твой HTML: форма, карточки, таблица и т.д.</p>
+          <p class="muted-sm">Тут любой твой ГЛАВНАЯ.</p>
         </div>
       </template>
-
-      <!-- страницы -->
-      <section class="page" id="home">
-        <div class="card page-title">
-          <div class="h1">Главная</div>
-          <p class="muted-sm">Контент главной.</p>
-          <button class="btn btn-primary" data-open-sheet data-title="Детали" data-tpl="#tpl-example">Открыть сверху</button>
-        </div>
       </section>
 
       <section class="page" id="services">
@@ -179,6 +183,13 @@
       <section class="page" id="consult">
         <div class="card page-title">
           <div class="h1">Запись на консультацию</div>
+          <!-- СНИЗУ -->
+<button class="btn btn-primary"
+        data-open-sheet
+        data-title="Детали"
+        data-tpl="#tpl-example"
+        data-from="bottom">Открыть снизу</button>
+
         </div>
       </section>
 
@@ -216,50 +227,76 @@
     });
   </script>
 
-  <!-- верхняя шторка -->
-  <script>
-  (function sheetInit(){
-    const root  = document.getElementById('top-sheet');
-    const panel = root.querySelector('.sheet__panel');
-    const body  = document.getElementById('sheet-body');
-    const titleEl = root.querySelector('.sheet__title');
+<script>
+(function sheetInit(){
+  const root  = document.getElementById('top-sheet');
+  const panel = root?.querySelector('.sheet__panel');
+  const body  = document.getElementById('sheet-body');
+  const titleEl = root?.querySelector('.sheet__title');
 
-    function haptic(level='light'){
-      try{ const TG=window.Telegram?.WebApp; TG?.HapticFeedback?.impactOccurred(level); }
-      catch(_){ try{ navigator.vibrate && navigator.vibrate(level==='light'?10:16); }catch(_){} }
-    }
+  function haptic(level='light'){
+    try{ const TG=window.Telegram?.WebApp; TG?.HapticFeedback?.impactOccurred(level); }
+    catch(_){ try{ navigator.vibrate && navigator.vibrate(level==='light'?10:16); }catch(_){} }
+  }
 
-    window.openSheet = ({title='', html=''} = {})=>{
-      if (title) titleEl.textContent = title;
-      if (html != null) body.innerHTML = html;
-      root.classList.add('is-open'); document.body.classList.add('sheet-open');
-      requestAnimationFrame(()=> panel.focus({preventScroll:true}));
-      haptic('light');
-    };
-    window.closeSheet = ()=>{
-      root.classList.remove('is-open'); document.body.classList.remove('sheet-open');
-      haptic('light');
-    };
+  // 👇 по умолчанию from='bottom' — шторка снизу, под меню
+  window.openSheet = ({title='', html='', from='bottom'} = {})=>{
+    if (!root) return;
+    root.classList.toggle('sheet-bottom', from==='bottom'); // класс для снизу
+    if (titleEl && title) titleEl.textContent = title;
+    if (body && html != null) body.innerHTML = html;
+    root.classList.add('is-open'); document.body.classList.add('sheet-open');
+    requestAnimationFrame(()=> panel?.focus({preventScroll:true}));
+    haptic('light');
+  };
 
-    root.addEventListener('click', (e)=>{ if (e.target.closest('[data-close-sheet]')) window.closeSheet(); });
-    document.addEventListener('keydown', (e)=>{ if (e.key==='Escape' && root.classList.contains('is-open')) window.closeSheet(); });
+  window.closeSheet = ()=>{
+    if (!root) return;
+    root.classList.remove('is-open'); document.body.classList.remove('sheet-open');
+    haptic('light');
+  };
 
-    let y0=0, y=0, dragging=false;
-    panel.addEventListener('touchstart', e=>{ dragging=true; y0=y=e.touches[0].clientY; panel.style.transition='none'; }, {passive:true});
-    panel.addEventListener('touchmove',  e=>{ if(!dragging) return; y=e.touches[0].clientY; const dy=Math.max(0, y-y0); panel.style.transform=`translateY(${dy}px)`; }, {passive:true});
-    panel.addEventListener('touchend',   ()=>{ if(!dragging) return; dragging=false; panel.style.transition=''; panel.style.transform=''; if (y-y0>80) window.closeSheet(); });
+  // закрытие по оверлею/крестику
+  root?.addEventListener('click', (e)=>{
+    if (e.target.closest('[data-close-sheet]')) window.closeSheet();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if (e.key==='Escape' && root?.classList.contains('is-open')) window.closeSheet();
+  });
 
-    document.addEventListener('click', (e)=>{
-      const t = e.target.closest('[data-open-sheet]'); if (!t) return;
-      e.preventDefault();
-      const tSel = t.dataset.tpl || '';
-      const tpl  = tSel ? document.querySelector(tSel) : null;
-      const html = tpl ? tpl.innerHTML : '';
-      const ttl  = t.getAttribute('title') || t.dataset.title || t.textContent.trim() || '';
-      window.openSheet({ title: ttl, html });
-    });
-  })();
-  </script>
+  // жест — тянуть вниз, чтобы закрыть (в нижнем режиме)
+  let y0=0, y=0, dragging=false;
+  panel?.addEventListener('touchstart', e=>{
+    dragging=true; y0=y=e.touches[0].clientY; panel.style.transition='none';
+  }, {passive:true});
+  panel?.addEventListener('touchmove', e=>{
+    if(!dragging) return;
+    y=e.touches[0].clientY;
+    const dy=Math.max(0, y-y0);      // тянем ТОЛЬКО вниз
+    panel.style.transform=`translateY(${dy}px)`;
+  }, {passive:true});
+  panel?.addEventListener('touchend', ()=>{
+    if(!dragging) return;
+    dragging=false; panel.style.transition='';
+    panel.style.transform='';
+    // если сильно потянули — закрываем
+    if (y-y0>80) window.closeSheet();
+  });
+
+  // авто-инициализация через data-open-sheet (по клику)
+  document.addEventListener('click', (e)=>{
+    const t = e.target.closest('[data-open-sheet]'); if (!t) return;
+    e.preventDefault();
+    const tplSel = t.dataset.tpl || '';
+    const tpl    = tplSel ? document.querySelector(tplSel) : null;
+    const html   = tpl ? tpl.innerHTML : '';
+    const ttl    = t.getAttribute('title') || t.dataset.title || t.textContent.trim() || '';
+    const from   = t.dataset.from || 'bottom';   // можно data-from="top", если нужно
+    openSheet({ title: ttl, html, from });
+  });
+})();
+</script>
+
 
   <!-- Telegram BackButton + SPA router -->
   <script>
