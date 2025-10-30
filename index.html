@@ -569,10 +569,10 @@ body.intro-open{ overflow:hidden; }
   })();
   </script>
 
-  <script>
-    /* ===== Intro slider ===== */
-(function(){
+<script>
+(function introSlider(){
   const TG = window.Telegram && window.Telegram.WebApp;
+
   const root = document.getElementById('intro');
   if(!root) return;
 
@@ -582,65 +582,85 @@ body.intro-open{ overflow:hidden; }
   const btnPrev = root.querySelector('[data-intro-prev]');
   const btnNext = root.querySelector('[data-intro-next]');
   const btnDone = root.querySelector('[data-intro-done]');
+
+  // прогресс-сегменты
+  if (progress) progress.innerHTML = slides.map(()=>'<i class="intro__seg"></i>').join('');
+  const segs = progress ? Array.from(progress.children) : [];
+
   let idx = 0, touchX0=0, touchX=0, dragging=false;
+  let backHandlerRef = null;
 
-  // build progress segments
-  progress.innerHTML = slides.map(()=>'<i class="intro__seg"></i>').join('');
-  const segs = Array.from(progress.children);
-
-  function haptic(level='light'){ try{ TG?.HapticFeedback?.impactOccurred(level); }catch(_){} }
+  function haptic(level='light'){
+    try{ TG?.HapticFeedback?.impactOccurred(level); }catch(_){}
+  }
 
   function apply(){
     slides.forEach((s,i)=> s.classList.toggle('active', i===idx));
     segs.forEach((d,i)=> d.classList.toggle('active', i<=idx));
-    btnPrev.disabled = (idx===0);
+    if (btnPrev) btnPrev.disabled = (idx===0);
     const last = (idx===slides.length-1);
-    btnNext.style.display = last ? 'none' : 'inline-grid';
-    btnDone.style.display = last ? 'inline-grid' : 'none';
+    if (btnNext) btnNext.style.display = last ? 'none' : 'inline-grid';
+    if (btnDone) btnDone.style.display = last ? 'inline-grid' : 'none';
   }
 
   function openIntro(){
-    root.classList.add('is-open'); document.body.classList.add('intro-open');
-    try{ TG?.BackButton?.hide?.(); TG?.disableVerticalSwipes?.(); }catch(_){}
+    if (!root) return;
+    root.classList.add('is-open');
+    document.body.classList.add('intro-open');
+
+    // показать «Назад» Телеги и повесить свой обработчик закрытия
+    try{
+      TG?.BackButton?.show?.();
+      backHandlerRef = ()=> closeIntro();
+      TG?.BackButton?.onClick?.(backHandlerRef);
+      TG?.disableVerticalSwipes?.();
+    }catch(_){}
+
     apply();
-  }
-  function closeIntro(){
-    root.classList.remove('is-open'); document.body.classList.remove('intro-open');
-    try{ TG?.BackButton?.show?.(); TG?.disableVerticalSwipes?.(); }catch(_){}
+    // если есть внешний синк — дергаем (чтоб правильно решилось кто показывает BackButton)
     window.syncBack?.();
+  }
+
+  function closeIntro(){
+    root.classList.remove('is-open');
+    document.body.classList.remove('intro-open');
+
+    // убрать свой обработчик «Назад» и вернуть стейт
+    try{
+      TG?.BackButton?.offClick?.(backHandlerRef);
+      backHandlerRef = null;
+    }catch(_){}
+    // если у тебя есть глобальный синк — вызовем его, иначе просто спрячем кнопку
+    if (typeof window.syncBack === 'function') window.syncBack();
+    else try{ TG?.BackButton?.hide?.(); }catch(_){}
   }
 
   function next(){ if(idx<slides.length-1){ idx++; apply(); haptic(); } }
   function prev(){ if(idx>0){ idx--; apply(); haptic(); } }
 
-  btnNext.addEventListener('click', next);
-  btnPrev.addEventListener('click', prev);
-  btnDone.addEventListener('click', ()=>{ haptic('medium'); closeIntro(); localStorage.setItem('intro_seen','1'); });
+  // кнопки
+  btnNext?.addEventListener('click', next);
+  btnPrev?.addEventListener('click', prev);
+  btnDone?.addEventListener('click', ()=>{ haptic('medium'); closeIntro(); });
 
-  // swipe
-  slidesWrap.addEventListener('touchstart', (e)=>{ dragging=true; touchX0=touchX=e.touches[0].clientX; }, {passive:true});
-  slidesWrap.addEventListener('touchmove',  (e)=>{ if(!dragging) return; touchX=e.touches[0].clientX; }, {passive:true});
-  slidesWrap.addEventListener('touchend',   ()=>{ if(!dragging) return; dragging=false;
-    const dx = touchX - touchX0;
-    if (Math.abs(dx)>50){ dx<0 ? next() : prev(); }
+  // свайпы
+  slidesWrap?.addEventListener('touchstart', (e)=>{ dragging=true; touchX0=touchX=e.touches[0].clientX; }, {passive:true});
+  slidesWrap?.addEventListener('touchmove',  (e)=>{ if(!dragging) return; touchX=e.touches[0].clientX; }, {passive:true});
+  slidesWrap?.addEventListener('touchend',   ()=>{ if(!dragging) return; dragging=false;
+    const dx = touchX - touchX0; if (Math.abs(dx)>50){ dx<0 ? next() : prev(); }
   });
 
-  // expose helpers
+  // открыть только по кнопке с атрибутом data-open-intro
+  document.addEventListener('click', (e)=>{
+    const t = e.target.closest('[data-open-intro]');
+    if (t){ e.preventDefault(); openIntro(); }
+  });
+
+  // Экспорт наружу (если вдруг понадобится открыть/закрыть из кода)
   window.openIntro = openIntro;
   window.closeIntro = closeIntro;
-
-  // Пример автопоказа при первом запуске:
-  if (!localStorage.getItem('intro_seen')) {
-    setTimeout(openIntro, 50);
-  }
-
-  // Можно открыть из любого места:
-  document.addEventListener('click', e=>{
-    const t = e.target.closest('[data-open-intro]');
-    if (t){ openIntro(); }
-  });
 })();
+</script>
 
-  </script>
 </body>
 </html>
