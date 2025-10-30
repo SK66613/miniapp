@@ -184,6 +184,70 @@
 
 
 </style>
+
+<style>
+  /* ===== FULLSCREEN INTRO ===== */
+.intro{
+  position:fixed; inset:0; z-index:10050;
+  background:#000; color:#fff;
+  display:none; pointer-events:auto;
+}
+.intro.is-open{ display:block; }
+body.intro-open{ overflow:hidden; }
+
+.intro__wrap{
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  padding: calc(env(safe-area-inset-top,0px) + 6px)
+           14px
+           calc(env(safe-area-inset-bottom,0px) + 14px);
+}
+
+.intro__progress{
+  display:flex; gap:8px; justify-content:center;
+  padding:8px 0 12px;
+}
+.intro__seg{
+  width:44px; height:4px; border-radius:999px;
+  background: rgba(255,255,255,.28);
+}
+.intro__seg.active{ background:#fff; }
+
+.intro__stage{
+  flex:1; display:grid; place-items:center;
+  text-align:center; padding:16px;
+}
+.intro__slides{ width:100%; }
+.intro__slide{ display:none; }
+.intro__slide.active{ display:block; }
+
+.intro__h1{ font-weight:900; font-size:28px; margin:0 0 10px }
+.intro__p{ opacity:.85; font-size:15px; margin:0 auto; max-width:24ch }
+
+.intro__actions{
+  display:grid; align-items:center; gap:10px;
+  grid-template-columns:1fr auto 1fr;
+}
+.intro__btn{
+  height:42px; padding:0 16px; border-radius:12px;
+  border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.04);
+  color:#fff; font-weight:700; cursor:pointer;
+}
+.intro__btn--ghost{ background:transparent; border-color:rgba(255,255,255,.14) }
+.intro__btn--primary{
+  grid-column:1 / -1; height:52px; border-radius:16px;
+  background:#fff; color:#000; font-weight:800;
+}
+.intro__btn[disabled]{ opacity:.45; pointer-events:none }
+.intro__al{ justify-self:start }
+.intro__ar{ justify-self:end }
+
+@media (min-width:900px){
+  .intro__wrap{ max-width: var(--appW,428px); margin:0 auto }
+}
+
+</style>
 </head>
 <body>
   <div class="wrap">
@@ -260,20 +324,21 @@
         </button>
       </div>
 
-      <div class="list__item">
-        <div class="list__icon"><img src="ic_services.png" alt=""></div>
-        <div class="list__text">
-          <div class="list__title">Get $NOT</div>
-          <div class="list__sub">Swap cash or crypto to $NOT</div>
-        </div>
-        <button class="list__chev-btn"
-                data-open-sheet
-                data-title="Get $NOT"
-                data-tpl="#tpl-example"
-                aria-label="Открыть">
-          ›
-        </button>
-      </div>
+<div class="list__item">
+  <div class="list__icon"><img src="ic_services.png" alt=""></div>
+  <div class="list__text">
+    <div class="list__title">Get $NOT</div>
+    <div class="list__sub">Swap cash or crypto to $NOT</div>
+  </div>
+
+  <!-- Открывает только интро-слайдер -->
+  <button class="list__chev-btn"
+          data-open-intro
+          aria-controls="intro"
+          aria-label="Открыть онбординг">
+    ›
+  </button>
+</div>
 
       <div class="list__item">
         <div class="list__icon"><img src="ic_about.png" alt=""></div>
@@ -320,6 +385,45 @@
           <div class="h1">Обо мне</div>
         </div>
       </section>
+
+      <!-- FULLSCREEN INTRO -->
+<div id="intro" class="intro" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="intro__wrap">
+    <div class="intro__progress" id="intro-progress"></div>
+
+    <div class="intro__stage">
+      <div class="intro__slides" id="intro-slides">
+        <!-- Слайд 1 -->
+        <section class="intro__slide active">
+          <h2 class="intro__h1">Welcome fren</h2>
+          <p class="intro__p">Короткий тизер, чем полезен мини-апп.</p>
+        </section>
+
+        <!-- Слайд 2 -->
+        <section class="intro__slide">
+          <h2 class="intro__h1">Learn & Earn</h2>
+          <p class="intro__p">Заголовок + 1–2 строки описания.</p>
+        </section>
+
+        <!-- Слайд 3 -->
+        <section class="intro__slide">
+          <h2 class="intro__h1">Marketplace</h2>
+          <p class="intro__p">Третий слайд. Можно вставить картинку/GIF.</p>
+        </section>
+
+        <!-- (опционально) 4–5 слайды — просто дублируй секцию -->
+      </div>
+    </div>
+
+    <div class="intro__actions">
+      <button class="intro__btn intro__al" data-intro-prev>Назад</button>
+      <div></div>
+      <button class="intro__btn intro__ar" data-intro-next>Вперёд</button>
+      <button class="intro__btn intro__btn--primary" data-intro-done style="display:none">Продолжить</button>
+    </div>
+  </div>
+</div>
+
     </main>
   </div>
 
@@ -463,6 +567,80 @@
     setTimeout(()=>{ TG?.disableVerticalSwipes?.(); syncBack(); }, 0);
     setTimeout(()=>{ TG?.disableVerticalSwipes?.(); syncBack(); }, 300);
   })();
+  </script>
+
+  <script>
+    /* ===== Intro slider ===== */
+(function(){
+  const TG = window.Telegram && window.Telegram.WebApp;
+  const root = document.getElementById('intro');
+  if(!root) return;
+
+  const slidesWrap = root.querySelector('#intro-slides');
+  const slides = Array.from(root.querySelectorAll('.intro__slide'));
+  const progress = root.querySelector('#intro-progress');
+  const btnPrev = root.querySelector('[data-intro-prev]');
+  const btnNext = root.querySelector('[data-intro-next]');
+  const btnDone = root.querySelector('[data-intro-done]');
+  let idx = 0, touchX0=0, touchX=0, dragging=false;
+
+  // build progress segments
+  progress.innerHTML = slides.map(()=>'<i class="intro__seg"></i>').join('');
+  const segs = Array.from(progress.children);
+
+  function haptic(level='light'){ try{ TG?.HapticFeedback?.impactOccurred(level); }catch(_){} }
+
+  function apply(){
+    slides.forEach((s,i)=> s.classList.toggle('active', i===idx));
+    segs.forEach((d,i)=> d.classList.toggle('active', i<=idx));
+    btnPrev.disabled = (idx===0);
+    const last = (idx===slides.length-1);
+    btnNext.style.display = last ? 'none' : 'inline-grid';
+    btnDone.style.display = last ? 'inline-grid' : 'none';
+  }
+
+  function openIntro(){
+    root.classList.add('is-open'); document.body.classList.add('intro-open');
+    try{ TG?.BackButton?.hide?.(); TG?.disableVerticalSwipes?.(); }catch(_){}
+    apply();
+  }
+  function closeIntro(){
+    root.classList.remove('is-open'); document.body.classList.remove('intro-open');
+    try{ TG?.BackButton?.show?.(); TG?.disableVerticalSwipes?.(); }catch(_){}
+    window.syncBack?.();
+  }
+
+  function next(){ if(idx<slides.length-1){ idx++; apply(); haptic(); } }
+  function prev(){ if(idx>0){ idx--; apply(); haptic(); } }
+
+  btnNext.addEventListener('click', next);
+  btnPrev.addEventListener('click', prev);
+  btnDone.addEventListener('click', ()=>{ haptic('medium'); closeIntro(); localStorage.setItem('intro_seen','1'); });
+
+  // swipe
+  slidesWrap.addEventListener('touchstart', (e)=>{ dragging=true; touchX0=touchX=e.touches[0].clientX; }, {passive:true});
+  slidesWrap.addEventListener('touchmove',  (e)=>{ if(!dragging) return; touchX=e.touches[0].clientX; }, {passive:true});
+  slidesWrap.addEventListener('touchend',   ()=>{ if(!dragging) return; dragging=false;
+    const dx = touchX - touchX0;
+    if (Math.abs(dx)>50){ dx<0 ? next() : prev(); }
+  });
+
+  // expose helpers
+  window.openIntro = openIntro;
+  window.closeIntro = closeIntro;
+
+  // Пример автопоказа при первом запуске:
+  if (!localStorage.getItem('intro_seen')) {
+    setTimeout(openIntro, 50);
+  }
+
+  // Можно открыть из любого места:
+  document.addEventListener('click', e=>{
+    const t = e.target.closest('[data-open-intro]');
+    if (t){ openIntro(); }
+  });
+})();
+
   </script>
 </body>
 </html>
