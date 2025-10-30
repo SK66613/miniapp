@@ -99,6 +99,80 @@
     body.sheet-open{ overflow:hidden }
     @media (min-width:900px){ .sheet__panel{ width:min(var(--appW),92vw); } }
   </style>
+
+
+<style>
+/* ====== HERO GIF ====== */
+:root{
+  --wrapPadX: 14px;   /* должен совпадать с боковыми паддингами .wrap */
+  --wrapPadTop: 16px; /* верхний паддинг .wrap */
+}
+.hero{
+  position: relative;
+  margin: calc(-1 * var(--wrapPadTop)) calc(-1 * var(--wrapPadX)) 14px;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: #000;        /* фон под GIF */
+  overflow: hidden;
+}
+.hero__media{
+  width: 100%;
+  height: clamp(260px, 42vh, 460px); /* высота баннера */
+  object-fit: cover;                  /* как на скрине — обрезаем по краям */
+  display: block;
+}
+.hero::after{ /* плавное «слияние» с нижним фоном */
+  content:"";
+  position:absolute; left:0; right:0; bottom:-1px; height:84px;
+  pointer-events:none;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, var(--bg) 100%);
+}
+
+/* ====== PROMO TILE (тыква + Play) ====== */
+.promo{
+  display:grid; grid-template-columns:48px 1fr auto; align-items:center;
+  gap:12px; padding:10px 12px;
+  background: rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+}
+.promo__icon{ width:48px; height:48px; border-radius:12px; overflow:hidden; display:grid; place-items:center; background:rgba(255,255,255,.06) }
+.promo__icon img{ width:28px; height:28px; display:block }
+.promo__title{ font-weight:700 }
+.promo__sub{ opacity:.8; font-size:13px; margin-top:2px }
+.promo__btn{
+  height:36px; padding:0 14px; border-radius:999px; border:1px solid rgba(255,255,255,.10);
+  background:linear-gradient(180deg,#2d7cff,#0f56ff); color:#fff; font-weight:800; cursor:pointer;
+}
+
+/* ====== LIST CARD ("Start here") ====== */
+.list-card .list-head{ font:700 16px/1.2 Inter, system-ui; margin-bottom:8px }
+.list{
+  display:grid; gap:8px;
+}
+.list__item{
+  display:grid; grid-template-columns:40px 1fr 18px; align-items:center; gap:12px;
+  padding:12px; border-radius:14px;
+  background: rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.08);
+  text-decoration:none; color:inherit; cursor:pointer;
+}
+.list__icon{
+  width:40px; height:40px; border-radius:12px; background:rgba(255,255,255,.06);
+  display:grid; place-items:center;
+}
+.list__icon img{ width:22px; height:22px; display:block }
+.list__text{ display:grid; gap:4px }
+.list__title{ font-weight:700 }
+.list__sub{ opacity:.8; font-size:13px }
+.list__chev{ font-size:22px; opacity:.7; transform: translateX(2px) }
+
+/* на десктопе центрируем ширину под твоё мобильное полотно */
+@media (min-width:900px){
+  .hero{ margin-left: calc((var(--appW) - 100vw)/2 - var(--wrapPadX)); margin-right: calc((var(--appW) - 100vw)/2 - var(--wrapPadX)); }
+}
+
+
+</style>
 </head>
 <body>
   <div class="wrap">
@@ -130,12 +204,65 @@
         </div>
       </template>
 
-      <section class="page" id="home">
-        <div class="card page-title">
-          <div class="h1">Главная</div>
-          <p class="muted-sm">Контент главной.</p>
-          <button class="btn btn-primary" data-open-sheet data-title="Детали" data-tpl="#tpl-example" data-from="bottom">Открыть снизу</button>
+<section class="page" id="home">
+  <!-- HERO GIF full-bleed -->
+  <div class="hero">
+    <!-- можно gif или mp4 (см. ниже) -->
+    <img class="hero__media" src="demo.gif" alt="Probably nothing">
+  </div>
+
+  <!-- Промо-плашка с кнопкой -->
+  <div class="card" style="padding:12px">
+    <div class="promo">
+      <div class="promo__icon">
+        <img src="ic_about.png" alt="">
+      </div>
+      <div>
+        <div class="promo__title">Halloween Clicker</div>
+        <div class="promo__sub">Play now</div>
+      </div>
+      <button class="promo__btn" data-open-sheet data-title="Halloween Clicker" data-tpl="#tpl-example">
+        Play
+      </button>
+    </div>
+  </div>
+
+  <!-- Список «Start here» -->
+  <div class="card list-card">
+    <div class="list-head">Start here</div>
+    <div class="list">
+      <a class="list__item" href="#" data-open-sheet data-title="What is Notcoin?" data-tpl="#tpl-example">
+        <div class="list__icon"><img src="ic_about.png" alt=""></div>
+        <div class="list__text">
+          <div class="list__title">What is Notcoin?</div>
+          <div class="list__sub">Intro</div>
         </div>
+        <div class="list__chev">›</div>
+      </a>
+
+      <a class="list__item" href="#" data-open-sheet data-title="Get $NOT" data-tpl="#tpl-example">
+        <div class="list__icon"><img src="ic_about.png" alt=""></div>
+        <div class="list__text">
+          <div class="list__title">Get $NOT</div>
+          <div class="list__sub">Swap cash or crypto to $NOT</div>
+        </div>
+        <div class="list__chev">›</div>
+      </a>
+
+      <a class="list__item" href="#" data-open-sheet data-title="Whitepaper" data-tpl="#tpl-example">
+        <div class="list__icon"><img src="ic_about.png" alt=""></div>
+        <div class="list__text">
+          <div class="list__title">Whitepaper</div>
+          <div class="list__sub">Literally</div>
+        </div>
+        <div class="list__chev">›</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+    
+  
       </section>
 
       <section class="page" id="services">
