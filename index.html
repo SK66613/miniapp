@@ -2,10 +2,11 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <title>Mini-app | Router + BackButton + No-Swipe (robust)</title>
+  <title>Mini‑app | Router + BackButton + No-Swipe (robust)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="format-detection" content="telephone=no" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
   <style>
     :root{
       --tabH: 64px;
@@ -41,17 +42,16 @@
       padding: 6px 6px 6px;
       background: rgba(10,12,14,.72);
       -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius: 16px;
-      width: min(820px, calc(100% - 12px));
-      margin: 0 auto;
-      gap: 6px;
+      border: 1px solid rgba(255,255,255,.08);
+      border-left:0; border-right:0; border-bottom:0;
+      border-radius: 16px 16px 0 0;
     }
     .btm-nav .tab{
-      height:52px; display:grid; grid-template-columns:24px 1fr; align-items:center; gap:10px;
-      justify-content:center;
-      color:#cdd4e1; background:transparent; border:0; border-radius:12px; font-weight:600;
-      padding:0 12px; opacity:.8; filter:saturate(.9); cursor:pointer;
+      height:100%; border:0; background:none; color:#dfe3e6; cursor:pointer;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+      font-size:11px; font-weight:700;
+      filter: grayscale(.35) saturate(.8); opacity:.85;
+      border-radius:14px; -webkit-tap-highlight-color:transparent;
     }
     .btm-nav .tab img{ width:24px; height:24px }
     .btm-nav .tab:active{ transform: translateY(1px) }
@@ -68,11 +68,6 @@
     .page-title{ margin:0 0 12px }
     .h1{ font-weight:800; font-size:20px; margin:0 0 8px }
     .muted-sm{ opacity:.8 }
-    .grid{ display:grid; gap:12px }
-    .btn{ display:inline-grid; place-items:center; height:48px; padding:0 16px; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,.04); color:#fff; font-weight:700; cursor:pointer }
-    .btn-primary{ background:linear-gradient(180deg,#2663ff,#1741ce); border-color:rgba(255,255,255,.1) }
-    .btn:active{ transform:translateY(1px) }
-
     .sheet{ position:fixed; inset:0; z-index:9990; pointer-events:none; }
     .sheet.is-open{ pointer-events:auto; }
     .sheet__overlay{
@@ -88,24 +83,26 @@
       background:linear-gradient(180deg, rgba(18,20,24,.98), rgba(18,20,24,.96));
       border:1px solid rgba(255,255,255,.08);
       box-shadow:0 20px 40px rgba(0,0,0,.45);
-      border-radius:20px 20px 16px 16px; transform: translateY(100%);
-      transition: transform .24s cubic-bezier(.2,.8,.2,1);
-      padding-bottom:16px;
+      transition: transform .28s cubic-bezier(.2,.8,.2,1), opacity .2s ease;
+      padding:12px 14px calc(16px + var(--tabH) + var(--navGap) + env(safe-area-inset-bottom, 0px));
+      will-change: transform;
+      touch-action: pan-y;
     }
-    .sheet.is-open .sheet__panel{ transform: translateY(0) }
-    .sheet__handle{ height:18px; display:grid; place-items:center }
-    .sheet__handle::before{ content:""; display:block; height:4px; width:48px; border-radius:999px; background:rgba(255,255,255,.16) }
-    .sheet__header{ display:flex; align-items:center; justify-content:space-between; padding:6px 14px 10px }
-    .sheet__title{ margin:0; font:700 18px/1.2 Inter,system-ui }
-    .sheet__close{ background:transparent; border:0; color:#fff; font:700 18px/1 Inter; cursor:pointer }
-
-    .sheet-bottom{ bottom:0; top:auto }
+    .sheet.sheet-bottom .sheet__panel{ bottom:0; top:auto; border-radius: 16px 16px 0 0; transform: translateY(100%); }
+    .sheet.is-open.sheet-bottom .sheet__panel{ transform: translateY(0); }
+    .sheet__handle{ width:42px; height:4px; border-radius:999px; margin:6px auto 10px; background:rgba(255,255,255,.18) }
+    .sheet__header{ display:flex; align-items:center; gap:10px; margin:0 0 8px }
+    .sheet__title{ font-weight:800; font-size:18px; margin:0 }
+    .sheet__close{ margin-left:auto; border:0; background:transparent; color:#fff; opacity:.85; width:36px; height:36px; border-radius:10px; display:grid; place-items:center }
+    .sheet__close:active{ transform:translateY(1px); opacity:1 }
+    .sheet__body{ display:grid; gap:10px }
     body.sheet-open{ overflow:hidden }
+    @media (min-width:900px){ .sheet__panel{ width:min(var(--appW),92vw); } }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <nav class="btm-nav" role="tablist">
+    <nav id="btm-nav" class="btm-nav" aria-label="Навигация">
       <button class="tab" data-page="home"><img src="ic_home.png" alt=""><span>Главная</span></button>
       <button class="tab" data-page="services"><img src="ic_services.png" alt=""><span>Услуги</span></button>
       <button class="tab" data-page="consult"><img src="ic_consult.png" alt=""><span>Запись</span></button>
@@ -128,7 +125,7 @@
 
       <template id="tpl-example">
         <div class="card">
-          <div class="h1">Демо-страница</div>
+          <div class="h1">Демо‑страница</div>
           <p class="muted-sm">Любой HTML внутрь: формы, карточки, таблицы…</p>
         </div>
       </template>
@@ -136,25 +133,23 @@
       <section class="page" id="home">
         <div class="card page-title">
           <div class="h1">Главная</div>
-          <p class="muted-sm">Переходи по разделам и открывай шторки — кнопка «Назад» будет.</p>
-        </div>
-        <div class="grid">
-          <button class="btn btn-primary" data-open-sheet data-title="Подтверждение" data-tpl="#tpl-example" data-from="bottom">Открыть снизу</button>
+          <p class="muted-sm">Контент главной.</p>
+          <button class="btn btn-primary" data-open-sheet data-title="Детали" data-tpl="#tpl-example" data-from="bottom">Открыть снизу</button>
         </div>
       </section>
 
       <section class="page" id="services">
         <div class="card page-title">
           <div class="h1">Услуги</div>
+          <p class="muted-sm">Тарифы, переключатель месяц/год и т.д.</p>
+          <button class="btn" data-open-sheet data-title="Прайс" data-tpl="#tpl-example" data-from="bottom">Показать прайс</button>
         </div>
       </section>
 
       <section class="page" id="consult">
         <div class="card page-title">
-          <div class="h1">Запись</div>
-          <div class="grid">
-            <button class="btn" data-open-sheet data-title="Окно записи" data-tpl="#tpl-example" data-from="bottom">Открыть окно записи</button>
-          </div>
+          <div class="h1">Запись на консультацию</div>
+          <button class="btn btn-primary" data-open-sheet data-title="Подтверждение" data-tpl="#tpl-example" data-from="bottom">Открыть снизу</button>
         </div>
       </section>
 
@@ -178,7 +173,7 @@
 
     if (TG){
       try{
-        TG.ready(); TG.setHeaderColor?.('secondary_bg_color'); TG.setBackgroundColor?.('bg_color'); try{ TG.BackButton?.show?.(); TG.BackButton?.hide?.(); }catch(_){ };
+        TG.ready();
         TG.expand();
         TG.disableVerticalSwipes?.();
         TG.enableClosingConfirmation?.();
@@ -221,11 +216,32 @@
       setActivePage(id);
     }
 
+    function showBack(){ try{ TG?.BackButton?.show && TG.BackButton.show(); }catch(_){ } }
+    function hideBack(){ try{ TG?.BackButton?.hide && TG.BackButton.hide(); }catch(_){ } }
+    function syncBack(){
+      if (!TG) return;
+      const atRoot = (currentId() === ROOT);
+      const sheetOpen = sheetRoot?.classList.contains('is-open');
+      if (sheetOpen || !atRoot) showBack(); else hideBack();
+    }
+
+    TG?.BackButton?.onClick?.(()=>{
+      if (sheetRoot && sheetRoot.classList.contains('is-open')){ closeSheet(); return; }
+      const atRoot = (currentId() === ROOT);
+      if (!atRoot) history.back();
+    });
+    TG?.onEvent?.('backButtonClicked', ()=>{
+      if (sheetRoot && sheetRoot.classList.contains('is-open')){ closeSheet(); return; }
+      const atRoot = (currentId() === ROOT);
+      if (!atRoot) history.back();
+    });
+
+    window.addEventListener('popstate', ()=> setActivePage(currentId()));
+
     function haptic(level='light'){
       try{ TG?.HapticFeedback?.impactOccurred && TG.HapticFeedback.impactOccurred(level); }
       catch(_){ try{ navigator.vibrate && navigator.vibrate(level==='light'?10:16); }catch(_){} }
     }
-
     function openSheet({title='', html='', from='bottom'} = {}){
       if (!sheetRoot) return;
       sheetRoot.classList.toggle('sheet-bottom', from==='bottom');
@@ -255,35 +271,30 @@
     }, {passive:false});
     sheetPanel?.addEventListener('touchend',   ()=>{ if(!drag) return; drag=false; sheetPanel.style.transition=''; sheetPanel.style.transform=''; if (y-y0>100) closeSheet(); });
 
-    function syncBack(){
-      if (!TG) return;
-      const atRoot = (currentId() === ROOT);
-      const sheetOpen = sheetRoot?.classList.contains('is-open');
-      if (sheetOpen || !atRoot) { try{ TG.BackButton.show(); }catch(_){ } }
-      else { try{ TG.BackButton.hide(); }catch(_){ } }
+    const isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (isiOS && !(TG && typeof TG.disableVerticalSwipes === 'function')){
+      let startY = 0;
+      document.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, {passive:true});
+      document.addEventListener('touchmove', e => {
+        const dy = e.touches[0].clientY - startY;
+        const atTop = (window.scrollY <= 0);
+        if (dy > 0 && atTop){ e.preventDefault(); }
+      }, {passive:false});
     }
-
-    const onBack = ()=>{
-      if (sheetRoot?.classList.contains('is-open')){ closeSheet(); return; }
-      if (currentId() !== ROOT){ history.back(); return; }
-      TG?.close?.();
-    };
-    TG?.BackButton?.onClick?.(onBack);
-    TG?.onEvent?.('backButtonClicked', onBack);
-
-    window.addEventListener('popstate', ()=> setActivePage(currentId()));
 
     document.addEventListener('click', (e)=>{
       const openBtn = e.target.closest('[data-open-sheet]');
       if (openBtn){
-        const title = openBtn.getAttribute('data-title') || '';
-        const tplSel = openBtn.getAttribute('data-tpl');
-        const from   = openBtn.getAttribute('data-from') || 'bottom';
-        const tpl = tplSel ? document.querySelector(tplSel) : null;
-        const html = tpl ? tpl.innerHTML : '<div class="card"><b>Нет шаблона</b></div>';
-        openSheet({ title, html, from }); return;
+        e.preventDefault();
+        const tplSel = openBtn.dataset.tpl || '';
+        const tpl    = tplSel ? document.querySelector(tplSel) : null;
+        const html   = tpl ? tpl.innerHTML : '';
+        const ttl    = openBtn.getAttribute('title') || openBtn.dataset.title || openBtn.textContent.trim() || '';
+        const from   = openBtn.dataset.from || 'bottom';
+        openSheet({ title: ttl, html, from });
+        return;
       }
-      const tab = e.target.closest('.tab[data-page]');
+      const tab = e.target.closest('[data-page]');
       if (tab){
         e.preventDefault();
         navigateTo(tab.dataset.page);
