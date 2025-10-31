@@ -374,7 +374,26 @@ body.clicker-open{ overflow:hidden; }
   letter-spacing: .2px;
   text-shadow: 0 2px 10px rgba(0,0,0,.25);
 }
+ </style>
 
+ <style>
+  /* ===== GAMES CARD ===== */
+.list-card.games .list__item{ background:transparent; border:0; box-shadow:none }
+.list__btn{
+  height:36px; padding:0 14px; border-radius:999px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.06);
+  color:#fff; font-weight:800; cursor:pointer;
+}
+.list__btn--primary{ background:#fff; color:#000; border-color:#fff }
+.list__btn:active{ transform:translateY(1px) }
+
+/* чуть плотнее сетка под кнопку справа */
+.list-card.games.tight .list__item{
+  grid-template-columns:36px 1fr auto;
+}
+:root{ --gap-block: 16px; }           /* подправь число при желании */
+.card.list-card.games{ margin-top: var(--gap-block); }
 
 
  </style>
@@ -535,6 +554,43 @@ body.clicker-open{ overflow:hidden; }
       </div>
     </div>
   </div>
+
+  <!-- Games -->
+<div class="card list-card games tight">
+  <div class="list-head">Games</div>
+  <div class="list">
+    <!-- Бонусы -->
+    <div class="list__item">
+      <div class="list__icon"><img src="ic_bonus.png" alt=""></div>
+      <div class="list__text">
+        <div class="list__title">Daily bonus</div>
+        <div class="list__sub">Забери подарок сегодня</div>
+      </div>
+      <!-- перейти в раздел Бонусы -->
+      <button class="list__btn"
+              onclick="typeof navigateTo==='function' ? navigateTo('bonuses') : (location.hash='#bonuses')">
+        Bonuses
+      </button>
+    </div>
+
+    <!-- Кликер -->
+    <div class="list__item">
+      <div class="list__icon"><img src="sales_genius_aibot.png" alt=""></div>
+      <div class="list__text">
+        <div class="list__title">Clicker</div>
+        <div class="list__sub">1-minute challenge</div>
+      </div>
+      <!-- запустить кликер-оверлей (+ дневной лимит из прошлой версии: 24ч) -->
+      <button class="list__btn list__btn--primary"
+              data-open-clicker
+              data-cooldown-hours="24"
+              data-clicker-key="pumpkin">
+        Play
+      </button>
+    </div>
+  </div>
+</div>
+
 </section>
 
 
