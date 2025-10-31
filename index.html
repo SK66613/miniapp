@@ -263,38 +263,74 @@ body.intro-open{ overflow:hidden; }
 }
 </style>
  <style>
-/* картинка = кнопка; никакой отдельной кнопки в UI */
-.clicker__img{
-  width:min(84vw, 520px); height:auto; display:block;
-  cursor:pointer; user-select:none; -webkit-user-drag:none;
-  -webkit-tap-highlight-color: transparent;
-  filter: drop-shadow(0 20px 60px rgba(0,255,255,.12));
-  transition: transform 90ms ease, filter 120ms ease;
-}
-/* имитация нажатия */
-.clicker__img.is-press{
-  transform: scale(.96);
-  filter: drop-shadow(0 6px 24px rgba(0,255,255,.25));
-}
-
-/* остальное как было */
+/* ===== FULLSCREEN CLICKER v2 ===== */
 .clicker{ position:fixed; inset:0; z-index:10060; background:#000; color:#fff; display:none; }
 .clicker.is-open{ display:block; }
 body.clicker-open{ overflow:hidden; }
-.clicker__wrap{ position:absolute; inset:0; display:flex; flex-direction:column;
-  padding: calc(env(safe-area-inset-top,0px)+6px) 14px calc(env(safe-area-inset-bottom,0px)+14px); }
-.clicker__counter{ align-self:center; min-width:120px; height:40px; display:grid; place-items:center;
-  padding:0 12px; border-radius:999px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
-  font:800 16px/1 Inter,system-ui; }
-.clicker__stage{ flex:1; display:grid; place-items:center; position:relative; touch-action:manipulation; }
-.clicker__hud{ position:absolute; left:0; right:0; bottom:0; display:grid; place-items:center; padding-bottom:4px;
-  opacity:.45; font:600 13px/1 Inter,system-ui; }
+
+.clicker__wrap{
+  position:absolute; inset:0; display:flex; flex-direction:column;
+  padding: calc(env(safe-area-inset-top,0px)+8px) 14px calc(env(safe-area-inset-bottom,0px)+14px);
+}
+
+/* TIMER */
+.timer{ width:100%; max-width:520px; margin:0 auto 10px; }
+.timer__row{ display:grid; justify-items:center; gap:6px; }
+.timer__text{ font:800 16px/1 Inter,system-ui; letter-spacing:.4px; }
+.timer__bar{ width:100%; height:4px; border-radius:999px; background:rgba(255,255,255,.18); overflow:hidden }
+.timer__bar>i{ display:block; height:100%; width:100%; background:#fff; transform-origin:left center; }
+
+/* COUNTER (мини-иконка + число) */
+.clicker__counter{
+  align-self:center; display:flex; align-items:center; gap:10px;
+  min-height:40px; padding:6px 12px; border-radius:999px;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
+  font:800 18px/1 Inter,system-ui;
+}
+.counter__mini{ width:26px; height:26px; border-radius:6px; overflow:hidden; display:block }
+
+.clicker__stage{ flex:1; display:grid; place-items:center; position:relative; touch-action:manipulation; user-select:none; }
+.clicker__img{
+  width:min(84vw,520px); height:auto; display:block; cursor:pointer;
+  -webkit-user-drag:none; -webkit-tap-highlight-color:transparent;
+  filter: drop-shadow(0 20px 60px rgba(0,255,255,.12));
+  transition: transform 90ms ease, filter 120ms ease;
+}
+.clicker__img.is-press{ transform:scale(.96); filter:drop-shadow(0 6px 24px rgba(0,255,255,.25)); }
+
+.clicker__score{
+  width:100%; max-width:520px; margin:12px auto 0;
+  display:grid; grid-template-columns:1fr 1fr auto; align-items:center; gap:14px;
+  padding:12px 16px; border-radius:18px;
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10);
+  visibility:hidden; opacity:0; transition:.2s ease;
+}
+.clicker__score.show{ visibility:visible; opacity:1; }
+.score__cell{ display:grid; gap:4px; justify-items:center }
+.score__val{ font:800 20px/1 Inter,system-ui }
+.score__sub{ font:600 12px/1.1 Inter,system-ui; opacity:.8 }
+.score__chev{ font:20px/1 Inter; opacity:.6 }
+
+/* CTA (появляется после таймера) */
+.clicker__cta{
+  position:absolute; left:14px; right:14px;
+  bottom: calc(env(safe-area-inset-bottom,0px) + 12px);
+  display:none;
+}
+.clicker__cta .btn{
+  width:100%; height:52px; border-radius:16px; font:800 16px/1 Inter,system-ui;
+  background:#fff; color:#000; border:1px solid #fff;
+}
+.clicker__cta.show{ display:block; }
+
+/* эффекты */
 .spark{ position:absolute; pointer-events:none; font-weight:900; font-size:22px; color:#6be3ff;
-  transform: translate(-50%,-50%); animation: spark-rise .7s ease-out forwards; text-shadow:0 0 10px rgba(107,227,255,.55); }
+  transform:translate(-50%,-50%); animation:spark-rise .7s ease-out forwards; text-shadow:0 0 10px rgba(107,227,255,.55); }
 @keyframes spark-rise{ 0%{opacity:1;transform:translate(-50%,-50%) scale(1)} 60%{opacity:.9;transform:translate(-50%,-110%) scale(1.05)} 100%{opacity:0;transform:translate(-50%,-170%) scale(.9)} }
 .ripple{ position:absolute; width:14px; height:14px; border-radius:999px; border:2px solid rgba(255,255,255,.35);
   transform:translate(-50%,-50%); pointer-events:none; animation:ripple .45s ease-out forwards; }
 @keyframes ripple{ to{ width:140px; height:140px; opacity:0; } }
+
 @media (min-width:900px){ .clicker__wrap{ max-width:var(--appW,428px); margin:0 auto } }
 
 
@@ -313,17 +349,48 @@ body.clicker-open{ overflow:hidden; }
 
     <main>
 <!-- FULLSCREEN CLICKER -->
+<!-- FULLSCREEN CLICKER -->
 <div id="clicker" class="clicker" aria-hidden="true" role="dialog" aria-modal="true">
   <div class="clicker__wrap">
-    <div id="clicker-counter" class="clicker__counter">◆ 0</div>
+    <!-- TIMER -->
+    <div class="timer">
+      <div class="timer__row">
+        <div id="timer-text" class="timer__text">01:00</div>
+        <div class="timer__bar"><i id="timer-bar"></i></div>
+      </div>
+    </div>
 
+    <!-- COUNTER pill -->
+    <div id="clicker-counter" class="clicker__counter">
+      <img class="counter__mini" src="sales_genius_aibot.png" alt="">
+      <span id="counter-val">0</span>
+    </div>
+
+    <!-- STAGE (кликаем только по картинке) -->
     <div id="clicker-stage" class="clicker__stage">
-      <!-- Картинка-цель. Положи свой файл в assets и замени src -->
       <img class="clicker__img" src="sales_genius_aibot.png" alt="Click target">
-      <div class="clicker__hud">кликай по картинке</div>
+    </div>
+
+    <!-- SCORE panel (появляется после таймера) -->
+    <div id="clicker-score" class="clicker__score" aria-hidden="true">
+      <div class="score__cell">
+        <div class="score__val" id="score-best">0</div>
+        <div class="score__sub">your best</div>
+      </div>
+      <div class="score__cell">
+        <div class="score__val" id="score-world">93</div>
+        <div class="score__sub">world record</div>
+      </div>
+      <div class="score__chev">›</div>
+    </div>
+
+    <!-- CTA -->
+    <div id="clicker-cta" class="clicker__cta">
+      <button class="btn" data-close-clicker>Try Again Tomorrow</button>
     </div>
   </div>
 </div>
+
 
 
 
@@ -809,65 +876,73 @@ body.clicker-open{ overflow:hidden; }
 
 
 <script>
-/* ===== FULLSCREEN CLICKER (клик только по картинке) ===== */
 (function(){
   const TG = window.Telegram && window.Telegram.WebApp;
+
   const root   = document.getElementById('clicker');
   if (!root) return;
 
   const stage  = document.getElementById('clicker-stage');
   const img    = root.querySelector('.clicker__img');
-  const counterEl = document.getElementById('clicker-counter');
+  const counterVal = document.getElementById('counter-val');
+
+  const timerText = document.getElementById('timer-text');
+  const timerBar  = document.getElementById('timer-bar');
+  const scoreBox  = document.getElementById('clicker-score');
+  const bestEl    = document.getElementById('score-best');
+  const worldEl   = document.getElementById('score-world');
+  const cta       = document.getElementById('clicker-cta');
+
+  const WORLD_RECORD = 93;     // поменяй при желании
+  const TIMER_MS     = 60_000; // 1 минута
 
   let diamonds = 0;
-  let backHandler = null;
+  let best     = Number(localStorage.getItem('clicker_best')||0);
   let pressing = false;
+  let running  = false;
+  let t0 = 0, rafId = 0;
+  let backHandler = null;
 
-  const haptic = (lvl='light') => { try{ TG?.HapticFeedback?.impactOccurred(lvl); }catch(_){ } };
-  const updateCounter = () => { counterEl.textContent = `◆ ${diamonds}`; };
+  const haptic = lvl => { try{ TG?.HapticFeedback?.impactOccurred(lvl||'light'); }catch(_){ } };
+  const mmss = ms => {
+    const s = Math.max(0, Math.ceil(ms/1000));
+    const m = Math.floor(s/60);
+    const s2 = String(s%60).padStart(2,'0');
+    return `${m}:${s2}`;
+  };
+
+  function updateCounter(){ counterVal.textContent = diamonds; }
 
   function spawnAt(x, y){
-    // ромбик
     const s = document.createElement('div');
     s.className = 'spark'; s.textContent = '◆';
     s.style.left = x+'px'; s.style.top = y+'px';
     stage.appendChild(s); s.addEventListener('animationend', ()=> s.remove());
-    // рипл
     const r = document.createElement('i');
     r.className = 'ripple'; r.style.left = x+'px'; r.style.top = y+'px';
     stage.appendChild(r); r.addEventListener('animationend', ()=> r.remove());
   }
 
   function registerHit(ev){
-    const stageRect = stage.getBoundingClientRect();
+    if(!running) return;
+    const rect = stage.getBoundingClientRect();
     const clientX = (ev.clientX ?? ev.touches?.[0]?.clientX);
     const clientY = (ev.clientY ?? ev.touches?.[0]?.clientY);
     if (clientX==null) return;
-    const cx = clientX - stageRect.left;
-    const cy = clientY - stageRect.top;
-    diamonds += 1; updateCounter(); haptic('medium'); spawnAt(cx, cy);
+    spawnAt(clientX - rect.left, clientY - rect.top);
+    diamonds += 1; updateCounter(); haptic('medium');
   }
 
-  // ——— нажатие только на картинку
-  function pressOn(){
-    if (pressing) return;
-    pressing = true; img.classList.add('is-press');
-  }
-  function pressOff(e){
-    if (!pressing) return;
-    pressing = false; img.classList.remove('is-press');
-    // регистрируем клик при отпускании, чтобы ощущалось «нажатие»
-    if (e) registerHit(e);
-  }
+  function pressOn(){ if(running && !pressing){ pressing=true; img.classList.add('is-press'); } }
+  function pressOff(e){ if(!pressing) return; pressing=false; img.classList.remove('is-press'); if (e) registerHit(e); }
 
-  // Pointer Events (универсально для мыши/тача)
+  // pointer events (кликаем только по IMG)
   if (window.PointerEvent){
-    img.addEventListener('pointerdown', (e)=>{ pressOn(); });
-    img.addEventListener('pointerup',   (e)=>{ pressOff(e); });
+    img.addEventListener('pointerdown', pressOn);
+    img.addEventListener('pointerup',   pressOff);
     img.addEventListener('pointercancel', ()=> pressOff());
     img.addEventListener('pointerleave',  ()=> pressOff());
   } else {
-    // fallback
     img.addEventListener('touchstart', ()=> pressOn(), {passive:true});
     img.addEventListener('touchend',   (e)=> pressOff(e), {passive:true});
     img.addEventListener('mousedown',  ()=> pressOn());
@@ -875,8 +950,46 @@ body.clicker-open{ overflow:hidden; }
     img.addEventListener('mouseleave', ()=> pressOff());
   }
 
+  // TIMER
+  function tick(){
+    const elapsed = Date.now() - t0;
+    const left = Math.max(0, TIMER_MS - elapsed);
+    timerText.textContent = mmss(left);
+    const p = 1 - (elapsed / TIMER_MS);
+    timerBar.style.transform = `scaleX(${Math.max(0,p)})`;
+    if (left <= 0){ finish(); return; }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function startTimer(){
+    cancelAnimationFrame(rafId);
+    t0 = Date.now();
+    timerBar.style.transform = 'scaleX(1)';
+    timerText.textContent = mmss(TIMER_MS);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function finish(){
+    running = false;
+    cancelAnimationFrame(rafId);
+    // обновить best и показать панель
+    if (diamonds > best){ best = diamonds; localStorage.setItem('clicker_best', String(best)); }
+    bestEl.textContent  = best;
+    worldEl.textContent = WORLD_RECORD;
+    scoreBox.classList.add('show');
+    cta.classList.add('show');
+    haptic('medium');
+  }
+
   function openClicker(){
-    root.classList.add('is-open'); document.body.classList.add('clicker-open');
+    // reset ui
+    diamonds = 0; updateCounter();
+    scoreBox.classList.remove('show');
+    cta.classList.remove('show');
+
+    root.classList.add('is-open');
+    document.body.classList.add('clicker-open');
+
     try{
       TG?.BackButton?.show?.();
       backHandler = ()=> closeClicker();
@@ -884,31 +997,43 @@ body.clicker-open{ overflow:hidden; }
       TG?.disableVerticalSwipes?.();
       TG?.expand?.();
     }catch(_){}
+
+    running = true;
+    startTimer();
     window.syncBack?.();
   }
+
   function closeClicker(){
-    root.classList.remove('is-open'); document.body.classList.remove('clicker-open');
+    running = false;
+    cancelAnimationFrame(rafId);
+    root.classList.remove('is-open');
+    document.body.classList.remove('clicker-open');
     try{ TG?.BackButton?.offClick?.(backHandler); backHandler=null; }catch(_){}
     if (typeof window.syncBack === 'function') window.syncBack(); else try{ TG?.BackButton?.hide?.(); }catch(_){}
   }
 
-  // Esc на десктопе
+  // CTA
+  cta.addEventListener('click', (e)=>{
+    if (e.target.closest('[data-close-clicker]')) closeClicker();
+  });
+
+  // Esc (desktop)
   document.addEventListener('keydown', (e)=>{ if (e.key==='Escape' && root.classList.contains('is-open')) closeClicker(); });
 
-  // открыть по кнопке с атрибутом
+  // Делегированное открытие
   document.addEventListener('click', (e)=>{
     const t = e.target.closest('[data-open-clicker]');
     if (!t) return;
     e.preventDefault();
-    diamonds = 0; updateCounter();
     openClicker();
   });
 
-  // экспорт
+  // Экспорт
   window.openClicker = openClicker;
   window.closeClicker = closeClicker;
 })();
 </script>
+
 
 
 
