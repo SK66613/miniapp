@@ -333,6 +333,49 @@ body.clicker-open{ overflow:hidden; }
 
 @media (min-width:900px){ .clicker__wrap{ max-width:var(--appW,428px); margin:0 auto } }
 
+/* === настройки отступа снизу для CTA === */
+:root{
+  --ctaGap: 44px; /* подними/опусти кнопку: 36–56px обычно идеально */
+}
+
+/* кнопка внизу — учёт палочки и safe-area */
+.clicker__cta{
+  position:absolute; left:14px; right:14px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--ctaGap));
+  display:none;
+}
+.clicker__cta.show{ display:block; }
+
+/* === СЧЁТ БЕЗ ПИЛЛЫ/РАМКИ, ×3 крупнее === */
+.clicker__counter{
+  /* убираем «пиллу» */
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  /* компоновка и отступы */
+  align-self:center;
+  display:flex; align-items:center; gap:14px;
+  padding: 0; min-height: 0;
+}
+
+/* мини-иконка у счёта — 3× от прежних ~26px (адаптивно) */
+.counter__mini{
+  width: clamp(60px, 18vw, 90px);
+  height: clamp(60px, 18vw, 90px);
+  border-radius: 14px;
+  overflow: hidden;
+  display:block;
+}
+
+/* само число — 3× крупнее (адаптивно), без бэкграунда */
+#counter-val{
+  font-weight: 900;
+  font-size: clamp(48px, 10vw, 72px);
+  line-height: 1;
+  letter-spacing: .2px;
+  text-shadow: 0 2px 10px rgba(0,0,0,.25); /* для читаемости на любых фонах */
+}
+
 
  </style>
 
@@ -350,6 +393,7 @@ body.clicker-open{ overflow:hidden; }
     <main>
 <!-- FULLSCREEN CLICKER -->
 <!-- FULLSCREEN CLICKER -->
+<!-- FULLSCREEN CLICKER -->
 <div id="clicker" class="clicker" aria-hidden="true" role="dialog" aria-modal="true">
   <div class="clicker__wrap">
     <!-- TIMER -->
@@ -360,36 +404,37 @@ body.clicker-open{ overflow:hidden; }
       </div>
     </div>
 
-    <!-- COUNTER pill -->
+    <!-- COUNTER (иконка + число БЕЗ рамок/плашек; размер управляет CSS) -->
     <div id="clicker-counter" class="clicker__counter">
       <img class="counter__mini" src="sales_genius_aibot.png" alt="">
       <span id="counter-val">0</span>
     </div>
 
-    <!-- STAGE (кликаем только по картинке) -->
+    <!-- СЦЕНА: кликаем только по IMG -->
     <div id="clicker-stage" class="clicker__stage">
       <img class="clicker__img" src="sales_genius_aibot.png" alt="Click target">
+
+      <!-- ПАНЕЛЬ СЧЁТА (появляется по центру вместо IMG после таймера) -->
+      <div id="clicker-score" class="clicker__score" aria-hidden="true">
+        <div class="score__cell">
+          <div class="score__val" id="score-best">0</div>
+          <div class="score__sub">your best</div>
+        </div>
+        <div class="score__cell">
+          <div class="score__val" id="score-world">93</div>
+          <div class="score__sub">world record</div>
+        </div>
+        <div class="score__chev">›</div>
+      </div>
     </div>
 
-    <!-- SCORE panel (появляется после таймера) -->
-    <div id="clicker-score" class="clicker__score" aria-hidden="true">
-      <div class="score__cell">
-        <div class="score__val" id="score-best">0</div>
-        <div class="score__sub">your best</div>
-      </div>
-      <div class="score__cell">
-        <div class="score__val" id="score-world">93</div>
-        <div class="score__sub">world record</div>
-      </div>
-      <div class="score__chev">›</div>
-    </div>
-
-    <!-- CTA -->
+    <!-- CTA снизу (учитывает safe-area и твой зазор через CSS) -->
     <div id="clicker-cta" class="clicker__cta">
       <button class="btn" data-close-clicker>Try Again Tomorrow</button>
     </div>
   </div>
 </div>
+
 
 
 
@@ -876,48 +921,55 @@ body.clicker-open{ overflow:hidden; }
 
 
 <script>
+/* ===== FULLSCREEN CLICKER (обновлённый) ===== */
 (function(){
   const TG = window.Telegram && window.Telegram.WebApp;
 
-  const root   = document.getElementById('clicker');
+  // DOM
+  const root        = document.getElementById('clicker');
   if (!root) return;
 
-  const stage  = document.getElementById('clicker-stage');
-  const img    = root.querySelector('.clicker__img');
-  const counterVal = document.getElementById('counter-val');
+  const stage       = document.getElementById('clicker-stage');
+  const img         = root.querySelector('.clicker__img');
 
-  const timerText = document.getElementById('timer-text');
-  const timerBar  = document.getElementById('timer-bar');
-  const scoreBox  = document.getElementById('clicker-score');
-  const bestEl    = document.getElementById('score-best');
-  const worldEl   = document.getElementById('score-world');
-  const cta       = document.getElementById('clicker-cta');
+  const counterVal  = document.getElementById('counter-val');
+  const timerText   = document.getElementById('timer-text');
+  const timerBar    = document.getElementById('timer-bar');
 
-  const WORLD_RECORD = 93;     // поменяй при желании
-  const TIMER_MS     = 60_000; // 1 минута
+  const scoreBox    = document.getElementById('clicker-score');
+  const bestEl      = document.getElementById('score-best');
+  const worldEl     = document.getElementById('score-world');
+  const cta         = document.getElementById('clicker-cta');
 
-  let diamonds = 0;
-  let best     = Number(localStorage.getItem('clicker_best')||0);
-  let pressing = false;
-  let running  = false;
-  let t0 = 0, rafId = 0;
-  let backHandler = null;
+  // Настройки
+  const WORLD_RECORD = 93;       // можешь менять / подтягивать с бэка
+  const TIMER_MS     = 60_000;   // 1 минута
 
-  const haptic = lvl => { try{ TG?.HapticFeedback?.impactOccurred(lvl||'light'); }catch(_){ } };
-  const mmss = ms => {
+  // Состояние
+  let diamonds   = 0;
+  let best       = Number(localStorage.getItem('clicker_best') || 0);
+  let pressing   = false;
+  let running    = false;
+  let t0         = 0;
+  let rafId      = 0;
+  let backHandler= null;
+
+  const haptic = (lvl='light') => { try{ TG?.HapticFeedback?.impactOccurred(lvl); }catch(_){ } };
+  const mmss   = (ms)=>{
     const s = Math.max(0, Math.ceil(ms/1000));
     const m = Math.floor(s/60);
-    const s2 = String(s%60).padStart(2,'0');
-    return `${m}:${s2}`;
+    const ss = String(s%60).padStart(2,'0');
+    return `${m}:${ss}`;
   };
-
-  function updateCounter(){ counterVal.textContent = diamonds; }
+  const updateCounter = ()=> { counterVal.textContent = diamonds; };
 
   function spawnAt(x, y){
+    // ромбик
     const s = document.createElement('div');
     s.className = 'spark'; s.textContent = '◆';
     s.style.left = x+'px'; s.style.top = y+'px';
     stage.appendChild(s); s.addEventListener('animationend', ()=> s.remove());
+    // рипл
     const r = document.createElement('i');
     r.className = 'ripple'; r.style.left = x+'px'; r.style.top = y+'px';
     stage.appendChild(r); r.addEventListener('animationend', ()=> r.remove());
@@ -936,7 +988,7 @@ body.clicker-open{ overflow:hidden; }
   function pressOn(){ if(running && !pressing){ pressing=true; img.classList.add('is-press'); } }
   function pressOff(e){ if(!pressing) return; pressing=false; img.classList.remove('is-press'); if (e) registerHit(e); }
 
-  // pointer events (кликаем только по IMG)
+  // Кликаем ТОЛЬКО по IMG (Pointer Events, fallbacks)
   if (window.PointerEvent){
     img.addEventListener('pointerdown', pressOn);
     img.addEventListener('pointerup',   pressOff);
@@ -950,17 +1002,15 @@ body.clicker-open{ overflow:hidden; }
     img.addEventListener('mouseleave', ()=> pressOff());
   }
 
-  // TIMER
+  // ===== Таймер
   function tick(){
     const elapsed = Date.now() - t0;
-    const left = Math.max(0, TIMER_MS - elapsed);
+    const left    = Math.max(0, TIMER_MS - elapsed);
     timerText.textContent = mmss(left);
-    const p = 1 - (elapsed / TIMER_MS);
-    timerBar.style.transform = `scaleX(${Math.max(0,p)})`;
+    timerBar.style.transform = `scaleX(${Math.max(0, 1 - elapsed / TIMER_MS)})`;
     if (left <= 0){ finish(); return; }
     rafId = requestAnimationFrame(tick);
   }
-
   function startTimer(){
     cancelAnimationFrame(rafId);
     t0 = Date.now();
@@ -969,23 +1019,13 @@ body.clicker-open{ overflow:hidden; }
     rafId = requestAnimationFrame(tick);
   }
 
-  function finish(){
-    running = false;
-    cancelAnimationFrame(rafId);
-    // обновить best и показать панель
-    if (diamonds > best){ best = diamonds; localStorage.setItem('clicker_best', String(best)); }
-    bestEl.textContent  = best;
-    worldEl.textContent = WORLD_RECORD;
-    scoreBox.classList.add('show');
-    cta.classList.add('show');
-    haptic('medium');
-  }
-
+  // ===== Открыть / Закрыть
   function openClicker(){
-    // reset ui
+    // reset счёт/интерфейс
     diamonds = 0; updateCounter();
-    scoreBox.classList.remove('show');
-    cta.classList.remove('show');
+    img.style.display = '';                // показать IMG
+    scoreBox.classList.remove('show');     // скрыть панель со счётом
+    cta.classList.remove('show');          // скрыть CTA
 
     root.classList.add('is-open');
     document.body.classList.add('clicker-open');
@@ -1002,7 +1042,6 @@ body.clicker-open{ overflow:hidden; }
     startTimer();
     window.syncBack?.();
   }
-
   function closeClicker(){
     running = false;
     cancelAnimationFrame(rafId);
@@ -1012,7 +1051,28 @@ body.clicker-open{ overflow:hidden; }
     if (typeof window.syncBack === 'function') window.syncBack(); else try{ TG?.BackButton?.hide?.(); }catch(_){}
   }
 
-  // CTA
+  // ===== Финиш раунда
+  function finish(){
+    running = false;
+    cancelAnimationFrame(rafId);
+
+    // обновить best
+    if (diamonds > best){
+      best = diamonds;
+      try{ localStorage.setItem('clicker_best', String(best)); }catch(_){}
+    }
+    bestEl.textContent  = best;
+    worldEl.textContent = WORLD_RECORD;
+
+    // заменить IMG на панель со счётом + показать CTA
+    img.style.display = 'none';
+    scoreBox.classList.add('show');
+    cta.classList.add('show');
+
+    haptic('medium');
+  }
+
+  // CTA: закрыть
   cta.addEventListener('click', (e)=>{
     if (e.target.closest('[data-close-clicker]')) closeClicker();
   });
@@ -1020,7 +1080,7 @@ body.clicker-open{ overflow:hidden; }
   // Esc (desktop)
   document.addEventListener('keydown', (e)=>{ if (e.key==='Escape' && root.classList.contains('is-open')) closeClicker(); });
 
-  // Делегированное открытие
+  // Делегированное открытие: любая кнопка с data-open-clicker
   document.addEventListener('click', (e)=>{
     const t = e.target.closest('[data-open-clicker]');
     if (!t) return;
@@ -1028,7 +1088,7 @@ body.clicker-open{ overflow:hidden; }
     openClicker();
   });
 
-  // Экспорт
+  // Экспорт (если захочешь звать программно)
   window.openClicker = openClicker;
   window.closeClicker = closeClicker;
 })();
