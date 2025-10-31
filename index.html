@@ -263,78 +263,40 @@ body.intro-open{ overflow:hidden; }
 }
 </style>
  <style>
-  /* ===== FULLSCREEN CLICKER ===== */
-.clicker{
-  position:fixed; inset:0; z-index:10060; /* выше шторок/интро */
-  background:#000; color:#fff; display:none;
-}
-.clicker.is-open{ display:block; }
-body.clicker-open{ overflow:hidden; }
-
-.clicker__wrap{
-  position:absolute; inset:0;
-  display:flex; flex-direction:column;
-  padding:
-    calc(env(safe-area-inset-top,0px) + 6px)
-    14px
-    calc(env(safe-area-inset-bottom,0px) + 14px);
-}
-
-.clicker__counter{
-  align-self:center;
-  min-width:120px; height:40px;
-  display:grid; place-items:center;
-  padding:0 12px; border-radius:999px;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.12);
-  font:800 16px/1 Inter, system-ui;
-}
-
-.clicker__stage{
-  flex:1; display:grid; place-items:center; position:relative;
-  user-select:none; -webkit-user-select:none;
-  touch-action:manipulation;
-}
-
+/* картинка = кнопка; никакой отдельной кнопки в UI */
 .clicker__img{
   width:min(84vw, 520px); height:auto; display:block;
+  cursor:pointer; user-select:none; -webkit-user-drag:none;
+  -webkit-tap-highlight-color: transparent;
   filter: drop-shadow(0 20px 60px rgba(0,255,255,.12));
+  transition: transform 90ms ease, filter 120ms ease;
+}
+/* имитация нажатия */
+.clicker__img.is-press{
+  transform: scale(.96);
+  filter: drop-shadow(0 6px 24px rgba(0,255,255,.25));
 }
 
-.clicker__hud{
-  position:absolute; left:0; right:0; bottom:0; display:grid; place-items:center;
-  padding-bottom: 4px;
-  opacity:.45; font:600 13px/1 Inter, system-ui;
-}
+/* остальное как было */
+.clicker{ position:fixed; inset:0; z-index:10060; background:#000; color:#fff; display:none; }
+.clicker.is-open{ display:block; }
+body.clicker-open{ overflow:hidden; }
+.clicker__wrap{ position:absolute; inset:0; display:flex; flex-direction:column;
+  padding: calc(env(safe-area-inset-top,0px)+6px) 14px calc(env(safe-area-inset-bottom,0px)+14px); }
+.clicker__counter{ align-self:center; min-width:120px; height:40px; display:grid; place-items:center;
+  padding:0 12px; border-radius:999px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
+  font:800 16px/1 Inter,system-ui; }
+.clicker__stage{ flex:1; display:grid; place-items:center; position:relative; touch-action:manipulation; }
+.clicker__hud{ position:absolute; left:0; right:0; bottom:0; display:grid; place-items:center; padding-bottom:4px;
+  opacity:.45; font:600 13px/1 Inter,system-ui; }
+.spark{ position:absolute; pointer-events:none; font-weight:900; font-size:22px; color:#6be3ff;
+  transform: translate(-50%,-50%); animation: spark-rise .7s ease-out forwards; text-shadow:0 0 10px rgba(107,227,255,.55); }
+@keyframes spark-rise{ 0%{opacity:1;transform:translate(-50%,-50%) scale(1)} 60%{opacity:.9;transform:translate(-50%,-110%) scale(1.05)} 100%{opacity:0;transform:translate(-50%,-170%) scale(.9)} }
+.ripple{ position:absolute; width:14px; height:14px; border-radius:999px; border:2px solid rgba(255,255,255,.35);
+  transform:translate(-50%,-50%); pointer-events:none; animation:ripple .45s ease-out forwards; }
+@keyframes ripple{ to{ width:140px; height:140px; opacity:0; } }
+@media (min-width:900px){ .clicker__wrap{ max-width:var(--appW,428px); margin:0 auto } }
 
-/* всплывающий «ромбик» */
-.spark{
-  position:absolute; pointer-events:none;
-  font-weight:900; font-size:22px; color:#6be3ff; /* ромбик-циан */
-  transform: translate(-50%, -50%);
-  animation: spark-rise .7s ease-out forwards;
-  text-shadow: 0 0 10px rgba(107,227,255,.55);
-}
-@keyframes spark-rise{
-  0%   { opacity:1; transform: translate(-50%,-50%) scale(1); }
-  60%  { opacity:.9; transform: translate(-50%,-110%) scale(1.05); }
-  100% { opacity:0; transform: translate(-50%,-170%) scale(.9); }
-}
-
-/* рипл по клику */
-.ripple{
-  position:absolute; width:14px; height:14px; border-radius:999px;
-  border:2px solid rgba(255,255,255,.35);
-  transform:translate(-50%,-50%); pointer-events:none;
-  animation:ripple .45s ease-out forwards;
-}
-@keyframes ripple{
-  to{ width:140px; height:140px; opacity:0; }
-}
-
-@media (min-width:900px){
-  .clicker__wrap{ max-width: var(--appW, 428px); margin:0 auto; }
-}
 
  </style>
 
@@ -847,52 +809,74 @@ body.clicker-open{ overflow:hidden; }
 
 
 <script>
-  /* ===== FULLSCREEN CLICKER ===== */
+/* ===== FULLSCREEN CLICKER (клик только по картинке) ===== */
 (function(){
   const TG = window.Telegram && window.Telegram.WebApp;
   const root   = document.getElementById('clicker');
   if (!root) return;
 
   const stage  = document.getElementById('clicker-stage');
+  const img    = root.querySelector('.clicker__img');
   const counterEl = document.getElementById('clicker-counter');
 
   let diamonds = 0;
   let backHandler = null;
+  let pressing = false;
 
   const haptic = (lvl='light') => { try{ TG?.HapticFeedback?.impactOccurred(lvl); }catch(_){ } };
-
-  function updateCounter(){
-    counterEl.textContent = `◆ ${diamonds}`;
-  }
+  const updateCounter = () => { counterEl.textContent = `◆ ${diamonds}`; };
 
   function spawnAt(x, y){
     // ромбик
     const s = document.createElement('div');
-    s.className = 'spark';
-    s.textContent = '◆';
+    s.className = 'spark'; s.textContent = '◆';
     s.style.left = x+'px'; s.style.top = y+'px';
-    stage.appendChild(s);
-    s.addEventListener('animationend', ()=> s.remove());
-
+    stage.appendChild(s); s.addEventListener('animationend', ()=> s.remove());
     // рипл
     const r = document.createElement('i');
-    r.className = 'ripple';
-    r.style.left = x+'px'; r.style.top = y+'px';
-    stage.appendChild(r);
-    r.addEventListener('animationend', ()=> r.remove());
+    r.className = 'ripple'; r.style.left = x+'px'; r.style.top = y+'px';
+    stage.appendChild(r); r.addEventListener('animationend', ()=> r.remove());
   }
 
-  function onClick(e){
-    const rect = stage.getBoundingClientRect();
-    const cx = (e.touches?.[0]?.clientX ?? e.clientX) - rect.left;
-    const cy = (e.touches?.[0]?.clientY ?? e.clientY) - rect.top;
+  function registerHit(ev){
+    const stageRect = stage.getBoundingClientRect();
+    const clientX = (ev.clientX ?? ev.touches?.[0]?.clientX);
+    const clientY = (ev.clientY ?? ev.touches?.[0]?.clientY);
+    if (clientX==null) return;
+    const cx = clientX - stageRect.left;
+    const cy = clientY - stageRect.top;
     diamonds += 1; updateCounter(); haptic('medium'); spawnAt(cx, cy);
   }
 
-  function openClicker(){
-    root.classList.add('is-open');
-    document.body.classList.add('clicker-open');
+  // ——— нажатие только на картинку
+  function pressOn(){
+    if (pressing) return;
+    pressing = true; img.classList.add('is-press');
+  }
+  function pressOff(e){
+    if (!pressing) return;
+    pressing = false; img.classList.remove('is-press');
+    // регистрируем клик при отпускании, чтобы ощущалось «нажатие»
+    if (e) registerHit(e);
+  }
 
+  // Pointer Events (универсально для мыши/тача)
+  if (window.PointerEvent){
+    img.addEventListener('pointerdown', (e)=>{ pressOn(); });
+    img.addEventListener('pointerup',   (e)=>{ pressOff(e); });
+    img.addEventListener('pointercancel', ()=> pressOff());
+    img.addEventListener('pointerleave',  ()=> pressOff());
+  } else {
+    // fallback
+    img.addEventListener('touchstart', ()=> pressOn(), {passive:true});
+    img.addEventListener('touchend',   (e)=> pressOff(e), {passive:true});
+    img.addEventListener('mousedown',  ()=> pressOn());
+    img.addEventListener('mouseup',    (e)=> pressOff(e));
+    img.addEventListener('mouseleave', ()=> pressOff());
+  }
+
+  function openClicker(){
+    root.classList.add('is-open'); document.body.classList.add('clicker-open');
     try{
       TG?.BackButton?.show?.();
       backHandler = ()=> closeClicker();
@@ -900,26 +884,18 @@ body.clicker-open{ overflow:hidden; }
       TG?.disableVerticalSwipes?.();
       TG?.expand?.();
     }catch(_){}
-
     window.syncBack?.();
   }
-
   function closeClicker(){
-    root.classList.remove('is-open');
-    document.body.classList.remove('clicker-open');
-
+    root.classList.remove('is-open'); document.body.classList.remove('clicker-open');
     try{ TG?.BackButton?.offClick?.(backHandler); backHandler=null; }catch(_){}
     if (typeof window.syncBack === 'function') window.syncBack(); else try{ TG?.BackButton?.hide?.(); }catch(_){}
   }
 
-  // клики/тачи по зоне
-  stage.addEventListener('click', onClick);
-  stage.addEventListener('touchstart', onClick, {passive:true});
-
-  // esc на десктопе
+  // Esc на десктопе
   document.addEventListener('keydown', (e)=>{ if (e.key==='Escape' && root.classList.contains('is-open')) closeClicker(); });
 
-  // делегирование открытия по кнопкам с data-open-clicker
+  // открыть по кнопке с атрибутом
   document.addEventListener('click', (e)=>{
     const t = e.target.closest('[data-open-clicker]');
     if (!t) return;
@@ -928,12 +904,12 @@ body.clicker-open{ overflow:hidden; }
     openClicker();
   });
 
-  // экспорт если нужно открыть из кода
+  // экспорт
   window.openClicker = openClicker;
   window.closeClicker = closeClicker;
 })();
-
 </script>
+
 
 
 </body>
