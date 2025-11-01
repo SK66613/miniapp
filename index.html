@@ -768,6 +768,151 @@ body.flappy-open{ overflow:hidden; }
 
 </style>
 
+ <style>
+  /* ===== MEMORY PAIRS (overlay) ===== */
+.pairs{ position:fixed; inset:0; z-index:10060; background:#000; color:#fff; display:none; }
+.pairs.is-open{ display:block; }
+body.pairs-open{ overflow:hidden; }
+
+.pairs__wrap{
+  position:absolute; inset:0; display:flex; flex-direction:column;
+  padding: calc(env(safe-area-inset-top,0px)+8px) 14px calc(env(safe-area-inset-bottom,0px)+14px);
+}
+
+/* HUD */
+.mp-hud{ width:100%; max-width:520px; margin:0 auto 10px; }
+.mp-stats{ display:flex; justify-content:center; gap:12px; }
+.mp-pill{
+  padding:6px 10px; border-radius:999px;
+  background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+  font:800 13px/1 Inter,system-ui; letter-spacing:.2px; display:flex; gap:6px; align-items:center
+}
+.mp-val{ font-weight:900; }
+
+/* Stage */
+.mp-stage{ flex:1; display:grid; place-items:center; }
+.mp-grid{
+  width:100%; max-width:520px;
+  display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;
+}
+
+/* Card */
+:root{
+  --card-r: 14px;
+  --card-back: rgba(255,255,255,.06);
+}
+.mp-card{
+  position:relative; width:100%; aspect-ratio: 3/4;
+  border:none; background:none; padding:0; cursor:pointer;
+  -webkit-tap-highlight-color: transparent;
+  perspective: 800px;
+}
+.mp-card[disabled]{ pointer-events:none; }
+
+.mp-in{
+  position:absolute; inset:0; border-radius:var(--card-r);
+  transform-style:preserve-3d; transition: transform .28s cubic-bezier(.2,.7,.2,1);
+  box-shadow: 0 10px 24px rgba(0,0,0,.35);
+}
+.mp-card.is-flipped .mp-in{ transform: rotateY(180deg); }
+
+.mp-face{
+  position:absolute; inset:0; display:grid; place-items:center; border-radius:var(--card-r);
+  backface-visibility:hidden;
+}
+
+/* back */
+.mp-face--back{
+  background:var(--card-back);
+  border:1px solid rgba(255,255,255,.10);
+}
+/* front (эмодзи по умолчанию) */
+.mp-face--front{
+  transform: rotateY(180deg);
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.18);
+  font: 900 clamp(28px,7vw,42px)/1.1 Inter;
+  text-shadow: 0 2px 10px rgba(0,0,0,.25);
+}
+/* когда фронт — картинка */
+.mp-front-img{
+  background: center / 80% no-repeat, rgba(255,255,255,.12);
+  font-size:0;
+}
+
+/* matched / wrong FX */
+.mp-card.is-matched .mp-in{
+  box-shadow: 0 0 0 2px rgba(107,227,255,.9), 0 0 22px rgba(107,227,255,.45);
+}
+@keyframes mp-shake{
+  0%{ transform: translateX(0) }
+  25%{ transform: translateX(-6px) }
+  50%{ transform: translateX(6px) }
+  75%{ transform: translateX(-3px) }
+  100%{ transform: translateX(0) }
+}
+.mp-card.is-wrong .mp-in{ animation: mp-shake .28s ease-out }
+
+/* Result */
+.mp-result{ position:absolute; inset:0; display:none; place-items:center; padding:16px; }
+.mp-result.show{ display:grid; }
+.mp-card-res{
+  width:min(100%,520px); background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10);
+  border-radius:18px; padding:12px 16px; display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:center;
+}
+.mp-cell{ display:grid; gap:4px; justify-items:center }
+.mp-title{ grid-column:1/-1; text-align:center; font:800 16px/1.2 Inter; opacity:.9 }
+
+/* CTA */
+:root{ --ctaGap: 44px; }
+.mp-cta{ position:absolute; left:14px; right:14px; bottom: calc(env(safe-area-inset-bottom,0px)+var(--ctaGap)); display:none; }
+.mp-cta.show{ display:block; }
+.mp-cta .btn{ width:100%; height:52px; border-radius:16px; font:800 16px/1 Inter; background:#fff; color:#000; border:1px solid #fff; }
+
+@media (min-width:900px){ .pairs__wrap{ max-width:var(--appW,428px); margin:0 auto } }
+
+/* ——— общие переменные ——— */
+:root{
+  --edgePad: 18px;            /* отступы слева/справа для сцены */
+  --gridGap: 12px;            /* расстояние между карточками */
+  --ctaH: 52px;               /* высота кнопки */
+  --ctaGap: 44px;             /* зазор от нижней «палочки» */
+}
+
+/* обёртка делает “опорой” для абсолютных элементов */
+.pairs__wrap{
+  position: relative; /* было absolute/inset:0 — больше не нужно */
+  inset: 0;
+  display: flex; flex-direction: column;
+  padding: calc(env(safe-area-inset-top,0px) + 8px)
+           var(--edgePad)
+           /* резерв под CTA, чтобы контент не заходил за кнопку */
+           calc(env(safe-area-inset-bottom,0px) + var(--ctaH) + var(--ctaGap) + 8px);
+}
+
+/* сцена + сетка — безопасные отступы по краям */
+.mp-stage{ flex:1; display:grid; place-items:center; }
+.mp-grid{
+  width:100%; max-width:520px;
+  display:grid; grid-template-columns: repeat(3, 1fr);
+  gap: var(--gridGap);
+}
+
+/* CTA всегда у нижней кромки с учётом safe-area */
+.mp-cta{
+  position: absolute;                 /* привязано к .pairs__wrap */
+  left: var(--edgePad); right: var(--edgePad);
+  bottom: calc(env(safe-area-inset-bottom,0px) + var(--ctaGap));
+  display:none; z-index: 5;
+}
+.mp-cta.show{ display:block; }
+
+.mp-cta{ position:fixed; left:14px; right:14px;
+         bottom: calc(env(safe-area-inset-bottom,0px) + var(--ctaGap)); }
+
+
+ </style>
+
 </head>
 <body>
   <div class="wrap">
@@ -780,6 +925,47 @@ body.flappy-open{ overflow:hidden; }
     </nav>
 
     <main>
+
+      <!-- MEMORY PAIRS (overlay) -->
+<div id="pairs" class="pairs" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="pairs__wrap">
+    <!-- HUD -->
+    <div class="mp-hud">
+      <div class="mp-stats">
+        <div class="mp-pill">Time <span id="mp-time" class="mp-val">00:00.0</span></div>
+        <div class="mp-pill">Moves <span id="mp-moves" class="mp-val">0</span></div>
+      </div>
+    </div>
+
+    <!-- STAGE -->
+    <div class="mp-stage">
+      <div id="mp-grid" class="mp-grid" aria-label="memory grid"></div>
+
+      <!-- RESULT -->
+      <div id="mp-result" class="mp-result" aria-hidden="true">
+        <div class="mp-card-res">
+          <div class="mp-title">Completed!</div>
+          <div class="mp-cell">
+            <div class="mp-val" id="mp-your-time">00:00.0</div>
+            <div class="mp-sub">your time</div>
+          </div>
+          <div class="mp-cell">
+            <div class="mp-val" id="mp-best-time">00:00.0</div>
+            <div class="mp-sub">best time</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div id="mp-cta" class="mp-cta">
+      <button class="btn" data-close-pairs>Play again</button>
+    </div>
+  </div>
+</div>
+
+
+
 
       <!-- FLAPPY LITE (overlay) -->
 <!-- FLAPPY LITE+ (overlay) -->
@@ -1111,6 +1297,19 @@ body.flappy-open{ overflow:hidden; }
       <!-- запустить кликер-оверлей (+ дневной лимит из прошлой версии: 24ч) -->
 <!-- Кнопка запуска на главной -->
 <button class="list__btn list__btn--primary" data-open-runner>Lane</button>
+    </div>
+
+       
+
+    <!-- Кликер -->
+    <div class="list__item">
+      <div class="list__icon"><img src="sales_genius_aibot.png" alt=""></div>
+      <div class="list__text">
+        <div class="list__title">Clicker</div>
+        <div class="list__sub">1-minute challenge</div>
+      </div>
+<!-- Кнопка запуска на главной -->
+<button class="list__btn list__btn--primary" data-open-pairs>Pairs</button>
     </div>
 
 
@@ -2773,6 +2972,196 @@ for (const it of items){
 })();
 </script>
 
+<script>
+/* ===== Memory Pairs 3×4 — flips, timer, moves, BackButton ===== */
+(function memoryPairs(){
+  const TG = window.Telegram && window.Telegram.WebApp;
+
+  // DOM
+  const root  = document.getElementById('pairs'); if (!root) return;
+  const grid  = document.getElementById('mp-grid');
+  const timeEl= document.getElementById('mp-time');
+  const movesEl=document.getElementById('mp-moves');
+  const resBox= document.getElementById('mp-result');
+  const yourT = document.getElementById('mp-your-time');
+  const bestT = document.getElementById('mp-best-time');
+  const cta   = document.getElementById('mp-cta');
+
+  // ===== ASSETS: эмодзи по умолчанию, можно заменить на картинки =====
+  const ASSETS = {
+    mode: 'emoji',  // 'emoji' | 'images'
+    emoji: ['🎃','👻','🕸️','🍭','🧩','⭐'], // 6 пар → 12 карт
+    images: [
+      // 'assets/pairs/01.png','assets/pairs/02.png','assets/pairs/03.png',
+      // 'assets/pairs/04.png','assets/pairs/05.png','assets/pairs/06.png'
+    ]
+  };
+
+  // STATE
+  let values = [];          // 12 значений (6×2)
+  let first = null;         // {idx, val, el}
+  let lock  = false;        // блок кликов во время проверки
+  let matched = 0;          // совпавшие пары
+  let moves = 0;
+
+  // timer
+  let running=false, t0=0, raf=0, backOff=null;
+  let bestMs = Number(localStorage.getItem('pairs_best_ms')||0);
+
+  // utils
+  const haptic = lvl=>{ try{ TG?.HapticFeedback?.impactOccurred(lvl||'light'); }catch(_){} };
+  const shuffle = (a)=>{ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; };
+  const fmt = (ms)=>{
+    const s = Math.floor(ms/1000), m = Math.floor(s/60), sec = s%60, tenths = Math.floor((ms%1000)/100);
+    return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}.${tenths}`;
+  };
+
+  // build deck
+  function buildValues(){
+    const src = (ASSETS.mode==='images' ? ASSETS.images : ASSETS.emoji).slice(0,6);
+    const deck = shuffle([...src, ...src]); // 12 карт
+    values = deck;
+  }
+
+  function cardTemplate(i, val){
+    const isImg = (ASSETS.mode==='images');
+    const frontStyle = isImg ? `class="mp-face mp-face--front mp-front-img" style="background-image:url('${val}');"` : `class="mp-face mp-face--front"`;
+    const frontInner = isImg ? '' : val;
+    return `
+      <button class="mp-card" data-idx="${i}" aria-label="card">
+        <span class="mp-in">
+          <i class="mp-face mp-face--back"></i>
+          <i ${frontStyle}>${frontInner}</i>
+        </span>
+      </button>
+    `;
+  }
+
+  function drawGrid(){
+    grid.innerHTML = values.map((v,i)=> cardTemplate(i,v)).join('');
+  }
+
+  function reset(){
+    matched = 0; moves = 0; movesEl.textContent = '0';
+    first = null; lock = false; running=false; cancelAnimationFrame(raf);
+    timeEl.textContent = '00:00.0';
+    resBox.classList.remove('show'); cta.classList.remove('show');
+    buildValues(); drawGrid();
+  }
+
+  function startTimer(){
+    if (running) return;
+    running = true; t0 = performance.now();
+    tick();
+  }
+  function tick(){
+    if (!running){ cancelAnimationFrame(raf); return; }
+    const ms = performance.now() - t0;
+    timeEl.textContent = fmt(ms);
+    raf = requestAnimationFrame(tick);
+  }
+
+  function finish(){
+    running=false; cancelAnimationFrame(raf);
+    const ms = performance.now() - t0;
+    yourT.textContent = fmt(ms);
+
+    if (bestMs===0 || ms < bestMs){ bestMs = ms; try{ localStorage.setItem('pairs_best_ms', String(bestMs)); }catch(_){} }
+    bestT.textContent = fmt(bestMs || ms);
+
+    resBox.classList.add('show'); cta.classList.add('show');
+    haptic('medium');
+  }
+
+  // flip logic
+  function onCardClick(btn){
+    if (lock) return;
+    const idx = Number(btn.getAttribute('data-idx'));
+    const val = values[idx];
+
+    if (btn.disabled) return;       // уже совпала
+    if (!running) startTimer();     // первый клик запускает таймер
+
+    // flip
+    btn.classList.add('is-flipped'); haptic('light');
+
+    if (!first){
+      first = { idx, val, el: btn };
+      return;
+    }
+
+    // второй клик
+    moves += 1; movesEl.textContent = String(moves);
+    lock = true;
+
+    if (val === first.val && idx !== first.idx){
+      // MATCH
+      setTimeout(()=>{
+        btn.disabled = true; first.el.disabled = true;
+        btn.classList.add('is-matched'); first.el.classList.add('is-matched');
+        matched += 1;
+        first = null; lock = false;
+        haptic('medium');
+        if (matched === 6){ finish(); }
+      }, 120);
+    } else {
+      // MISMATCH
+      btn.classList.add('is-wrong'); first.el.classList.add('is-wrong');
+      haptic('light');
+      setTimeout(()=>{
+        btn.classList.remove('is-flipped','is-wrong');
+        first.el.classList.remove('is-flipped','is-wrong');
+        first = null; lock = false;
+      }, 650);
+    }
+  }
+
+  // open/close
+  function openPairs(){
+    reset();
+
+    root.classList.add('is-open'); document.body.classList.add('pairs-open');
+    try{
+      TG?.BackButton?.show?.();
+      backOff = ()=> closePairs();
+      TG?.BackButton?.onClick?.(backOff);
+      TG?.disableVerticalSwipes?.(); TG?.expand?.();
+    }catch(_){}
+
+    grid.addEventListener('click', gridHandler, { passive:true });
+  }
+
+  function closePairs(){
+    running=false; cancelAnimationFrame(raf);
+    grid.removeEventListener('click', gridHandler);
+    root.classList.remove('is-open'); document.body.classList.remove('pairs-open');
+    try{ TG?.BackButton?.offClick?.(backOff); TG?.BackButton?.hide?.(); }catch(_){}
+  }
+
+  function gridHandler(e){
+    const b = e.target.closest('.mp-card'); if (!b) return;
+    if (!b.classList.contains('is-flipped')) onCardClick(b);
+  }
+
+  // CTA
+  cta.addEventListener('click', (e)=>{
+    if (!e.target.closest('.btn')) return;
+    closePairs(); openPairs();
+  });
+
+  // openers
+  document.addEventListener('click', (e)=>{
+    const t = e.target.closest('[data-open-pairs]'); if (!t) return;
+    e.preventDefault(); openPairs();
+  });
+  document.addEventListener('click', (e)=>{
+    if (e.target.closest('[data-close-pairs]')) closePairs();
+  });
+
+  // Esc desktop
+  document.addEventListener('keydown', (e)=>{ if (e.key==='Escape' && root.classList.contains('is-open')) closePairs(); });
+})();
+</script>
 
 
 </body>
