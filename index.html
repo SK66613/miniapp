@@ -453,7 +453,7 @@ body.clicker-open{ overflow:hidden; }
  </style>
 
  <style>
-  /* ===== TARGET POPPER (overlay) ===== */
+/* ===== TARGET POPPER v2 (overlay) ===== */
 .popper{ position:fixed; inset:0; z-index:10060; background:#000; color:#fff; display:none; }
 .popper.is-open{ display:block; }
 body.popper-open{ overflow:hidden; }
@@ -463,20 +463,30 @@ body.popper-open{ overflow:hidden; }
   padding: calc(env(safe-area-inset-top,0px)+8px) 14px calc(env(safe-area-inset-bottom,0px)+14px);
 }
 
-/* Timer */
+/* ENERGY (header) */
 .pp-timer{ width:100%; max-width:520px; margin:0 auto 10px; }
 .pp-timer__row{ display:grid; justify-items:center; gap:6px; }
 .pp-timer__text{ font:800 16px/1 Inter,system-ui; letter-spacing:.4px; }
 .pp-timer__bar{ width:100%; height:4px; border-radius:999px; background:rgba(255,255,255,.18); overflow:hidden }
 .pp-timer__bar>i{ display:block; height:100%; width:100%; background:#fff; transform-origin:left center; }
 
-/* Score (крупное число без плашек) */
+/* SCORE */
 .pp-score{ align-self:center; display:flex; align-items:center; gap:12px; margin-bottom:6px; }
 .pp-score__icon{ width:28px; height:28px; display:block; opacity:.9 }
 #pp-score-val{
   font-weight:900; font-size: clamp(32px, 8vw, 56px);
   line-height:1; letter-spacing:.2px; text-shadow:0 2px 10px rgba(0,0,0,.25);
 }
+
+/* COMBO (скрыто по умолчанию) */
+.pp-combo{ display:none !important; position:absolute; top:10px; right:10px; z-index:2;
+  align-items:center; gap:6px; padding:6px 10px; border-radius:999px;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
+  font:800 13px/1 Inter,system-ui;
+}
+.pp-combo.show{ display:flex !important; }
+.pp-combo__val{ font-weight:900; }
+.pp-combo__mult{ opacity:.85; }
 
 /* Stage */
 .pp-stage{ flex:1; position:relative; overflow:hidden; border-radius:16px; background:#07080b; }
@@ -490,20 +500,24 @@ body.popper-open{ overflow:hidden; }
   box-shadow:0 10px 24px rgba(0,0,0,.35);
   transform:scale(.7); opacity:0; animation: pp-in .12s ease-out forwards;
 }
-.pp-target--rare{
-  background: radial-gradient(circle at 35% 35%, rgba(255,0,90,.35), rgba(255,0,90,.12));
-  border-color: rgba(255,0,120,.55);
+.pp-target--gold{
+  background: radial-gradient(circle at 35% 35%, rgba(255,230,100,.6), rgba(255,180,0,.18));
+  border-color: rgba(255,210,90,.8);
+  box-shadow: 0 10px 30px rgba(255,200,40,.45), inset 0 0 20px rgba(255,220,120,.35);
+  animation: pp-in .12s ease-out forwards, gold-pulse 1.2s ease-in-out infinite;
 }
+@keyframes gold-pulse{ 0%,100%{ filter:none } 50%{ filter: drop-shadow(0 0 16px rgba(255,200,40,.55)); } }
 
-/* pop / fade */
 @keyframes pp-in{ to{ transform:scale(1); opacity:1 } }
 @keyframes pp-out{ to{ transform:scale(.6); opacity:0 } }
 
-/* Hit effects */
+/* FX */
 .pp-spark{
   position:absolute; pointer-events:none; font-weight:900; font-size:20px; color:#6be3ff;
   transform:translate(-50%,-50%); animation: pp-spark .7s ease-out forwards; text-shadow:0 0 10px rgba(107,227,255,.55);
 }
+.pp-spark--gold{ color:#ffdf6a; text-shadow:0 0 14px rgba(255,210,90,.8); }
+.pp-spark--miss{ color:#ff7a7a; text-shadow:0 0 10px rgba(255,80,80,.55); }
 @keyframes pp-spark{ 0%{opacity:1;transform:translate(-50%,-50%) scale(1)} 60%{opacity:.9;transform:translate(-50%,-110%) scale(1.05)} 100%{opacity:0;transform:translate(-50%,-170%) scale(.9)} }
 .pp-ripple{
   position:absolute; width:14px; height:14px; border-radius:999px; border:2px solid rgba(255,255,255,.35);
@@ -511,10 +525,8 @@ body.popper-open{ overflow:hidden; }
 }
 @keyframes pp-ripple{ to{ width:120px; height:120px; opacity:0 } }
 
-/* Result panel (центр в сцене) */
-.pp-result{
-  position:absolute; inset:0; display:none; place-items:center; padding:16px;
-}
+/* Result panel */
+.pp-result{ position:absolute; inset:0; display:none; place-items:center; padding:16px; }
 .pp-result.show{ display:grid; }
 .pp-result__card{
   width:min(100%,520px); background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10);
@@ -525,13 +537,15 @@ body.popper-open{ overflow:hidden; }
 .pp-result .score__sub{ font:600 12px/1.1 Inter; opacity:.8 }
 .pp-result .score__chev{ font:20px/1 Inter; opacity:.6 }
 
-/* CTA bottom (учёт нижней палочки) */
+/* CTA bottom */
 :root{ --ctaGap: 44px; }
 .pp-cta{ position:absolute; left:14px; right:14px; bottom: calc(env(safe-area-inset-bottom,0px) + var(--ctaGap)); display:none; }
 .pp-cta.show{ display:block; }
 .pp-cta .btn{ width:100%; height:52px; border-radius:16px; font:800 16px/1 Inter; background:#fff; color:#000; border:1px solid #fff; }
 
 @media (min-width:900px){ .popper__wrap{ max-width:var(--appW,428px); margin:0 auto } }
+
+
 
  </style>
 
@@ -548,28 +562,35 @@ body.popper-open{ overflow:hidden; }
 
     <main>
 
-      <!-- TARGET POPPER (overlay) -->
+<!-- TARGET POPPER v2 (overlay) -->
+<!-- TARGET POPPER v2 (overlay) -->
 <div id="popper" class="popper" aria-hidden="true" role="dialog" aria-modal="true">
   <div class="popper__wrap">
-    <!-- TIMER -->
+    <!-- ENERGY -->
     <div class="pp-timer">
       <div class="pp-timer__row">
-        <div id="pp-timer-text" class="pp-timer__text">00:45</div>
+        <div id="pp-timer-text" class="pp-timer__text">Energy 100%</div>
         <div class="pp-timer__bar"><i id="pp-timer-bar"></i></div>
       </div>
     </div>
 
-    <!-- SCORE (крупное число) -->
+    <!-- SCORE -->
     <div class="pp-score">
-      <img class="pp-score__icon" src="assets/target.svg" alt="">
+      <img class="pp-score__icon" src="assets/target.svg" onerror="this.style.display='none'" alt="">
       <span id="pp-score-val">0</span>
     </div>
 
     <!-- STAGE -->
     <div id="pp-stage" class="pp-stage">
+      <!-- combo — по умолчанию пусто -->
+      <div class="pp-combo" id="pp-combo">
+        <span class="pp-combo__val" id="pp-combo-val"></span>
+        <span class="pp-combo__mult" id="pp-combo-note"></span>
+      </div>
+
       <div class="pp-stage__hint">tap the targets</div>
 
-      <!-- RESULT panel (после окончания) -->
+      <!-- RESULT -->
       <div id="pp-result" class="pp-result" aria-hidden="true">
         <div class="pp-result__card">
           <div class="score__cell">
@@ -587,10 +608,16 @@ body.popper-open{ overflow:hidden; }
 
     <!-- CTA -->
     <div id="pp-cta" class="pp-cta">
-      <button class="btn" data-close-popper>Try Again Tomorrow</button>
+      <button class="btn" data-close-popper>Close</button>
     </div>
   </div>
 </div>
+
+
+
+
+
+
 
 
 
@@ -752,7 +779,6 @@ body.popper-open{ overflow:hidden; }
         <div class="list__title">Daily bonus</div>
         <div class="list__sub">Забери подарок сегодня</div>
       </div>
-      <!-- перейти в раздел Бонусы -->
 <!-- Пример кнопки запуска на главной -->
 <button class="list__btn list__btn--primary"
         data-open-popper
@@ -1393,128 +1419,11 @@ body.popper-open{ overflow:hidden; }
 </script>
 
 <script>
-(function leaderboard(){
+/* ===== TARGET POPPER v2 — smooth energy regen + time drain + gold + combos ===== */
+(function targetPopperV2(){
   const TG = window.Telegram && window.Telegram.WebApp;
 
   // DOM
-  const page     = document.getElementById('leaderboard');
-  if (!page) return;
-  const listEl   = document.getElementById('lb-list');
-  const youAva   = document.getElementById('lb-you-ava');
-  const youName  = document.getElementById('lb-you-name');
-  const youScore = document.getElementById('lb-you-score');
-  const modeBtns = Array.from(page.querySelectorAll('.js-lb-mode'));
-  const refresh  = document.getElementById('lb-refresh');
-
-  // state
-  let MODE = localStorage.getItem('lb_mode') || 'daily';
-
-  // helpers
-  const haptic = (lvl='light')=>{ try{ TG?.HapticFeedback?.impactOccurred(lvl); }catch(_){} };
-  const initials = (name)=>{
-    return (name||'U').trim().split(/\s+/).map(p=>p[0]).slice(0,2).join('').toUpperCase();
-  };
-
-  function getUser(){
-    const u = TG?.initDataUnsafe?.user;
-    const name = u ? [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username || ('id'+u.id) : 'You';
-    return { id: u?.id || 'local', name, photo_url: u?.photo_url };
-  }
-
-  // backend hook (подключишь позже)
-  async function fetchLeaderboard(mode){
-    // Если задан APP_CONFIG.WORKER_BASE — пробуем реальный бэкенд
-    try{
-      const base = window.APP_CONFIG?.WORKER_BASE;
-      if (base){
-        const url = `${base}clicker/leaderboard?mode=${encodeURIComponent(mode)}`;
-        const r = await fetch(url, { headers: { 'accept':'application/json' }});
-        if (r.ok) return await r.json(); // ожидание: [{id,name,score,photo_url},...]
-      }
-    }catch(_){}
-    // Мок-данные (fallback)
-    const names = ['Alex','Mila','Leo','Vlad','Nika','Oleg','Ira','Den','Lisa','Mark','Polina','Yuri','Nastya','Fedor','Kate','Artem','Maks','Daria','Pavel','Roma'];
-    const rows = names.map((n,i)=>({
-      id: i+1,
-      name: n,
-      score: Math.floor(20 + Math.random()*120),
-      photo_url: ''
-    })).sort((a,b)=>b.score-a.score).slice(0,30);
-    return rows;
-  }
-
-  function renderYou(){
-    const u  = getUser();
-    const best = Number(localStorage.getItem('clicker_best') || 0);
-    youName.textContent  = u.name;
-    youScore.textContent = best;
-    youAva.textContent   = '';
-    youAva.style.backgroundImage = '';
-    if (u.photo_url){
-      youAva.style.background = `#111 url(${u.photo_url}) center/cover no-repeat`;
-    } else {
-      youAva.textContent = initials(u.name);
-    }
-  }
-
-  function rowHTML(row, idx){
-    const medal = idx===0?' lb-medal-1' : idx===1?' lb-medal-2' : idx===2?' lb-medal-3':'';
-    const ava = row.photo_url
-      ? `<div class="lb-avatar" style="background:#111 url(${row.photo_url}) center/cover no-repeat"></div>`
-      : `<div class="lb-avatar">${initials(row.name)}</div>`;
-    return `
-      <div class="lb-row${medal}">
-        <div class="lb-rank">${idx+1}</div>
-        ${ava}
-        <div class="lb-name">${row.name}</div>
-        <div class="lb-score">${row.score}</div>
-      </div>
-    `;
-  }
-
-  async function load(mode){
-    MODE = mode || MODE;
-    localStorage.setItem('lb_mode', MODE);
-    // aria состояния на сегментах
-    modeBtns.forEach(b=> b.setAttribute('aria-pressed', String(b.dataset.mode===MODE)));
-    // загрузка
-    listEl.innerHTML = '<div class="lb-row" style="justify-content:center;grid-template-columns:1fr">Loading…</div>';
-    try{
-      const rows = await fetchLeaderboard(MODE);
-      listEl.innerHTML = rows.map(rowHTML).join('');
-    }catch(e){
-      listEl.innerHTML = `<div class="lb-row" style="grid-template-columns:1fr">Error loading</div>`;
-      console.warn(e);
-    }
-  }
-
-  // events
-  modeBtns.forEach(b=> b.addEventListener('click', ()=>{
-    haptic(); load(b.dataset.mode);
-  }));
-  refresh.addEventListener('click', ()=>{ haptic(); renderYou(); load(MODE); });
-
-  // когда страница активируется — обновим «Ты» и таблицу
-  function onPageShown(){
-    renderYou();
-    load(MODE);
-  }
-
-  // если у тебя есть свой роутер — можно дергать onPageShown при входе на страницу;
-  // а тут сделаем авто: при изменении hash и при загрузке
-  window.addEventListener('hashchange', ()=>{ if (location.hash==='#leaderboard') onPageShown(); });
-  document.addEventListener('DOMContentLoaded', ()=>{ if (location.hash==='#leaderboard') onPageShown(); });
-
-  // экспорт на всякий случай
-  window.lbReload = ()=> load(MODE);
-})();
-</script>
-
-<script>
-(function targetPopper(){
-  const TG = window.Telegram && window.Telegram.WebApp;
-
-  // ---- DOM
   const root = document.getElementById('popper'); if (!root) return;
   const stage = document.getElementById('pp-stage');
   const timerText = document.getElementById('pp-timer-text');
@@ -1524,48 +1433,153 @@ body.popper-open{ overflow:hidden; }
   const bestEl    = document.getElementById('pp-best');
   const worldEl   = document.getElementById('pp-world');
   const cta       = document.getElementById('pp-cta');
+  const comboEl   = document.getElementById('pp-combo');
+  const comboValEl= document.getElementById('pp-combo-val');
+  const comboNoteEl = document.getElementById('pp-combo-note');
 
-  // ---- CONFIG
-  const GAME_NAME      = 'popper';
-  const DURATION_MS    = 45_000;      // длительность раунда
-  const WORLD_RECORD   = 120;         // отображение на экране результатов
-  const SPAWN_EVERY_MS = 420;         // базовый тиковый интервал спавна
-  const LIFE_MIN_MS    = 650;         // сколько живёт цель
-  const LIFE_MAX_MS    = 1150;
-  const SIZE_MIN       = 44;          // px
-  const SIZE_MAX       = 68;
-  const RARE_PROB      = 0.12;        // редкая цель
-  const RARE_SCORE     = 3;           // очки за редкую
-  const NORMAL_SCORE   = 1;
+  // CONFIG
+  const GAME_NAME        = 'popper';
+  const WORLD_RECORD     = 120;
 
-  // ---- State
-  let score=0, best = Number(localStorage.getItem(`${GAME_NAME}_best_default`)||0);
-  let running=false, t0=0, rafId=0, spawnId=0;
-  let backHandler=null;
-  let sessionKey='default';
-  let cooldownMs = 24*3600_000; // по умолчанию 24 часа
-  let cooldownTimer=0;
+  // targets жизнь цели
+  const SPAWN_EVERY_MS   = 520;
+  const LIFE_MIN_MS      = 1100;
+  const LIFE_MAX_MS      = 1700;
+  const SIZE_MIN         = 44;
+  const SIZE_MAX         = 68;
+  const GOLD_PROB        = 0.08;
+  const GOLD_SCORE       = 5;
+  const NORMAL_SCORE     = 1;
 
-  // ---- Utils
+  // combo
+  const COMBO_STEP       = 3;     // +1 множитель каждые 3 попадания
+  const COMBO_MAX_MULT   = 5;     // максимум x5
+
+  // energy (дефолты можно крутить)
+  const ENERGY_MAX_DEFAULT = 100;
+  const ENERGY_COST_HIT    = 0.1;
+  const ENERGY_COST_MISS   = 0.3;
+  const ENERGY_COST_EXPIRE = 0.2;
+  const START_MIN_ENERGY   = 0.1;   // минимум, чтобы стартовать
+  let   ENERGY_REGEN_MS    = 0.1 * 3600_000; // глобальный дефолт (полный бак за 24ч)
+
+  // плавный ПОМИНУТНЫЙ расход во время игры (Variant 2)
+  const DRAIN_PER_MIN     = 0.10;   // ед/мин; поставь меньше/больше
+  let   lastDrainTs       = 0;
+
+  // STATE
+  let score = 0, best = 0;
+  let running = false, spawnId = 0;
+  let backHandler = null;
+  let combo = 0;
+  let sessionKey = 'default';
+  let energyMax  = ENERGY_MAX_DEFAULT;
+  let energyRafId = 0;
+  let lockMode = false;
+
+  // Utils
   const haptic = lvl=>{ try{ TG?.HapticFeedback?.impactOccurred(lvl||'light'); }catch(_){} };
-  const mmss = ms => {
-    const s=Math.max(0, Math.ceil(ms/1000));
-    return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-  };
   const rnd  = (a,b)=> a + Math.random()*(b-a);
   const irnd = (a,b)=> Math.floor(rnd(a,b));
+  const clamp= (v,a,b)=> Math.max(a, Math.min(b, v));
 
-  // cooldown helpers
-  const keyLast = (k)=> `${GAME_NAME}_last_play_${k}`;
-  const keyBest = (k)=> `${GAME_NAME}_best_${k}`;
-  const setLast = (k,ts)=>{ try{ localStorage.setItem(keyLast(k), String(ts)); }catch(_){ } };
-  const getLast = (k)=> Number(localStorage.getItem(keyLast(k))||0);
-  const leftMs  = (k,cd)=> Math.max(0, getLast(k)+cd - Date.now());
+  // Storage helpers (per sessionKey)
+  const k = (s)=> `${GAME_NAME}_${s}_${sessionKey}`;
+  const getNum = (key, def=0)=> Number(localStorage.getItem(key) ?? def);
+  const setNum = (key, v)=> { try{ localStorage.setItem(key, String(v)); }catch(_){} };
 
-  // ---- Score
-  function setScore(v){ score=v; scoreVal.textContent = v; }
+  // Energy model (value@ts + linear regen)
+  function energyKeys(){ return { val: k('energy_val'), ts: k('energy_ts') }; }
+  function energySnapshot(){
+    const {val, ts} = energyKeys();
+    let v = Number(localStorage.getItem(val));
+    let t = Number(localStorage.getItem(ts));
+    if (!Number.isFinite(v)) v = energyMax;
+    if (!Number.isFinite(t)) t = Date.now();
+    return { v, t };
+  }
+  function energyAt(now = Date.now()){
+    const { v, t } = energySnapshot();
+    const regenRate = energyMax / ENERGY_REGEN_MS; // ед/мс
+    return clamp(v + regenRate * (now - t), 0, energyMax);
+  }
+  function energyWrite(newVal, now = Date.now()){
+    const { val, ts } = energyKeys();
+    setNum(val, clamp(newVal, 0, energyMax));
+    setNum(ts, now);
+  }
+  function energyUse(cost){
+    const now = Date.now();
+    const cur = energyAt(now);
+    const next = cur - cost;
+    energyWrite(next, now);
+    if (next <= 0){ energyWrite(0, now); finish(true); return false; }
+    return true;
+  }
+  function energyPctFloat(v = energyAt()){ return (v / energyMax) * 100; }
 
-  // ---- Spawn targets
+  // Smooth UI (rAF) + time drain
+  function energyUIFrame(){
+    // плавный поминутный расход, пока игра идёт
+    if (running && DRAIN_PER_MIN > 0){
+      const nowPerf = performance.now();
+      if (!lastDrainTs) lastDrainTs = nowPerf;
+      const dtMin = (nowPerf - lastDrainTs) / 60000;
+      if (dtMin > 0){
+        const drain = dtMin * DRAIN_PER_MIN;
+        const now   = Date.now();
+        const cur   = energyAt(now);
+        energyWrite(cur - drain, now);
+        lastDrainTs = nowPerf;
+      }
+    }
+
+    const pct = energyPctFloat();
+    const pctText = Math.round(pct*10)/10;
+    timerText.textContent = `Energy ${pctText}%`;
+    timerBar.style.transform = `scaleX(${clamp(pct/100, 0, 1)})`;
+
+    if (lockMode){
+      const btn = cta.querySelector('.btn');
+      if (btn) btn.textContent = (energyAt() >= START_MIN_ENERGY) ? 'Play' : 'Out of energy — Close';
+    }
+    energyRafId = requestAnimationFrame(energyUIFrame);
+  }
+  function startEnergyRaf(){ cancelAnimationFrame(energyRafId); energyRafId = requestAnimationFrame(energyUIFrame); }
+  function stopEnergyRaf(){ cancelAnimationFrame(energyRafId); energyRafId = 0; }
+
+  // Score / Combo (x1 скрыт)
+  function updateScore(v){ score = v; scoreVal.textContent = v; }
+  function setCombo(hitOk){
+    if (hitOk){ combo += 1; } else { combo = 0; }
+    const mult = 1 + Math.min(Math.floor(combo / COMBO_STEP), COMBO_MAX_MULT-1);
+    if (mult > 1){
+      comboValEl.textContent = `x${mult}`;
+      comboNoteEl.textContent = 'combo';
+      comboEl.classList.add('show');
+    } else {
+      comboEl.classList.remove('show');
+      comboValEl.textContent = '';
+      comboNoteEl.textContent = '';
+    }
+    return mult;
+  }
+
+  // FX
+  function spark(x,y, text, cls){
+    const s = document.createElement('div');
+    s.className = 'pp-spark' + (cls?` ${cls}`:'');
+    s.textContent = text;
+    s.style.left = x+'px'; s.style.top = y+'px';
+    stage.appendChild(s); s.addEventListener('animationend', ()=> s.remove());
+  }
+  function ripple(x,y){
+    const r = document.createElement('i');
+    r.className='pp-ripple'; r.style.left=x+'px'; r.style.top=y+'px';
+    stage.appendChild(r); r.addEventListener('animationend', ()=> r.remove());
+  }
+
+  // Spawn targets
   function spawn(){
     if(!running) return;
     const rect = stage.getBoundingClientRect();
@@ -1574,152 +1588,136 @@ body.popper-open{ overflow:hidden; }
     const x = irnd(pad, Math.max(pad, rect.width - size - pad));
     const y = irnd(pad, Math.max(pad, rect.height - size - pad));
     const life = irnd(LIFE_MIN_MS, LIFE_MAX_MS);
-    const rare = Math.random() < RARE_PROB;
+    const isGold = Math.random() < GOLD_PROB;
 
     const el = document.createElement('div');
-    el.className = 'pp-target' + (rare ? ' pp-target--rare' : '');
+    el.className = 'pp-target' + (isGold ? ' pp-target--gold' : '');
     el.style.width = el.style.height = size+'px';
     el.style.left = x+'px'; el.style.top = y+'px';
-    el.dataset.score = String(rare ? RARE_SCORE : NORMAL_SCORE);
+    el.dataset.base = String(isGold ? GOLD_SCORE : NORMAL_SCORE);
     let dead=false;
 
-    const kill = (hit=false)=>{
-      if (dead) return; dead = true;
-      el.style.animation = 'pp-out .12s ease-out forwards';
-      if (hit){
-        // эффекты
-        const s = document.createElement('div');
-        s.className='pp-spark'; s.textContent = rare ? '+3' : '+1';
-        s.style.left = (x+size/2)+'px'; s.style.top=(y+size/2)+'px';
-        stage.appendChild(s); s.addEventListener('animationend', ()=> s.remove());
-        const r = document.createElement('i');
-        r.className='pp-ripple'; r.style.left=(x+size/2)+'px'; r.style.top=(y+size/2)+'px';
-        stage.appendChild(r); r.addEventListener('animationend', ()=> r.remove());
-      }
-      setTimeout(()=> el.remove(), 110);
-    };
+    function kill(){ if (dead) return; dead = true; el.style.animation = 'pp-out .12s ease-out forwards'; setTimeout(()=> el.remove(), 120); }
 
     el.addEventListener('pointerdown', (e)=>{
       if(!running) return;
-      e.preventDefault();
-      const add = Number(el.dataset.score||1);
-      setScore(score + add);
+      e.preventDefault(); e.stopPropagation();
+
+      if (!energyUse(ENERGY_COST_HIT)) return;
+
+      const base = Number(el.dataset.base||1);
+      const mult = setCombo(true);
+      const add  = base * mult;
+
+      const cx = x + size/2, cy = y + size/2;
+      updateScore(score + add);
       haptic('medium');
-      kill(true);
+      spark(cx, cy, `+${add}` + (mult>1?` ×${mult}`:''), isGold? 'pp-spark--gold':'' );
+      ripple(cx, cy);
+
+      kill();
+
+      if (isGold){
+        const now = Date.now();
+        const cur = energyAt(now);
+        energyWrite(Math.min(energyMax, cur + 2), now); // +2 энергии
+      }
     }, {passive:false});
 
     stage.appendChild(el);
-    setTimeout(()=> kill(false), life);
+
+    // истечение жизни цели = штраф
+    setTimeout(()=>{
+      if (!dead && running){
+        const cx = x + size/2, cy = y + size/2;
+        combo = 0; setCombo(false);
+        if (energyUse(ENERGY_COST_EXPIRE)){
+          updateScore(Math.max(0, score - 1));
+          spark(cx, cy, '–1', 'pp-spark--miss'); ripple(cx, cy);
+          haptic('light');
+        }
+        kill();
+      }
+    }, life);
   }
 
-  // ---- Timer
-  function tick(){
-    const elapsed = Date.now() - t0;
-    const left = Math.max(0, DURATION_MS - elapsed);
-    timerText.textContent = mmss(left);
-    timerBar.style.transform = `scaleX(${Math.max(0, 1 - elapsed / DURATION_MS)})`;
-    if (left <= 0){ finish(); return; }
-    rafId = requestAnimationFrame(tick);
-  }
+  // Miss по пустому месту
+  stage.addEventListener('pointerdown', (e)=>{
+    if(!running) return;
+    if (e.target.closest('.pp-target')) return;
+    e.preventDefault();
+    const rect = stage.getBoundingClientRect();
+    const cx = (e.clientX ?? 0) - rect.left, cy = (e.clientY ?? 0) - rect.top;
 
-  // ---- Lock screen (cooldown)
+    combo = 0; setCombo(false);
+    if (energyUse(ENERGY_COST_MISS)){
+      updateScore(Math.max(0, score - 1));
+      spark(cx, cy, '–1', 'pp-spark--miss'); ripple(cx, cy);
+      haptic('light');
+    }
+  });
+
+  // Open / Close / Lock
   function openLocked(){
-    root.classList.add('is-open'); document.body.classList.add('popper-open');
-    // прячем всё игровое, показываем только CTA и обратный отсчёт в таймере
+    lockMode = true; running = false;
+    result.classList.remove('show'); cta.classList.add('show');
     stage.style.pointerEvents='none';
-    result.classList.remove('show');
-    cta.classList.add('show');
 
-    try{
-      TG?.BackButton?.show?.();
-      backHandler = ()=> closePopper();
-      TG?.BackButton?.onClick?.(backHandler);
-      TG?.disableVerticalSwipes?.(); TG?.expand?.();
-    }catch(_){}
-
-    const upd = ()=>{
-      const l = leftMs(sessionKey, cooldownMs);
-      timerText.textContent = l>0 ? mmss(l) : 'Ready';
-      timerBar.style.transform = `scaleX(${Math.max(0, l / cooldownMs)})`;
-      const btn = cta.querySelector('.btn');
-      if (btn) btn.textContent = l>0 ? 'Try Again Later' : 'Play';
-      if (l<=0){ clearInterval(cooldownTimer); }
-    };
-    clearInterval(cooldownTimer);
-    upd();
-    cooldownTimer = setInterval(upd, 1000);
+    root.classList.add('is-open'); document.body.classList.add('popper-open');
+    try{ TG?.BackButton?.show?.(); TG?.BackButton?.onClick?.(()=> closePopper()); TG?.disableVerticalSwipes?.(); TG?.expand?.(); }catch(_){}
+    startEnergyRaf(); window.syncBack?.();
   }
 
-  // ---- Open/Close
   function openPopper(opts){
     sessionKey = opts?.key || 'default';
-    cooldownMs = Number(opts?.cooldownMs || 24*3600_000);
+    ENERGY_REGEN_MS = Number.isFinite(opts?.regenMs) ? opts.regenMs : ENERGY_REGEN_MS; // Variant-B
+    energyMax = ENERGY_MAX_DEFAULT;
 
-    // cooldown?
-    if (leftMs(sessionKey, cooldownMs) > 0){
-      openLocked();
-      return;
-    }
+    best = getNum(k('best'), 0);
 
-    // reset UI
-    clearInterval(cooldownTimer);
-    setScore(0);
+    if (energyAt() < START_MIN_ENERGY) return openLocked();
+
+    // reset
+    lockMode = false; updateScore(0); combo = 0; setCombo(false);
+    result.classList.remove('show'); cta.classList.remove('show');
     stage.style.pointerEvents='auto';
-    result.classList.remove('show');
-    cta.classList.remove('show');
-    // убираем возможные остатки целей
     stage.querySelectorAll('.pp-target,.pp-spark,.pp-ripple').forEach(n=>n.remove());
 
     root.classList.add('is-open'); document.body.classList.add('popper-open');
     try{
       TG?.BackButton?.show?.();
-      backHandler = ()=> closePopper();
-      TG?.BackButton?.onClick?.(backHandler);
+      TG?.BackButton?.onClick?.(()=> closePopper());
       TG?.disableVerticalSwipes?.(); TG?.expand?.();
     }catch(_){}
 
     running = true;
-    t0 = Date.now();
-    timerBar.style.transform='scaleX(1)';
-    timerText.textContent = mmss(DURATION_MS);
-    tick();
-    spawn(); // моментальный спавн
+    lastDrainTs = performance.now();
     clearInterval(spawnId);
+    spawn();
     spawnId = setInterval(()=>{ if(running) spawn(); }, SPAWN_EVERY_MS);
+
+    startEnergyRaf();
     window.syncBack?.();
   }
 
   function closePopper(){
-    running = false;
-    cancelAnimationFrame(rafId);
-    clearInterval(spawnId);
-    clearInterval(cooldownTimer);
+    running = false; lockMode = false; lastDrainTs = 0;
+    clearInterval(spawnId); stopEnergyRaf();
     root.classList.remove('is-open'); document.body.classList.remove('popper-open');
-    try{ TG?.BackButton?.offClick?.(backHandler); backHandler=null; }catch(_){}
-    if (typeof window.syncBack === 'function') window.syncBack(); else try{ TG?.BackButton?.hide?.(); }catch(_){}
+    try{ TG?.BackButton?.hide?.(); }catch(_){}
+    window.syncBack?.();
   }
 
-  // ---- Finish
-  async function finish(){
-    running = false;
-    cancelAnimationFrame(rafId);
-    clearInterval(spawnId);
+  // Finish
+  async function finish(outOfEnergy=false){
+    running = false; clearInterval(spawnId);
+    if (score > best){ best = score; setNum(k('best'), best); }
+    bestEl.textContent  = best; worldEl.textContent = WORLD_RECORD;
 
-    // best
-    const bestKey = keyBest('default'); // локальный общий best; можно сделать per sessionKey
-    if (score > best){ best = score; try{ localStorage.setItem(bestKey, String(best)); }catch(_){ } }
-    bestEl.textContent = best;
-    worldEl.textContent = WORLD_RECORD;
-
-    // cooldown start
-    setLast(sessionKey, Date.now());
-
-    // показать результат в центре и CTA снизу
-    result.classList.add('show');
-    cta.classList.add('show');
+    result.classList.add('show'); cta.classList.add('show');
+    const btn = cta.querySelector('.btn'); if (btn) btn.textContent = outOfEnergy ? 'Out of energy — Close' : 'Close';
     haptic('medium');
 
-    // (опционально) отправить на бэкенд
     try{
       const base = window.APP_CONFIG?.WORKER_BASE;
       if (base){
@@ -1734,36 +1732,40 @@ body.popper-open{ overflow:hidden; }
     }catch(_){}
   }
 
-  // ---- CTA
+  // CTA
   cta.addEventListener('click', (e)=>{
     if (!e.target.closest('.btn')) return;
-    const l = leftMs(sessionKey, cooldownMs);
-    if (l<=0 && !running){
-      openPopper({ key: sessionKey, cooldownMs });
+    if (lockMode && energyAt() >= START_MIN_ENERGY){
+      openPopper({ key: sessionKey }); // regenMs оставляем текущий
     } else {
       closePopper();
     }
   });
 
-  // ---- Delegated opener
+  // Delegated opener (Variant-B: не подставляем 24ч, если атрибут не указан)
   document.addEventListener('click', (e)=>{
-    const t = e.target.closest('[data-open-popper]');
-    if (!t) return;
+    const t = e.target.closest('[data-open-popper]'); if (!t) return;
     e.preventDefault();
-    const hrs = parseFloat(t.getAttribute('data-cooldown-hours'));
-    const cd  = Number.isFinite(hrs) ? hrs*36_000 : 24*3600_000;
-    const key = t.getAttribute('data-game-key') || 'default';
-    openPopper({ key, cooldownMs: cd });
+    const key  = t.getAttribute('data-game-key') || 'default';
+    const hrsAttr = t.getAttribute('data-energy-regen-hours');
+    const regenMs = (hrsAttr !== null && hrsAttr !== '')
+      ? parseFloat(hrsAttr) * 3600_000
+      : undefined;
+    openPopper({ key, regenMs });
   });
 
-  // ---- Esc (desktop)
+  // Esc (desktop)
   document.addEventListener('keydown', (e)=>{ if (e.key==='Escape' && root.classList.contains('is-open')) closePopper(); });
 
-  // export
-  window.openPopper = (opts)=> openPopper(opts);
+  // экспорт
+  window.openPopper  = (opts)=> openPopper(opts);
   window.closePopper = closePopper;
 })();
 </script>
+
+
+
+
 
 
 </body>
