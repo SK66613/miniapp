@@ -913,6 +913,82 @@ body.pairs-open{ overflow:hidden; }
 
  </style>
 
+ <style>
+  /* ===== FLICK COIN (overlay) ===== */
+.flick{ position:fixed; inset:0; z-index:10060; background:#000; color:#fff; display:none; }
+.flick.is-open{ display:block; }
+body.flick-open{ overflow:hidden; }
+
+.flick__wrap{
+  position:relative; inset:0; display:flex; flex-direction:column;
+  --edgePad: 18px; --ctaGap: 44px; --ctaH: 52px;
+  padding: calc(env(safe-area-inset-top,0px)+8px)
+           var(--edgePad)
+           calc(env(safe-area-inset-bottom,0px)+var(--ctaGap)+var(--ctaH)+8px);
+}
+
+/* HUD */
+.fk-hud{ width:100%; max-width:520px; margin:0 auto 8px; display:grid; gap:8px; }
+.fk-stats{ display:flex; justify-content:center; gap:12px; }
+.fk-pill{ padding:6px 10px; border-radius:999px; background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1); font:800 13px/1 Inter; letter-spacing:.2px; display:flex; gap:6px; align-items:center; }
+.fk-powers{ display:flex; justify-content:center; gap:10px; }
+.fk-power{ height:36px; padding:0 12px; border-radius:12px; border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06); color:#fff; font:800 12px/1 Inter; }
+.fk-power.is-on{ box-shadow:0 0 18px rgba(100,220,255,.45), inset 0 0 0 2px rgba(100,220,255,.9); }
+
+/* Stage */
+.fk-stage{ flex:1; position:relative; overflow:hidden; border-radius:16px;
+  background: radial-gradient(120% 100% at 50% 0%, #0e1524 0%, #0a0c14 60%, #07080b 100%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+}
+
+/* Holes */
+.fk-hole{ position:absolute; width:84px; height:84px; border-radius:50%;
+  display:grid; place-items:center; }
+.fk-hole__ring{ position:absolute; inset:-8px; border-radius:50%;
+  box-shadow:0 0 0 2px rgba(107,227,255,.9), 0 0 22px rgba(107,227,255,.45); }
+.fk-hole__core{ width:70%; height:70%; border-radius:50%;
+  background: radial-gradient(circle at 35% 35%, #0b0f18, #000); box-shadow: inset 0 6px 14px rgba(0,0,0,.75); }
+.fk-hole__lbl{ position:absolute; top:-20px; font:800 12px/1 Inter; opacity:.85; }
+
+/* Coin */
+.fk-coin{ position:absolute; width:56px; height:56px; border-radius:50%;
+  background: radial-gradient(circle at 35% 35%, #ffe28a, #ffac33);
+  box-shadow:0 8px 18px rgba(255,172,51,.35), inset 0 0 12px rgba(255,255,255,.35);
+  transform:translate(-50%,-50%); will-change: transform, left, top; }
+.fk-coin.is-aim{ outline:2px dashed rgba(255,255,255,.35); outline-offset:6px; }
+
+/* Bumpers */
+.fk-bumper{ position:absolute; width:90px; height:14px; border-radius:999px;
+  background:linear-gradient(90deg, #00d2ff, #3a7bd5);
+  box-shadow:0 12px 22px rgba(0, 150, 255, .25), inset 0 0 10px rgba(255,255,255,.25); }
+
+/* Guide path */
+.fk-guide{ position:absolute; inset:0; pointer-events:none; }
+.fk-guide svg{ width:100%; height:100%; }
+.fk-guide polyline{ fill:none; stroke:rgba(255,255,255,.7); stroke-width:2; stroke-dasharray:4 6; }
+
+/* Result */
+.fk-result{ position:absolute; inset:0; display:none; place-items:center; padding:16px; }
+.fk-result.show{ display:grid; }
+.fk-card{ width:min(100%,520px); background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10);
+  border-radius:18px; padding:12px 16px; display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:center; }
+.fk-title{ grid-column:1/-1; text-align:center; font:800 16px/1.2 Inter; opacity:.9 }
+.fk-cell{ display:grid; gap:4px; justify-items:center }
+.fk-val{ font:800 20px/1 Inter }
+
+/* CTA */
+.fk-cta{ position:absolute; left:var(--edgePad); right:var(--edgePad);
+  bottom:calc(env(safe-area-inset-bottom,0px)+var(--ctaGap)); display:none; }
+.fk-cta.show{ display:block; }
+.fk-cta .btn{ width:100%; height:var(--ctaH); border-radius:16px; font:800 16px/1 Inter;
+  background:#fff; color:#000; border:1px solid #fff; }
+
+@media (min-width:900px){ .flick__wrap{ max-width:var(--appW,428px); margin:0 auto } }
+
+ </style>
+
 </head>
 <body>
   <div class="wrap">
@@ -925,6 +1001,46 @@ body.pairs-open{ overflow:hidden; }
     </nav>
 
     <main>
+
+      <!-- FLICK COIN (overlay) -->
+<div id="flick" class="flick" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="flick__wrap">
+    <!-- HUD -->
+    <div class="fk-hud">
+      <div class="fk-stats">
+        <div class="fk-pill">Score <span id="fk-score" class="fk-val">0</span></div>
+        <div class="fk-pill">Shots <span id="fk-shots" class="fk-val">0/5</span></div>
+      </div>
+      <div class="fk-powers">
+        <button class="fk-power" data-power="guide">🎯 Guide</button>
+        <button class="fk-power" data-power="magnet">🧲 Magnet</button>
+      </div>
+    </div>
+
+    <!-- STAGE -->
+    <div id="fk-stage" class="fk-stage">
+      <div class="fk-guide"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline id="fk-poly" points=""/></svg></div>
+      <div id="fk-coin" class="fk-coin" aria-label="coin"></div>
+
+      <!-- RESULT -->
+      <div id="fk-result" class="fk-result" aria-hidden="true">
+        <div class="fk-card">
+          <div class="fk-title">Round finished</div>
+          <div class="fk-cell"><div class="fk-val" id="fk-best">0</div><div>best</div></div>
+          <div class="fk-cell"><div class="fk-val" id="fk-total">0</div><div>your score</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div id="fk-cta" class="fk-cta">
+      <button class="btn" data-close-flick>Play again</button>
+    </div>
+  </div>
+</div>
+
+
+
 
       <!-- MEMORY PAIRS (overlay) -->
 <div id="pairs" class="pairs" aria-hidden="true" role="dialog" aria-modal="true">
@@ -1310,6 +1426,17 @@ body.pairs-open{ overflow:hidden; }
       </div>
 <!-- Кнопка запуска на главной -->
 <button class="list__btn list__btn--primary" data-open-pairs>Pairs</button>
+    </div>
+
+        <!-- Кликер -->
+    <div class="list__item">
+      <div class="list__icon"><img src="sales_genius_aibot.png" alt=""></div>
+      <div class="list__text">
+        <div class="list__title">Clicker</div>
+        <div class="list__sub">1-minute challenge</div>
+      </div>
+<!-- Кнопка запуска на главной -->
+<button class="list__btn list__btn--primary" data-open-flick>Coin</button>
     </div>
 
 
@@ -3163,6 +3290,358 @@ for (const it of items){
 })();
 </script>
 
+<script>
+/* ===== Flick Coin — physics, holes, bumpers, guide & magnet ===== */
+(function flickCoin(){
+  const TG = window.Telegram && window.Telegram.WebApp;
+
+  // DOM
+  const root   = document.getElementById('flick'); if (!root) return;
+  const stage  = document.getElementById('fk-stage');
+  const coinEl = document.getElementById('fk-coin');
+  const scoreEl= document.getElementById('fk-score');
+  const shotsEl= document.getElementById('fk-shots');
+  const resBox = document.getElementById('fk-result');
+  const bestEl = document.getElementById('fk-best');
+  const totalEl= document.getElementById('fk-total');
+  const cta    = document.getElementById('fk-cta');
+  const powerBtns = Array.from(document.querySelectorAll('.fk-power'));
+  const guidePoly = document.getElementById('fk-poly');
+
+  // CONFIG
+  const SHOTS_MAX = 5;
+  const BASE_SCORE = 100;
+  const WALL_BONUS = 0.5;     // +50% если был рикошет от стены
+  const GRAVITY = 900;        // px/s^2
+  const FRICTION = 0.995;     // аэродраг
+  const BOUNCE  = 0.72;       // упругость стен
+  const SPEED_MAX = 1600;     // кап на стартовую скорость
+  const START_ZONE_H = 140;   // высота зоны старта снизу
+
+  // Holes (x as fraction of width, y absolute from top)
+  const HOLES = [
+    { fx:.18, y:90, r:42, mult:1 },
+    { fx:.50, y:90, r:42, mult:2 },
+    { fx:.82, y:90, r:42, mult:3 }
+  ];
+
+  // Bumpers (moving bars)
+  const BUMPERS = [
+    { x: 40, y: 260, w: 90, h:14, vx: 90 },   // будет бегать влево-вправо
+    { x: 300, y: 360, w: 90, h:14, vx:-110 }
+  ];
+
+  // Powers
+  let hasGuide = true;  // стартовый набор
+  let hasMagnet = true;
+  const MAGNET_RADIUS = 120;     // радиус захвата
+  const MAGNET_PULL   = 480;     // px/s притяжение к центру лунки
+
+  // STATE
+  let w=0,h=0, best=Number(localStorage.getItem('flick_best')||0);
+  let shots=0, score=0;
+  let coin = { x:0,y:0, vx:0,vy:0, flying:false, banked:false }; // banked = был ли удар о стену
+  let holes=[], bumpers=[];
+  let running=false, raf=0, backOff=null;
+  let aim={ down:false, sx:0,sy:0, t0:0 };
+  let guideArmed=false, magnetArmed=false;
+
+  // Utils
+  const haptic = lvl=>{ try{ TG?.HapticFeedback?.impactOccurred(lvl||'light'); }catch(_){} };
+  const clamp  = (v,a,b)=> Math.max(a, Math.min(b, v));
+  const dist   = (ax,ay,bx,by)=> Math.hypot(ax-bx, ay-by);
+  const now    = ()=> performance.now();
+
+  // Build holes/bumpers DOM
+  function buildTargets(){
+    holes.forEach(h=>h.el.remove()); holes=[];
+    bumpers.forEach(b=>b.el.remove()); bumpers=[];
+
+    HOLES.forEach(cfg=>{
+      const el = document.createElement('div'); el.className='fk-hole';
+      const ring = document.createElement('i'); ring.className='fk-hole__ring';
+      const core = document.createElement('b'); core.className='fk-hole__core';
+      const lbl  = document.createElement('span'); lbl.className='fk-hole__lbl'; lbl.textContent = `x${cfg.mult}`;
+      el.append(ring, core, lbl); stage.appendChild(el);
+      holes.push({ cfg, el, cx:0, cy:cfg.y, r:cfg.r });
+    });
+
+    BUMPERS.forEach(cfg=>{
+      const el = document.createElement('div'); el.className='fk-bumper';
+      stage.appendChild(el);
+      bumpers.push({ ...cfg, el });
+    });
+  }
+
+  function layout(){
+    w = stage.clientWidth; h = stage.clientHeight;
+    // holes pos
+    holes.forEach(hh=>{ hh.cx = w * hh.cfg.fx; hh.cy = hh.cfg.y; hh.r = hh.cfg.r; positionHole(hh); });
+    // bumpers pos
+    bumpers.forEach(bb=>{ if (!bb.x0) bb.x0 = bb.x; positionBumper(bb); });
+    // coin start
+    if (!coin.flying){
+      coin.x = w/2; coin.y = h - START_ZONE_H/2; applyCoin();
+    }
+    // update guide viewport
+    guidePoly.ownerSVGElement.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  }
+  const positionHole = h=>{ const s=h.el.style; s.left=(h.cx-42)+'px'; s.top=(h.cy-42)+'px'; };
+  const positionBumper = b=>{ const s=b.el.style; s.left=(b.x - b.w/2)+'px'; s.top=(b.y - b.h/2)+'px'; s.width=b.w+'px'; s.height=b.h+'px'; };
+  function applyCoin(){ coinEl.style.left = coin.x+'px'; coinEl.style.top = coin.y+'px'; }
+
+  // Open/Close
+  function openFlick(){
+    root.classList.add('is-open'); document.body.classList.add('flick-open');
+
+    try{
+      TG?.BackButton?.show?.();
+      backOff = ()=> closeFlick();
+      TG?.BackButton?.onClick?.(backOff);
+      TG?.disableVerticalSwipes?.(); TG?.expand?.();
+    }catch(_){}
+
+    // powers
+    guideArmed = hasGuide; magnetArmed = hasMagnet;
+    updatePowerButtons();
+
+    shots=0; score=0; updateHud();
+
+    buildTargets(); layout();
+    resBox.classList.remove('show'); cta.classList.remove('show');
+
+    running = true; raf = requestAnimationFrame(tick);
+  }
+  function closeFlick(){
+    running=false; cancelAnimationFrame(raf);
+    root.classList.remove('is-open'); document.body.classList.remove('flick-open');
+    try{ TG?.BackButton?.offClick?.(backOff); TG?.BackButton?.hide?.(); }catch(_){}
+  }
+
+  function updateHud(){
+    scoreEl.textContent = score;
+    shotsEl.textContent = `${shots}/${SHOTS_MAX}`;
+  }
+  function updatePowerButtons(){
+    powerBtns.forEach(b=>{
+      const k = b.dataset.power;
+      const on = (k==='guide'?guideArmed:magnetArmed);
+      b.classList.toggle('is-on', on);
+    });
+  }
+
+  // Input (flick from bottom zone)
+  stage.addEventListener('pointerdown', (e)=>{
+    const rect = stage.getBoundingClientRect();
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+
+    if (y < h - START_ZONE_H) return; // стартуем только из нижней зоны
+    if (coin.flying) return;
+
+    aim = { down:true, sx:x, sy:y, t0: now() };
+    coinEl.classList.add('is-aim');
+    if (guideArmed) drawGuideFrom(x,y);
+  }, {passive:true});
+
+  stage.addEventListener('pointermove', (e)=>{
+    if (!aim.down) return;
+    const rect = stage.getBoundingClientRect();
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+    if (guideArmed) drawGuideFrom(aim.sx, aim.sy, x,y);
+  }, {passive:true});
+
+  stage.addEventListener('pointerup', (e)=>{
+    if (!aim.down) return;
+    const rect = stage.getBoundingClientRect();
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+
+    // стартовая скорость = (start - end) / time * scale
+    const dt = Math.max(16, now() - aim.t0);
+    let vx = (aim.sx - x) / dt * 800;     // эмпирический коэффициент
+    let vy = (aim.sy - y) / dt * 800;
+
+    const sp = Math.hypot(vx,vy);
+    if (sp > SPEED_MAX){ const k = SPEED_MAX/sp; vx*=k; vy*=k; }
+
+    startShot(vx, vy);
+    coinEl.classList.remove('is-aim');
+    aim.down=false;
+    clearGuide();
+  }, {passive:true});
+
+  function startShot(vx,vy){
+    if (coin.flying) return;
+    if (shots >= SHOTS_MAX){ return; }
+
+    shots++; updateHud();
+    coin.flying = true; coin.vx = vx; coin.vy = vy; coin.banked=false;
+    haptic('light');
+
+    // consume powers
+    if (guideArmed){ guideArmed=false; updatePowerButtons(); }
+  }
+
+  // Guide (simple parabolic preview + wall bounces)
+  function drawGuideFrom(sx,sy, mx, my){
+    const pvx = ((sx - (mx??sx)) / Math.max(16, now()-aim.t0)) * 800;
+    const pvy = ((sy - (my??(sy-80))) / Math.max(16, now()-aim.t0)) * 800;
+    const pts = [];
+    let x = coin.x, y = coin.y, vx=pvx, vy=pvy;
+    let t=0, step=24;
+    for (let i=0;i<50;i++){
+      t += step/1000;
+      vy += GRAVITY * (step/1000);
+      x += vx * (step/1000);
+      y += vy * (step/1000);
+      // стенки
+      if (x<28){ x=28; vx = -vx*BOUNCE; }
+      if (x>w-28){ x=w-28; vx = -vx*BOUNCE; }
+      pts.push(`${x},${y}`);
+      if (y<0 || y>h) break;
+    }
+    guidePoly.setAttribute('points', pts.join(' '));
+  }
+  function clearGuide(){ guidePoly.setAttribute('points',''); }
+
+  // Loop
+  function tick(){
+    const nt = performance.now();
+    const dt = Math.min(32, tick._prev ? nt - tick._prev : 16); tick._prev = nt;
+
+    // move bumpers
+    for (const b of bumpers){
+      b.x += b.vx * dt/1000;
+      if (b.x <= 40 || b.x >= w-40){ b.vx *= -1; }
+      positionBumper(b);
+    }
+
+    // coin physics
+    if (coin.flying){
+      // magnet to nearest hole
+      if (magnetArmed){
+        let best=null, bd=1e9;
+        for (const h of holes){
+          const d = dist(coin.x,coin.y, h.cx,h.cy);
+          if (d < bd){ bd=d; best=h; }
+        }
+        if (best && bd < MAGNET_RADIUS){
+          const nx = (best.cx-coin.x) / (bd||1);
+          const ny = (best.cy-coin.y) / (bd||1);
+          coin.vx += nx * MAGNET_PULL * dt/1000;
+          coin.vy += ny * MAGNET_PULL * dt/1000;
+        }
+      }
+
+      coin.vy += GRAVITY * dt/1000;
+      coin.x  += coin.vx * dt/1000;
+      coin.y  += coin.vy * dt/1000;
+
+      // friction
+      coin.vx *= FRICTION; coin.vy *= FRICTION;
+
+      // walls
+      if (coin.x < 28){ coin.x = 28; coin.vx = -coin.vx * BOUNCE; coin.banked=true; haptic('light'); }
+      if (coin.x > w-28){ coin.x = w-28; coin.vx = -coin.vx * BOUNCE; coin.banked=true; haptic('light'); }
+      if (coin.y < 28){ coin.y = 28; coin.vy = -coin.vy * BOUNCE; haptic('light'); }
+
+      // bumpers collision (AABB vs circle)
+      for (const b of bumpers){
+        if (circleRectOverlap(coin.x,coin.y, 28, b.x-b.w/2,b.y-b.h/2,b.w,b.h)){
+          // отражаем по нормали: примитивно — инвертируем vy, чуть теряем энергию
+          coin.y = (coin.y < b.y ? b.y - b.h/2 - 28 : b.y + b.h/2 + 28);
+          coin.vy = -coin.vy * BOUNCE;
+          coin.banked=true;
+          haptic('light');
+        }
+      }
+
+      // hole check
+      for (const h of holes){
+        const d = dist(coin.x,coin.y, h.cx,h.cy);
+        if (d <= h.r * 0.6){ // «воротник» для попадания
+          const gained = Math.round(BASE_SCORE * h.cfg.mult * (coin.banked ? (1+WALL_BONUS) : 1));
+          score += gained; updateHud();
+          // snap to center & stop
+          coin.x=h.cx; coin.y=h.cy; coin.vx=0; coin.vy=0; coin.flying=false;
+          haptic('medium');
+          // маленький всплеск
+          flashHole(h.el);
+          endIfNeeded();
+          break;
+        }
+      }
+
+      // miss — ниже низа и почти остановился
+      if (coin.y > h + 40 || (Math.abs(coin.vx)<10 && Math.abs(coin.vy)<10 && coin.y > h-60)){
+        coin.flying=false; endIfNeeded();
+      }
+    }
+
+    applyCoin();
+    raf = requestAnimationFrame(tick);
+  }
+
+  function endIfNeeded(){
+    if (shots >= SHOTS_MAX && !coin.flying){
+      finish();
+    } else {
+      // вернуть монетку в старт-зону
+      setTimeout(()=>{ coin.x=w/2; coin.y=h-START_ZONE_H/2; coin.vx=coin.vy=0; applyCoin(); }, 250);
+      // одноразовые пауэры не тратим при промахе/попадании — только guide сгорает на старте, магнит — до конца раунда
+    }
+  }
+
+  function finish(){
+    if (score > best){ best=score; try{ localStorage.setItem('flick_best', String(best)); }catch(_){ } }
+    bestEl.textContent = best;
+    totalEl.textContent = score;
+    resBox.classList.add('show'); cta.classList.add('show');
+  }
+
+  // tiny helpers
+  function flashHole(el){
+    el.style.transform = 'scale(1.06)';
+    setTimeout(()=> el.style.transform='', 160);
+  }
+  function circleRectOverlap(cx,cy,r, rx,ry,rw,rh){
+    const nx = clamp(cx, rx, rx+rw);
+    const ny = clamp(cy, ry, ry+rh);
+    return ( (cx-nx)**2 + (cy-ny)**2 ) <= r*r;
+  }
+
+  // Powers buttons
+  powerBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const k = btn.dataset.power;
+      if (k==='guide'){ guideArmed = !guideArmed && hasGuide; }
+      if (k==='magnet'){ magnetArmed = !magnetArmed && hasMagnet; }
+      updatePowerButtons();
+    });
+  });
+
+  // CTA
+  cta.addEventListener('click', (e)=>{
+    if (!e.target.closest('.btn')) return;
+    closeFlick(); openFlick();
+  });
+
+  // openers
+  document.addEventListener('click', (e)=>{
+    const t = e.target.closest('[data-open-flick]'); if (!t) return;
+    e.preventDefault(); openFlick();
+  });
+  document.addEventListener('click', (e)=>{
+    if (e.target.closest('[data-close-flick]')) closeFlick();
+  });
+
+  // Esc desktop
+  document.addEventListener('keydown', (e)=>{ if (e.key==='Escape' && root.classList.contains('is-open')) closeFlick(); });
+
+  // Resize
+  const ro = new ResizeObserver(()=> layout());
+  ro.observe(stage);
+})();
+</script>
 
 </body>
 </html>
