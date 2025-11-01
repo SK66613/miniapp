@@ -551,7 +551,7 @@ body.popper-open{ overflow:hidden; }
 
 
 <style>
-  /* ===== LANE RUNNER (overlay) ===== */
+/* ===== LANE RUNNER (overlay) ===== */
 .runner{ position:fixed; inset:0; z-index:10060; background:#000; color:#fff; display:none; }
 .runner.is-open{ display:block; }
 body.runner-open{ overflow:hidden; }
@@ -561,7 +561,7 @@ body.runner-open{ overflow:hidden; }
   padding: calc(env(safe-area-inset-top,0px)+8px) 14px calc(env(safe-area-inset-bottom,0px)+14px);
 }
 
-/* Header (time bar + score) */
+/* HUD */
 .rn-hud{ width:100%; max-width:520px; margin:0 auto 10px; }
 .rn-hud__row{ display:grid; justify-items:center; gap:6px; }
 .rn-time{ font:800 16px/1 Inter,system-ui; letter-spacing:.4px; }
@@ -578,24 +578,49 @@ body.runner-open{ overflow:hidden; }
 }
 .rn-lane:before{ left:33.333%; } .rn-lane:after{ left:66.666%; }
 
-.rn-player, .rn-obstacle, .rn-coin{
-  position:absolute; width:56px; height:56px; transform:translate(-50%,-50%);
-  display:grid; place-items:center; user-select:none; -webkit-tap-highlight-color:transparent;
+/* ===== Sprites (размеры по переменным) ===== */
+:root{
+  --player-w: 56px; --player-h: 96px;
+  --obs-w: 56px;    --obs-h: 96px;
+  --coin-w: 38px;   --coin-h: 38px;
 }
-.rn-player{
-  border-radius:14px; background:linear-gradient(180deg,#2bdcff,#0da2ff);
-  box-shadow:0 10px 22px rgba(13,162,255,.35), inset 0 0 24px rgba(255,255,255,.12);
-}
-.rn-player:active{ transform:translate(-50%,-50%) scale(.98); }
 
-.rn-obstacle{
-  border-radius:14px; background:linear-gradient(180deg,#ff6b6b,#ff3b3b);
-  box-shadow:0 10px 22px rgba(255,59,59,.35), inset 0 0 10px rgba(255,255,255,.1);
+.rn-player, .rn-obstacle, .rn-coin{
+  position:absolute; transform:translate(-50%,-50%); user-select:none; -webkit-tap-highlight-color:transparent;
+  image-rendering:auto; will-change: left, transform, top;
 }
+
+/* Игрок — машина */
+.rn-player{
+  width:var(--player-w); height:var(--player-h);
+  background:center / contain no-repeat;
+  transition: left 160ms cubic-bezier(.2,.7,.2,1);
+}
+/* Поворот при смене полосы: короткая анимация, возвращается в 0° */
+.rn-player.tilt-left{ animation: rn-tilt-left 220ms ease-out; }
+.rn-player.tilt-right{ animation: rn-tilt-right 220ms ease-out; }
+
+@keyframes rn-tilt-left{
+  0%{ transform:translate(-50%,-50%) rotate(0deg) }
+  35%{ transform:translate(-50%,-50%) rotate(-8deg) }
+  100%{ transform:translate(-50%,-50%) rotate(0deg) }
+}
+@keyframes rn-tilt-right{
+  0%{ transform:translate(-50%,-50%) rotate(0deg) }
+  35%{ transform:translate(-50%,-50%) rotate(8deg) }
+  100%{ transform:translate(-50%,-50%) rotate(0deg) }
+}
+
+/* Препятствия — машины */
+.rn-obstacle{
+  width:var(--obs-w); height:var(--obs-h);
+  background:center / contain no-repeat;
+}
+
+/* Монетка */
 .rn-coin{
-  border-radius:999px; width:42px; height:42px;
-  background:radial-gradient(circle at 35% 35%, #ffe98a, #ffc72a);
-  box-shadow:0 8px 18px rgba(255,199,42,.35), inset 0 0 10px rgba(255,255,255,.35);
+  width:var(--coin-w); height:var(--coin-h);
+  background:center / contain no-repeat;
 }
 
 /* Result */
@@ -608,13 +633,14 @@ body.runner-open{ overflow:hidden; }
 .rn-cell{ display:grid; gap:4px; justify-items:center }
 .rn-val{ font:800 20px/1 Inter } .rn-sub{ font:600 12px/1.1 Inter; opacity:.8 } .rn-chev{ font:20px/1 Inter; opacity:.6 }
 
-/* CTA */
+/* CTA (safe-area) */
 :root{ --ctaGap: 44px; }
 .rn-cta{ position:absolute; left:14px; right:14px; bottom: calc(env(safe-area-inset-bottom,0px) + var(--ctaGap)); display:none; }
 .rn-cta.show{ display:block; }
 .rn-cta .btn{ width:100%; height:52px; border-radius:16px; font:800 16px/1 Inter; background:#fff; color:#000; border:1px solid #fff; }
 
 @media (min-width:900px){ .runner__wrap{ max-width:var(--appW,428px); margin:0 auto } }
+
 
 </style>
 
@@ -1874,7 +1900,7 @@ body.runner-open{ overflow:hidden; }
 
 
 <script>
-/* ===== Lane Runner — 3 lanes, swipe/keys, obstacles & coins ===== */
+/* ===== Lane Runner — sprites + tilt on lane change ===== */
 (function laneRunner(){
   const TG = window.Telegram && window.Telegram.WebApp;
 
@@ -1890,23 +1916,46 @@ body.runner-open{ overflow:hidden; }
   const worldEl= document.getElementById('rn-world');
   const cta    = document.getElementById('rn-cta');
 
+  /* ===== Sprites config (поставь свои пути/размеры) ===== */
+  const SPRITES = {
+    player: { img: 'travel.png', w: 56, h: 96 },
+    obstacles: [
+      { img: 'car.png',    w: 56, h: 96 },
+      { img: 'car.png', w: 56, h: 96 },
+      { img: 'car.png',  w: 56, h: 96 }
+    ],
+    coin: { img: 'coin.png', w: 38, h: 38 }
+  };
+  function applyPlayerSprite(){
+    document.documentElement.style.setProperty('--player-w', SPRITES.player.w + 'px');
+    document.documentElement.style.setProperty('--player-h', SPRITES.player.h + 'px');
+    player.style.backgroundImage = `url(${SPRITES.player.img})`;
+  }
+  function pickObstacleSprite(){
+    return SPRITES.obstacles[Math.floor(Math.random()*SPRITES.obstacles.length)];
+  }
+  function applyCoinVars(){
+    document.documentElement.style.setProperty('--coin-w', SPRITES.coin.w + 'px');
+    document.documentElement.style.setProperty('--coin-h', SPRITES.coin.h + 'px');
+  }
+
   // CONFIG (крути как нужно)
   const DURATION_MS     = 45_000;           // длительность забега
   const WORLD_RECORD    = 5000;
-  const BASE_SPEED_PX_S = 260;              // базовая скорость падения, px/сек (умеренно)
-  const SPEED_ACCEL_EACH= 8_000;            // каждые N мс прибавляем скорость
+  const BASE_SPEED_PX_S = 260;              // базовая скорость падения, px/сек
+  const SPEED_ACCEL_EACH= 8_000;            // каждые N мс — ускорение
   const SPEED_DELTA     = 40;               // шаг ускорения px/сек
   const SPAWN_MS        = 550;              // интервал спавна объектов
-  const COIN_PROB       = 0.30;             // шанс монетки вместо препятствия
+  const COIN_PROB       = 0.30;             // шанс монетки
   const COIN_SCORE      = 15;               // очки за монетку
-  const DIST_SCORE_K    = 0.06;             // очки за каждый px прожитого пути (настраивай)
-  const PLAYER_Y        = 0.82;             // относительная высота игрока (0-1 от верха)
-  const COLLIDE_PAD     = 16;               // «мягкость» столкновения (px)
+  const DIST_SCORE_K    = 0.06;             // очки за каждый px
+  const PLAYER_Y        = 0.82;             // высота игрока (0..1)
+  const COLLIDE_PAD     = 16;               // «мягкость» коллизии, px
 
   // STATE
   let lane = 1;                              // 0/1/2
   let score= 0, best = Number(localStorage.getItem('runner_best')||0);
-  let running=false, t0=0, raf=0, spawnTimer=0, lastSpeedUp=0;
+  let running=false, t0=0, raf=0, spawnTimer=0;
   let backOff=null;
   let entities=[]; // {type:'obs'|'coin', lane:0..2, x,y,el}
 
@@ -1914,33 +1963,42 @@ body.runner-open{ overflow:hidden; }
   const clamp = (v,a,b)=> Math.max(a,Math.min(b,v));
   const haptic = lvl=>{ try{ TG?.HapticFeedback?.impactOccurred(lvl||'light'); }catch(_){} };
   const mmss = ms => { const s=Math.max(0,Math.ceil(ms/1000)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; };
-
-  function laneCenters(){
-    const w = stage.clientWidth;
-    const laneW = w/3;
+  const laneCenters = ()=>{
+    const w = stage.clientWidth, laneW = w/3;
     return [laneW*0.5, laneW*1.5, laneW*2.5];
-  }
+  };
   function placePlayer(){
     const x = laneCenters()[lane];
     const y = stage.clientHeight * PLAYER_Y;
     player.style.left = x+'px';
     player.style.top  = y+'px';
   }
+  function tilt(dir){
+    // перезапуск анимации: снимаем классы, рефлоу, снова навешиваем
+    player.classList.remove('tilt-left','tilt-right');
+    void player.offsetWidth; // reflow
+    player.classList.add(dir==='right' ? 'tilt-right' : 'tilt-left');
+    setTimeout(()=> player.classList.remove('tilt-left','tilt-right'), 260);
+  }
 
   // swipe / keys
   let startX=0,startY=0;
   stage.addEventListener('pointerdown', e=>{ startX=e.clientX; startY=e.clientY; }, {passive:true});
   stage.addEventListener('pointerup', e=>{
+    if(!running) return;
     const dx = e.clientX - startX, dy = e.clientY - startY;
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 24){
+      const prev = lane;
       if (dx>0) lane = clamp(lane+1,0,2); else lane = clamp(lane-1,0,2);
-      placePlayer(); haptic('light');
+      if (lane!==prev){ placePlayer(); tilt(dx>0?'right':'left'); haptic('light'); }
     }
   }, {passive:true});
   document.addEventListener('keydown', e=>{
     if(!running) return;
-    if (e.key==='ArrowLeft') { lane=clamp(lane-1,0,2); placePlayer(); }
-    if (e.key==='ArrowRight'){ lane=clamp(lane+1,0,2); placePlayer(); }
+    const prev = lane;
+    if (e.key==='ArrowLeft')  lane=clamp(lane-1,0,2);
+    if (e.key==='ArrowRight') lane=clamp(lane+1,0,2);
+    if (lane!==prev){ placePlayer(); tilt(lane>prev?'right':'left'); haptic('light'); }
   });
 
   // entities
@@ -1948,9 +2006,22 @@ body.runner-open{ overflow:hidden; }
     const isCoin = Math.random()<COIN_PROB;
     const L = Math.floor(Math.random()*3);
     const el = document.createElement('div');
-    el.className = isCoin? 'rn-coin' : 'rn-obstacle';
-    stage.appendChild(el);
     const centers = laneCenters();
+
+    if (isCoin){
+      el.className = 'rn-coin';
+      el.style.width  = SPRITES.coin.w + 'px';
+      el.style.height = SPRITES.coin.h + 'px';
+      el.style.backgroundImage = `url(${SPRITES.coin.img})`;
+    } else {
+      el.className = 'rn-obstacle';
+      const s = pickObstacleSprite();
+      el.style.width  = s.w + 'px';
+      el.style.height = s.h + 'px';
+      el.style.backgroundImage = `url(${s.img})`;
+    }
+
+    stage.appendChild(el);
     const e = { type:isCoin?'coin':'obs', lane:L, x:centers[L], y:-40, el };
     el.style.left = e.x+'px'; el.style.top = e.y+'px';
     entities.push(e);
@@ -1969,9 +2040,8 @@ body.runner-open{ overflow:hidden; }
     // скорость (ускоряемся со временем)
     let speed = BASE_SPEED_PX_S + Math.floor(elapsed / SPEED_ACCEL_EACH) * SPEED_DELTA;
 
-    // движение, столкновения, очки за дистанцию
+    // движение, очки за дистанцию
     const sy = speed * dt/1000;
-    const playerRect = player.getBoundingClientRect();
     entities.forEach(e=>{
       e.y += sy;
       e.el.style.top = e.y+'px';
@@ -1988,13 +2058,15 @@ body.runner-open{ overflow:hidden; }
     for (let i=0;i<entities.length;i++){
       const e=entities[i];
       // убрать вышедшие
-      if (e.y > stage.clientHeight + 80){ dead.push(i); continue; }
+      if (e.y > stage.clientHeight + 80){ e.el.remove(); dead.push(i); continue; }
 
       if (e.lane===lane){
+        const halfHPlayer = player.clientHeight * 0.45;
+        const halfHEnt    = e.el.clientHeight * 0.45;
         const dy = Math.abs(e.y - py);
-        if (dy < (player.clientHeight/2 + 28 - COLLIDE_PAD)){
+        if (dy < (halfHPlayer + halfHEnt - COLLIDE_PAD)){
           if (e.type==='obs'){
-            crash(); return; // конец игры
+            crash(); return;
           } else if (e.type==='coin'){
             score += COIN_SCORE; scoreEl.textContent=score;
             haptic('medium');
@@ -2020,7 +2092,6 @@ body.runner-open{ overflow:hidden; }
     cancelAnimationFrame(raf);
     clearInterval(spawnTimer);
 
-    // best
     if (score>best){ best=score; try{ localStorage.setItem('runner_best', String(best)); }catch(_){ } }
     bestEl.textContent=best; worldEl.textContent=WORLD_RECORD;
 
@@ -2041,10 +2112,12 @@ body.runner-open{ overflow:hidden; }
       TG?.disableVerticalSwipes?.(); TG?.expand?.();
     }catch(_){}
 
-    // позиция игрока
+    // спрайты и позиция игрока
+    applyPlayerSprite(); applyCoinVars();
     lane = 1; placePlayer();
 
     // старт
+    running = true;
     t0 = Date.now();
     tick._prev = t0;
     tick();
@@ -2084,6 +2157,7 @@ body.runner-open{ overflow:hidden; }
   ro.observe(stage);
 })();
 </script>
+
 
 
 
