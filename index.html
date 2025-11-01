@@ -549,6 +549,75 @@ body.popper-open{ overflow:hidden; }
 
  </style>
 
+
+<style>
+  /* ===== LANE RUNNER (overlay) ===== */
+.runner{ position:fixed; inset:0; z-index:10060; background:#000; color:#fff; display:none; }
+.runner.is-open{ display:block; }
+body.runner-open{ overflow:hidden; }
+
+.runner__wrap{
+  position:absolute; inset:0; display:flex; flex-direction:column;
+  padding: calc(env(safe-area-inset-top,0px)+8px) 14px calc(env(safe-area-inset-bottom,0px)+14px);
+}
+
+/* Header (time bar + score) */
+.rn-hud{ width:100%; max-width:520px; margin:0 auto 10px; }
+.rn-hud__row{ display:grid; justify-items:center; gap:6px; }
+.rn-time{ font:800 16px/1 Inter,system-ui; letter-spacing:.4px; }
+.rn-bar{ width:100%; height:4px; border-radius:999px; background:rgba(255,255,255,.18); overflow:hidden }
+.rn-bar>i{ display:block; height:100%; width:100%; background:#fff; transform-origin:left center; }
+.rn-score{ align-self:center; display:flex; align-items:center; gap:10px; margin:6px 0 4px; }
+.rn-score__val{ font:900 clamp(28px,8vw,48px)/1 Inter; text-shadow:0 2px 10px rgba(0,0,0,.25) }
+
+/* Stage */
+.rn-stage{ flex:1; position:relative; overflow:hidden; border-radius:16px; background:#07080b; }
+.rn-lane{ position:absolute; inset:0; pointer-events:none; }
+.rn-lane:before,.rn-lane:after{
+  content:""; position:absolute; top:0; bottom:0; width:1px; background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+}
+.rn-lane:before{ left:33.333%; } .rn-lane:after{ left:66.666%; }
+
+.rn-player, .rn-obstacle, .rn-coin{
+  position:absolute; width:56px; height:56px; transform:translate(-50%,-50%);
+  display:grid; place-items:center; user-select:none; -webkit-tap-highlight-color:transparent;
+}
+.rn-player{
+  border-radius:14px; background:linear-gradient(180deg,#2bdcff,#0da2ff);
+  box-shadow:0 10px 22px rgba(13,162,255,.35), inset 0 0 24px rgba(255,255,255,.12);
+}
+.rn-player:active{ transform:translate(-50%,-50%) scale(.98); }
+
+.rn-obstacle{
+  border-radius:14px; background:linear-gradient(180deg,#ff6b6b,#ff3b3b);
+  box-shadow:0 10px 22px rgba(255,59,59,.35), inset 0 0 10px rgba(255,255,255,.1);
+}
+.rn-coin{
+  border-radius:999px; width:42px; height:42px;
+  background:radial-gradient(circle at 35% 35%, #ffe98a, #ffc72a);
+  box-shadow:0 8px 18px rgba(255,199,42,.35), inset 0 0 10px rgba(255,255,255,.35);
+}
+
+/* Result */
+.rn-result{ position:absolute; inset:0; display:none; place-items:center; padding:16px; }
+.rn-result.show{ display:grid; }
+.rn-card{
+  width:min(100%,520px); background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10);
+  border-radius:18px; padding:12px 16px; display:grid; grid-template-columns:1fr 1fr auto; gap:14px; align-items:center;
+}
+.rn-cell{ display:grid; gap:4px; justify-items:center }
+.rn-val{ font:800 20px/1 Inter } .rn-sub{ font:600 12px/1.1 Inter; opacity:.8 } .rn-chev{ font:20px/1 Inter; opacity:.6 }
+
+/* CTA */
+:root{ --ctaGap: 44px; }
+.rn-cta{ position:absolute; left:14px; right:14px; bottom: calc(env(safe-area-inset-bottom,0px) + var(--ctaGap)); display:none; }
+.rn-cta.show{ display:block; }
+.rn-cta .btn{ width:100%; height:52px; border-radius:16px; font:800 16px/1 Inter; background:#fff; color:#000; border:1px solid #fff; }
+
+@media (min-width:900px){ .runner__wrap{ max-width:var(--appW,428px); margin:0 auto } }
+
+</style>
+
 </head>
 <body>
   <div class="wrap">
@@ -561,6 +630,50 @@ body.popper-open{ overflow:hidden; }
     </nav>
 
     <main>
+
+<!-- LANE RUNNER (overlay) -->
+<div id="runner" class="runner" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="runner__wrap">
+    <!-- HUD -->
+    <div class="rn-hud">
+      <div class="rn-hud__row">
+        <div id="rn-time" class="rn-time">00:45</div>
+        <div class="rn-bar"><i id="rn-bar"></i></div>
+      </div>
+    </div>
+    <div class="rn-score">Score <span id="rn-score-val" class="rn-score__val">0</span></div>
+
+    <!-- STAGE -->
+    <div id="rn-stage" class="rn-stage">
+      <div class="rn-lane"></div>
+      <div id="rn-player" class="rn-player" aria-label="player"></div>
+
+      <!-- RESULT -->
+      <div id="rn-result" class="rn-result" aria-hidden="true">
+        <div class="rn-card">
+          <div class="rn-cell">
+            <div class="rn-val" id="rn-best">0</div>
+            <div class="rn-sub">your best</div>
+          </div>
+          <div class="rn-cell">
+            <div class="rn-val" id="rn-world">5000</div>
+            <div class="rn-sub">world record</div>
+          </div>
+          <div class="rn-chev">›</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div id="rn-cta" class="rn-cta">
+      <button class="btn" data-close-runner>Play again</button>
+    </div>
+  </div>
+</div>
+
+
+
+
 
 <!-- TARGET POPPER v2 (overlay) -->
 <!-- TARGET POPPER v2 (overlay) -->
@@ -576,7 +689,7 @@ body.popper-open{ overflow:hidden; }
 
     <!-- SCORE -->
     <div class="pp-score">
-      <img class="pp-score__icon" src="assets/target.svg" onerror="this.style.display='none'" alt="">
+      <img class="pp-score__icon" src="ic_about.png" onerror="this.style.display='none'" alt="">
       <span id="pp-score-val">0</span>
     </div>
 
@@ -588,7 +701,7 @@ body.popper-open{ overflow:hidden; }
         <span class="pp-combo__mult" id="pp-combo-note"></span>
       </div>
 
-      <div class="pp-stage__hint">tap the targets</div>
+      
 
       <!-- RESULT -->
       <div id="pp-result" class="pp-result" aria-hidden="true">
@@ -796,12 +909,8 @@ body.popper-open{ overflow:hidden; }
         <div class="list__sub">1-minute challenge</div>
       </div>
       <!-- запустить кликер-оверлей (+ дневной лимит из прошлой версии: 24ч) -->
-      <button class="list__btn list__btn--primary"
-              data-open-clicker
-              data-cooldown-hours="24"
-              data-clicker-key="pumpkin">
-        Play
-      </button>
+<!-- Кнопка запуска на главной -->
+<button class="list__btn list__btn--primary" data-open-runner>Lane</button>
     </div>
   </div>
 </div>
@@ -1461,7 +1570,7 @@ body.popper-open{ overflow:hidden; }
   const ENERGY_COST_MISS   = 0.3;
   const ENERGY_COST_EXPIRE = 0.2;
   const START_MIN_ENERGY   = 0.1;   // минимум, чтобы стартовать
-  let   ENERGY_REGEN_MS    = 0.1 * 3600_000; // глобальный дефолт (полный бак за 24ч)
+  let   ENERGY_REGEN_MS    = 24 * 3600_000; // глобальный дефолт (полный бак за 24ч)
 
   // плавный ПОМИНУТНЫЙ расход во время игры (Variant 2)
   const DRAIN_PER_MIN     = 0.10;   // ед/мин; поставь меньше/больше
@@ -1762,6 +1871,220 @@ body.popper-open{ overflow:hidden; }
   window.closePopper = closePopper;
 })();
 </script>
+
+
+<script>
+/* ===== Lane Runner — 3 lanes, swipe/keys, obstacles & coins ===== */
+(function laneRunner(){
+  const TG = window.Telegram && window.Telegram.WebApp;
+
+  // DOM
+  const root   = document.getElementById('runner'); if (!root) return;
+  const stage  = document.getElementById('rn-stage');
+  const player = document.getElementById('rn-player');
+  const timeEl = document.getElementById('rn-time');
+  const barEl  = document.getElementById('rn-bar');
+  const scoreEl= document.getElementById('rn-score-val');
+  const resBox = document.getElementById('rn-result');
+  const bestEl = document.getElementById('rn-best');
+  const worldEl= document.getElementById('rn-world');
+  const cta    = document.getElementById('rn-cta');
+
+  // CONFIG (крути как нужно)
+  const DURATION_MS     = 45_000;           // длительность забега
+  const WORLD_RECORD    = 5000;
+  const BASE_SPEED_PX_S = 260;              // базовая скорость падения, px/сек (умеренно)
+  const SPEED_ACCEL_EACH= 8_000;            // каждые N мс прибавляем скорость
+  const SPEED_DELTA     = 40;               // шаг ускорения px/сек
+  const SPAWN_MS        = 550;              // интервал спавна объектов
+  const COIN_PROB       = 0.30;             // шанс монетки вместо препятствия
+  const COIN_SCORE      = 15;               // очки за монетку
+  const DIST_SCORE_K    = 0.06;             // очки за каждый px прожитого пути (настраивай)
+  const PLAYER_Y        = 0.82;             // относительная высота игрока (0-1 от верха)
+  const COLLIDE_PAD     = 16;               // «мягкость» столкновения (px)
+
+  // STATE
+  let lane = 1;                              // 0/1/2
+  let score= 0, best = Number(localStorage.getItem('runner_best')||0);
+  let running=false, t0=0, raf=0, spawnTimer=0, lastSpeedUp=0;
+  let backOff=null;
+  let entities=[]; // {type:'obs'|'coin', lane:0..2, x,y,el}
+
+  // helpers
+  const clamp = (v,a,b)=> Math.max(a,Math.min(b,v));
+  const haptic = lvl=>{ try{ TG?.HapticFeedback?.impactOccurred(lvl||'light'); }catch(_){} };
+  const mmss = ms => { const s=Math.max(0,Math.ceil(ms/1000)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; };
+
+  function laneCenters(){
+    const w = stage.clientWidth;
+    const laneW = w/3;
+    return [laneW*0.5, laneW*1.5, laneW*2.5];
+  }
+  function placePlayer(){
+    const x = laneCenters()[lane];
+    const y = stage.clientHeight * PLAYER_Y;
+    player.style.left = x+'px';
+    player.style.top  = y+'px';
+  }
+
+  // swipe / keys
+  let startX=0,startY=0;
+  stage.addEventListener('pointerdown', e=>{ startX=e.clientX; startY=e.clientY; }, {passive:true});
+  stage.addEventListener('pointerup', e=>{
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 24){
+      if (dx>0) lane = clamp(lane+1,0,2); else lane = clamp(lane-1,0,2);
+      placePlayer(); haptic('light');
+    }
+  }, {passive:true});
+  document.addEventListener('keydown', e=>{
+    if(!running) return;
+    if (e.key==='ArrowLeft') { lane=clamp(lane-1,0,2); placePlayer(); }
+    if (e.key==='ArrowRight'){ lane=clamp(lane+1,0,2); placePlayer(); }
+  });
+
+  // entities
+  function spawn(){
+    const isCoin = Math.random()<COIN_PROB;
+    const L = Math.floor(Math.random()*3);
+    const el = document.createElement('div');
+    el.className = isCoin? 'rn-coin' : 'rn-obstacle';
+    stage.appendChild(el);
+    const centers = laneCenters();
+    const e = { type:isCoin?'coin':'obs', lane:L, x:centers[L], y:-40, el };
+    el.style.left = e.x+'px'; el.style.top = e.y+'px';
+    entities.push(e);
+  }
+
+  function tick(){
+    const t = Date.now();
+    const dt = Math.min(32, t - (tick._prev||t)); tick._prev = t;
+
+    // таймер
+    const elapsed = t - t0;
+    const left = Math.max(0, DURATION_MS - elapsed);
+    timeEl.textContent = mmss(left);
+    barEl.style.transform = `scaleX(${Math.max(0,1 - elapsed/DURATION_MS)})`;
+
+    // скорость (ускоряемся со временем)
+    let speed = BASE_SPEED_PX_S + Math.floor(elapsed / SPEED_ACCEL_EACH) * SPEED_DELTA;
+
+    // движение, столкновения, очки за дистанцию
+    const sy = speed * dt/1000;
+    const playerRect = player.getBoundingClientRect();
+    entities.forEach(e=>{
+      e.y += sy;
+      e.el.style.top = e.y+'px';
+    });
+
+    // дистанция → очки
+    score += Math.round(sy * DIST_SCORE_K);
+    scoreEl.textContent = score;
+
+    // проверка столкновений и сбор монет
+    const px = laneCenters()[lane];
+    const py = stage.clientHeight * PLAYER_Y;
+    const dead=[];
+    for (let i=0;i<entities.length;i++){
+      const e=entities[i];
+      // убрать вышедшие
+      if (e.y > stage.clientHeight + 80){ dead.push(i); continue; }
+
+      if (e.lane===lane){
+        const dy = Math.abs(e.y - py);
+        if (dy < (player.clientHeight/2 + 28 - COLLIDE_PAD)){
+          if (e.type==='obs'){
+            crash(); return; // конец игры
+          } else if (e.type==='coin'){
+            score += COIN_SCORE; scoreEl.textContent=score;
+            haptic('medium');
+            e.el.remove(); dead.push(i);
+          }
+        }
+      }
+    }
+    // удалить мёртвых с конца
+    for (let i=dead.length-1;i>=0;i--) entities.splice(dead[i],1);
+
+    if (left<=0){ finish(); return; }
+    raf = requestAnimationFrame(tick);
+  }
+
+  function crash(){
+    haptic('heavy');
+    finish();
+  }
+
+  function finish(){
+    running=false;
+    cancelAnimationFrame(raf);
+    clearInterval(spawnTimer);
+
+    // best
+    if (score>best){ best=score; try{ localStorage.setItem('runner_best', String(best)); }catch(_){ } }
+    bestEl.textContent=best; worldEl.textContent=WORLD_RECORD;
+
+    resBox.classList.add('show'); cta.classList.add('show');
+  }
+
+  function openRunner(){
+    // reset
+    entities.forEach(e=> e.el.remove()); entities = [];
+    resBox.classList.remove('show'); cta.classList.remove('show');
+    score=0; scoreEl.textContent='0';
+
+    root.classList.add('is-open'); document.body.classList.add('runner-open');
+    try{
+      TG?.BackButton?.show?.();
+      backOff = ()=> closeRunner();
+      TG?.BackButton?.onClick?.(backOff);
+      TG?.disableVerticalSwipes?.(); TG?.expand?.();
+    }catch(_){}
+
+    // позиция игрока
+    lane = 1; placePlayer();
+
+    // старт
+    t0 = Date.now();
+    tick._prev = t0;
+    tick();
+    clearInterval(spawnTimer);
+    spawn(); // мгновенно
+    spawnTimer = setInterval(spawn, SPAWN_MS);
+  }
+
+  function closeRunner(){
+    running=false;
+    cancelAnimationFrame(raf);
+    clearInterval(spawnTimer);
+    root.classList.remove('is-open'); document.body.classList.remove('runner-open');
+    try{ TG?.BackButton?.offClick?.(backOff); TG?.BackButton?.hide?.(); }catch(_){}
+  }
+
+  // CTA
+  cta.addEventListener('click', e=>{
+    if (!e.target.closest('.btn')) return;
+    closeRunner(); openRunner();
+  });
+
+  // Openers
+  document.addEventListener('click', (e)=>{
+    const t = e.target.closest('[data-open-runner]'); if (!t) return;
+    e.preventDefault(); openRunner();
+  });
+  document.addEventListener('click', (e)=>{
+    if (e.target.closest('[data-close-runner]')) closeRunner();
+  });
+
+  // Esc desktop
+  document.addEventListener('keydown', e=>{ if (e.key==='Escape' && root.classList.contains('is-open')) closeRunner(); });
+
+  // адаптация при ресайзе (центр дорожек)
+  const ro = new ResizeObserver(()=> placePlayer());
+  ro.observe(stage);
+})();
+</script>
+
 
 
 
